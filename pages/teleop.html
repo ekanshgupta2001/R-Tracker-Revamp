@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <!-- v2 theme: `light` = light glass and is the default; no class = dark glass. rt-theme is the only localStorage key in the app (UI preference). -->
+  <script>document.documentElement.classList.add('light');try{if(localStorage.getItem('rt-theme')==='dark')document.documentElement.classList.remove('light')}catch(e){}</script>
+  <title>TeleOp Practice — R-Tracker</title>
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/fonts.css">
+  <link rel="stylesheet" href="../css/teleop.css">
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <script src="../js/schema.js"></script>
+  <script src="../js/store.js"></script>
+  <script defer src="../js/sidebar.js"></script>
+  <script defer src="../vendor/three/three.min.js"></script>
+  <script defer src="../vendor/three/STLLoader.js"></script>
+  <script defer src="../vendor/three/OrbitControls.js"></script>
+</head>
+
+<body>
+<a href="#app" class="skip-to-content">Skip to main content</a>
+<div id="rt-overlay" aria-hidden="true"><div id="rt-overlay-logo"><span class="ol-r">R-</span><span class="ol-t">Tracker</span></div></div>
+<div id="rt-atmosphere" aria-hidden="true"></div>
+  <div class="mobile-warning">
+    TeleOp Practice works best on desktop or tablet with a gamepad. Some features may not work on mobile.
+  </div>
+  <main id="app">
+    <div id="field-container">
+      <div id="mode-tabs">
+        <button class="mode-tab active" id="tab-freedrive" onclick="switchMode('freedrive')">Free Drive</button>
+        <button class="mode-tab" id="tab-levels" onclick="switchMode('levels')">Levels</button>
+      </div>
+      <div id="field-wrap">
+        <canvas id="c"></canvas>
+        <div id="countdown-overlay">
+          <div id="countdown-text">3</div>
+        </div>
+        <div id="level-hud">
+          <div class="hud-row">
+            <div class="hud-chip timer-chip" id="hud-timer">0.0s</div>
+            <div class="hud-chip cp-chip" id="hud-cp">0/0</div>
+            <div class="hud-chip acc-chip" id="hud-acc">100%</div>
+          </div>
+        </div>
+        <div id="result-card">
+          <div class="rc-medal" id="rc-medal"></div>
+          <div class="rc-title" id="rc-title">Level Complete!</div>
+          <div class="rc-level" id="rc-level">Level 1 &mdash; Forward March</div>
+          <div class="rc-stars">
+            <span class="rc-star" id="rc-s1">&#9733;</span>
+            <span class="rc-star" id="rc-s2">&#9733;</span>
+            <span class="rc-star" id="rc-s3">&#9733;</span>
+          </div>
+          <div class="rc-stats" id="rc-stats"></div>
+          <div class="rc-delta" id="rc-delta"></div>
+          <div class="rc-btns">
+            <button class="btn" onclick="retryLevel()"><span class="rt-icon" data-rt-icon="rotate"></span>Retry</button>
+            <button class="btn" onclick="exitToSelect()"><span class="rt-icon" data-rt-icon="menu"></span>Levels</button>
+            <button class="btn active" id="rc-next-btn" onclick="nextLevel()">Next<span class="rt-icon" data-rt-icon="chevronRight"></span></button>
+          </div>
+        </div>
+        <div id="fail-card">
+          <div class="fail-icon"><span class="rt-icon" data-rt-icon="clock"></span></div>
+          <div class="fail-title">Time's Up!</div>
+          <div class="fail-level" id="fail-level">Keep practicing!</div>
+          <div class="fail-btns">
+            <button class="btn" onclick="retryLevel()"><span class="rt-icon" data-rt-icon="rotate"></span>Retry</button>
+            <button class="btn" onclick="exitToSelect()"><span class="rt-icon" data-rt-icon="menu"></span>Levels</button>
+          </div>
+        </div>
+      </div>
+      <div id="ctrl-bar">
+        <button class="btn active" id="btn-mec" onclick="setDrive('mecanum')">Mecanum</button>
+        <button class="btn" id="btn-tank" onclick="setDrive('tank')">Tank</button>
+        <span class="ctrl-sep" aria-hidden="true"></span>
+        <button class="btn active" id="btn-fc" onclick="setMode('field')">Field-Centric</button>
+        <button class="btn" id="btn-rc" onclick="setMode('robot')">Robot-Centric</button>
+        <span class="ctrl-sep" aria-hidden="true"></span>
+        <button class="btn" onclick="resetRobot()">Reset [R]</button>
+        <span class="ctrl-sep" aria-hidden="true"></span>
+        <button class="btn" onclick="openDriverReport()"><span class="rt-icon" data-rt-icon="chart"></span>Report</button>
+        <span class="ctrl-sep" aria-hidden="true"></span>
+        <div class="view-toggle">
+          <button class="view-btn active" data-mode="2d" onclick="setViewMode('2d')">2D</button>
+          <button class="view-btn" data-mode="3d" onclick="setViewMode('3d')">3D</button>
+        </div>
+        <div id="gpstatus" class="gpoff">No Gamepad</div>
+      </div>
+      <div id="mini-stats">
+        <span class="ms-item"><span class="ms-lbl">SPD</span><span class="ms-val" id="ms-spd">0.00</span></span>
+        <span class="ms-sep">·</span>
+        <span class="ms-item"><span class="ms-lbl">SESSION</span><span class="ms-val" id="ms-sess">0:00</span></span>
+        <span class="ms-sep">·</span>
+        <span class="ms-item"><span class="ms-lbl">SMOOTH</span><span class="ms-val" id="ms-smooth">-</span></span>
+        <span class="ms-sep">·</span>
+        <span class="ms-item"><span class="ms-lbl">RATING</span><span class="ms-val" id="ms-rating">-</span></span>
+        <span class="ms-sep">·</span>
+        <span class="ms-hint">[H] hide</span>
+      </div>
+    </div>
+    <div id="sidebar-teleop">
+      <div class="panel">
+        <div class="ptitle">Match Timer</div>
+        <div id="timer-display">2:30</div>
+        <div id="period-label" class="ready-period">READY — PRESS START</div>
+        <div class="tctrls">
+          <button class="btn" onclick="timerStart()"><span class="rt-icon" data-rt-icon="play"></span>Start</button>
+          <button class="btn" onclick="timerPause()"><span class="rt-icon" data-rt-icon="pause"></span>Pause</button>
+          <button class="btn" onclick="timerReset()"><span class="rt-icon" data-rt-icon="rotate"></span>Reset</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">Telemetry</div>
+        <div class="trow"><span class="tlbl">X</span><span class="tval" id="t-x">0.00 ft</span></div>
+        <div class="trow"><span class="tlbl">Y</span><span class="tval" id="t-y">0.00 ft</span></div>
+        <div class="trow"><span class="tlbl">Heading</span><span class="tval" id="t-h">0.0°</span></div>
+        <div class="trow"><span class="tlbl">Speed</span><span class="tval" id="t-s">0.00 ft/s</span></div>
+        <div class="trow"><span class="tlbl">Drivetrain</span><span class="tval" id="t-dt">Mecanum</span></div>
+        <div class="trow"><span class="tlbl">Drive Mode</span><span class="tval" id="t-dm">Field-Centric</span></div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">Joysticks</div>
+        <div class="sticks-row">
+          <div class="stkwrap">
+            <div class="stk"><div class="sdot" id="dl"></div></div>
+            <div class="slbl">LEFT</div>
+          </div>
+          <div class="stkwrap">
+            <div class="stk"><div class="sdot" id="dr"></div></div>
+            <div class="slbl">RIGHT</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">Motor Powers</div>
+        <div class="mrow">
+          <div class="mlbl"><span>Front Left</span><span class="mval" id="v-fl">0.00</span></div>
+          <div class="mbg"><div class="mbar" id="b-fl"></div><div class="mctr"></div></div>
+        </div>
+        <div class="mrow">
+          <div class="mlbl"><span>Front Right</span><span class="mval" id="v-fr">0.00</span></div>
+          <div class="mbg"><div class="mbar" id="b-fr"></div><div class="mctr"></div></div>
+        </div>
+        <div class="mrow">
+          <div class="mlbl"><span>Back Left</span><span class="mval" id="v-bl">0.00</span></div>
+          <div class="mbg"><div class="mbar" id="b-bl"></div><div class="mctr"></div></div>
+        </div>
+        <div class="mrow">
+          <div class="mlbl"><span>Back Right</span><span class="mval" id="v-br">0.00</span></div>
+          <div class="mbg"><div class="mbar" id="b-br"></div><div class="mctr"></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">Configuration</div>
+        <div class="hlp cfg-note">Defaults model a 435 RPM mecanum drivetrain on foam tiles. Levels are rated at these defaults.</div>
+        <div class="srow">
+          <div class="slrow"><span>Max Speed</span><span class="sval" id="s-ms-v">6.5 ft/s</span></div>
+          <input type="range" id="s-ms" min="3" max="10" step="0.5" value="6.5" oninput="cfgUpdate()">
+        </div>
+        <div class="srow">
+          <div class="slrow"><span>Turn Rate</span><span class="sval" id="s-tr-v">380 °/s</span></div>
+          <input type="range" id="s-tr" min="90" max="450" step="10" value="380" oninput="cfgUpdate()">
+        </div>
+        <div class="srow">
+          <div class="slrow"><span>Robot Size</span><span class="sval" id="s-rs-v">18 in</span></div>
+          <input type="range" id="s-rs" min="12" max="24" step="1" value="18" oninput="cfgUpdate()">
+        </div>
+        <div class="srow">
+          <div class="slrow"><span>Deadzone</span><span class="sval" id="s-dz-v">0.10</span></div>
+          <input type="range" id="s-dz" min="0.00" max="0.40" step="0.01" value="0.10" oninput="cfgUpdate()">
+        </div>
+        <div class="srow">
+          <div class="slrow"><span>Traction (accel)</span><span class="sval" id="s-ac-v">20 ft/s²</span></div>
+          <input type="range" id="s-ac" min="5" max="30" step="1" value="20" oninput="cfgUpdate()">
+        </div>
+        <div class="srow">
+          <div class="slrow"><span>Braking</span><span class="sval" id="s-fr-v">20 ft/s²</span></div>
+          <input type="range" id="s-fr" min="2" max="30" step="1" value="20" oninput="cfgUpdate()">
+        </div>
+        <div class="srow">
+          <div class="slrow"><span>Response Delay</span><span class="sval" id="s-rd-v">80 ms</span></div>
+          <input type="range" id="s-rd" min="0" max="300" step="10" value="80" oninput="cfgUpdate()">
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">3D Robot Model</div>
+        <div class="stl-panel">
+          <button class="stl-upload-btn" onclick="uploadSTL()">Upload STL</button>
+          <button id="stl-remove-btn" onclick="removeSTL()">Remove</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">Keyboard Controls</div>
+        <div class="hlp">
+          <div><b>W / S</b> — Forward / Back</div>
+          <div><b>A / D</b> — Strafe L / R</div>
+          <div><b>← →</b> — Rotate CW / CCW</div>
+          <div><b>R</b> — Reset robot position</div>
+          <div><b>F</b> — Toggle drive mode</div>
+          <div><b>T</b> — Toggle drivetrain</div>
+          <div><b>Space</b> — Start / pause timer</div>
+        </div>
+      </div>
+    </div>
+    <div id="levels-sidebar">
+      <div id="attempt-panel">
+        <div class="ap-title" id="ap-name">Level 1</div>
+        <div class="ap-row"><span class="ap-lbl">Time</span><span class="ap-val" id="ap-time">0.0s</span></div>
+        <div class="ap-row"><span class="ap-lbl">Limit</span><span class="ap-val" id="ap-limit">—</span></div>
+        <div class="ap-row"><span class="ap-lbl">Checkpoints</span><span class="ap-val" id="ap-cp">0/0</span></div>
+        <div class="ap-row"><span class="ap-lbl">Accuracy</span><span class="ap-val" id="ap-acc">100%</span></div>
+        <div class="ap-btns">
+          <button class="btn" onclick="retryLevel()"><span class="rt-icon" data-rt-icon="rotate"></span>Retry</button>
+          <button class="btn" onclick="exitToSelect()"><span class="rt-icon" data-rt-icon="menu"></span>List</button>
+        </div>
+      </div>
+      <div id="lvl-list"></div>
+    </div>
+  </main>
+
+  <!-- ── Driver Analytics Modal ─────────────────────────────────────── -->
+  <div id="analytics-backdrop" onclick="if(event.target===this)closeDriverReport()">
+    <div id="analytics-modal">
+      <div class="an-header">
+        <div class="an-title"><span class="rt-icon" data-rt-icon="chart"></span>Driver Report Card</div>
+        <button class="an-close" onclick="closeDriverReport()" aria-label="Close">&#10005;</button>
+      </div>
+      <div class="an-tabs">
+        <button class="an-tab active" id="tab-stats" onclick="switchReportTab('stats')">Stats</button>
+        <button class="an-tab" id="tab-coach" onclick="switchReportTab('coach')"><span class="rt-icon" data-rt-icon="target"></span>Coach</button>
+      </div>
+      <div id="an-stats-panel">
+        <div class="an-grade-row">
+          <div class="an-grade" id="an-grade">-</div>
+          <div class="an-grade-info">
+            <div class="an-overall" id="an-overall">Overall Rating: -</div>
+            <div id="an-percentile" class="an-percentile">-</div>
+          </div>
+        </div>
+        <div class="an-section-title">Level Performance <span class="an-section-sub" id="an-lvl-window">last 5 sessions</span></div>
+        <div id="an-levels"></div>
+        <div class="an-section-title" style="margin-top:14px">Why · Skill Breakdown <span class="an-section-sub" id="an-atspeed"></span></div>
+        <div class="an-section-note" id="an-style-note"></div>
+        <div class="an-bar-row"><span class="an-bar-lbl">Smoothness</span><div class="an-bar-bg"><div class="an-bar-fill" id="anb-smoothness"></div></div><span class="an-bar-pct" id="anp-smoothness">-</span></div>
+        <div class="an-bar-row"><span class="an-bar-lbl">Stability</span><div class="an-bar-bg"><div class="an-bar-fill" id="anb-stability"></div></div><span class="an-bar-pct" id="anp-stability">-</span></div>
+        <div class="an-bar-row"><span class="an-bar-lbl">Strafe Use</span><div class="an-bar-bg"><div class="an-bar-fill" id="anb-strafe"></div></div><span class="an-bar-pct" id="anp-strafe">-</span></div>
+        <div class="an-bar-row"><span class="an-bar-lbl">Turn Prec.</span><div class="an-bar-bg"><div class="an-bar-fill" id="anb-turn"></div></div><span class="an-bar-pct" id="anp-turn">-</span></div>
+        <div class="an-bar-row"><span class="an-bar-lbl">Recovery</span><div class="an-bar-bg"><div class="an-bar-fill" id="anb-recovery"></div></div><span class="an-bar-pct" id="anp-recovery">-</span></div>
+        <div class="an-section-title" style="margin-top:14px">Insights</div>
+        <div id="an-strengths"></div>
+        <div id="an-weaknesses"></div>
+        <div class="an-recommend" id="an-recommend"></div>
+        <div class="an-section-title" style="margin-top:14px">Session Stats</div>
+        <div class="an-session-grid">
+          <div class="an-stat"><div class="an-stat-val" id="ans-time">0:00</div><div class="an-stat-lbl">Session Time</div></div>
+          <div class="an-stat"><div class="an-stat-val" id="ans-lvls">0</div><div class="an-stat-lbl">Levels Done</div></div>
+          <div class="an-stat"><div class="an-stat-val" id="ans-dist">0</div><div class="an-stat-lbl">Dist (ft)</div></div>
+          <div class="an-stat"><div class="an-stat-val" id="ans-inputs">0</div><div class="an-stat-lbl">Inputs</div></div>
+        </div>
+      </div>
+      <div id="an-coach-panel">
+        <div class="coach-section" id="cs-badge">
+          <div class="coach-profile-badge">
+            <span class="cpb-icon" id="coach-profile-icon"></span>
+            <span id="coach-profile-name">Driver</span>
+          </div>
+        </div>
+        <div class="coach-section" id="cs-summary">
+          <div class="coach-section-label">Overall Summary</div>
+          <div class="coach-summary-text" id="coach-summary-text"></div>
+        </div>
+        <div class="coach-section" id="cs-analysis">
+          <div class="coach-section-label">Detailed Analysis</div>
+          <div class="coach-analysis-text" id="coach-analysis-text"></div>
+        </div>
+        <div class="coach-section" id="cs-strengths">
+          <div class="coach-section-label">Your Strengths</div>
+          <div id="coach-strengths-list"></div>
+        </div>
+        <div class="coach-section" id="cs-weaknesses">
+          <div class="coach-section-label">Areas to Improve</div>
+          <div id="coach-weaknesses-list"></div>
+        </div>
+        <div class="coach-section" id="cs-plan">
+          <div class="coach-section-label">Your Training Plan</div>
+          <div id="coach-plan-list"></div>
+        </div>
+        <div class="coach-section" id="cs-comparison">
+          <div class="coach-section-label">Session Comparison</div>
+          <div id="coach-comparison-content" class="coach-analysis-text">Loading previous data...</div>
+        </div>
+      </div>
+      <div class="an-footer">
+        <button class="btn" onclick="confirmResetMetrics()"><span class="rt-icon" data-rt-icon="rotate"></span>Reset</button>
+        <button class="btn active" onclick="closeDriverReport()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Driver rating: level table + outcome-based rating (pure functions, shared with the unit tests) -->
+  <script defer src="../js/level-table.js"></script>
+  <script defer src="../js/driver-rating.js"></script>
+  <!-- Teleop JS modules (load order matters — globals shared via plain scripts) -->
+  <script defer src="../js/teleop/field.js"></script>
+  <script defer src="../js/teleop/robot.js"></script>
+  <script defer src="../js/teleop/drive.js"></script>
+  <script defer src="../js/teleop/timer.js"></script>
+  <script defer src="../js/teleop/input.js"></script>
+  <script defer src="../js/teleop/metrics.js"></script>
+  <script defer src="../js/teleop/levels.js"></script>
+  <script defer src="../js/teleop/persist.js"></script>
+  <script defer src="../js/teleop/coach.js"></script>
+  <script defer src="../js/teleop/view3d.js"></script>
+  <script defer src="../js/teleop/ui.js"></script>
+<script>
+(function() {
+  var overlay = document.getElementById('rt-overlay');
+  if (!overlay) return;
+  if (sessionStorage.getItem('rt-nav') === '1') {
+    sessionStorage.removeItem('rt-nav');
+    overlay.classList.add('visible');
+    setTimeout(function() {
+      overlay.classList.remove('visible');
+      document.body.classList.add('rt-entering');
+    }, 200);
+    setTimeout(function() { document.body.classList.remove('rt-entering'); }, 400);
+  }
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('a[href]');
+    if (!link) return;
+    var href = link.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+    if (link.hasAttribute('download') || href.startsWith('blob:')) return;
+    if (href.startsWith('http') && href.indexOf(location.host) === -1) return;
+    if (link.target === '_blank') return;
+    e.preventDefault();
+    sessionStorage.setItem('rt-nav', '1');
+    overlay.classList.add('visible');
+    setTimeout(function() { window.location.href = href; }, 150);
+  });
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted) {
+      overlay.classList.remove('visible');
+      document.body.classList.remove('rt-entering');
+    }
+  });
+})();
+</script>
+</body>
+</html>

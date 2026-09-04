@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Local tooling
+.claude/settings.local.json
+
+# Test output
+test-results/
+playwright-report/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <!-- v2 theme: `light` = light glass and is the default; no class = dark glass. rt-theme is the only localStorage key in the app (UI preference). -->
+  <script>document.documentElement.classList.add('light');try{if(localStorage.getItem('rt-theme')==='dark')document.documentElement.classList.remove('light')}catch(e){}</script>
+  <meta name="description" content="About R-Tracker — Rundle Robotics personally designed visualizer for FTC teams.">
+  <title>About — R-Tracker</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="stylesheet" href="../css/fonts.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/about.css">
+  <script src="../js/schema.js"></script>
+  <script src="../js/store.js"></script>
+  <script defer src="../js/sidebar.js"></script>
+</head>
+
+<body>
+<a href="#main-content" class="skip-to-content">Skip to main content</a>
+<div id="rt-overlay" aria-hidden="true"><div id="rt-overlay-logo"><span class="ol-r">R-</span><span class="ol-t">Tracker</span></div></div>
+<div id="rt-atmosphere" aria-hidden="true"></div>
+  <header class="topbar">
+    <div class="topbar-left"><a href="../index.html">← Home</a></div>
+    <div class="topbar-right">About</div>
+  </header>
+
+  <main class="main-wrap" id="main-content">
+    <div class="content">
+      <div class="about-header">
+        <h1>About <span>R-Tracker</span></h1>
+        <p>Learn more about our team and this tool.</p>
+      </div>
+
+      <div class="about-block">
+        <h2>About This Tool</h2>
+        <p>R-Tracker is a high-performance pathing visualizer designed to bridge the gap between code and the field. It allows teams to simulate autonomous paths and refine driver practice in a digital environment, saving hours of on-field calibration. This project was spearheaded by Ekansh Gupta and co-designed by Neel Laroiya of Team 25702 Rundle Robotics Castle.</p>
+      </div>
+
+      <div class="about-block">
+        <h2>Project Legacy</h2>
+        <p>We believe that the best way to learn is to build. R-Tracker represents our commitment to high-level software engineering in FTC. By maintaining this tool, we provide a consistent standard for driver training and autonomous logic that future team members can build upon, fork, and improve.</p>
+      </div>
+
+      <div class="about-block">
+        <h2>Future Improvements</h2>
+        <p>R-Tracker is constantly evolving. Our development roadmap includes: </p>
+        <p>Multi-Pathing Functionality: </p>
+        <p>Currently focused on Pedro Pathing, we are working to expand support for various autonomous control frameworks to make R-Tracker more versatile. </p>
+      </div>
+
+      <div class="about-block">
+        <h2>Privacy &amp; Data</h2>
+        <p>R-Tracker is a set of static files. Nothing you type, score, or do is ever sent anywhere: there are no accounts, no database, no analytics, and no AI service.</p>
+        <ul>
+          <li><strong>Where your progress lives:</strong> only in this browser tab, and in a <code>.json</code> file you choose to export from the sidebar. Closing the tab clears it, so export before you leave.</li>
+          <li><strong>What is in the file:</strong> driver practice scores and level results, curriculum progress, code submissions and theory answers, saved paths and strategies.</li>
+          <li><strong>Sharing with a mentor:</strong> you send them your exported file yourself, the same way you would share any document. Nothing is uploaded by this site.</li>
+          <li><strong>What the site remembers between visits:</strong> your light/dark theme choice, and nothing else.</li>
+        </ul>
+        <p><strong>Grading:</strong> theory answers and code submissions are checked by rules that run inside your browser. They never leave your device.</p>
+      </div>
+    </div>
+
+    <footer class="page-footer">Built for FTC teams <span class="accent" aria-hidden="true"><svg viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#800020"/><path d="M4 17.5 8.2 12.4 10.4 14.6 15.2 6.5 16.6 9.4 20 17.5" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></span></footer>
+  </main>
+<script>
+(function() {
+  var overlay = document.getElementById('rt-overlay');
+  if (!overlay) return;
+  if (sessionStorage.getItem('rt-nav') === '1') {
+    sessionStorage.removeItem('rt-nav');
+    overlay.classList.add('visible');
+    setTimeout(function() {
+      overlay.classList.remove('visible');
+      document.body.classList.add('rt-entering');
+    }, 200);
+    setTimeout(function() { document.body.classList.remove('rt-entering'); }, 400);
+  }
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('a[href]');
+    if (!link) return;
+    var href = link.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+    if (link.hasAttribute('download') || href.startsWith('blob:')) return;
+    if (href.startsWith('http') && href.indexOf(location.host) === -1) return;
+    if (link.target === '_blank') return;
+    e.preventDefault();
+    sessionStorage.setItem('rt-nav', '1');
+    overlay.classList.add('visible');
+    setTimeout(function() { window.location.href = href; }, 150);
+  });
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted) {
+      overlay.classList.remove('visible');
+      document.body.classList.remove('rt-entering');
+    }
+  });
+})();
+</script>
+</body>
+</html>

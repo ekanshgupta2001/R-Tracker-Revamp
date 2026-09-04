@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <!-- v2 theme: `light` = light glass and is the default; no class = dark glass. rt-theme is the only localStorage key in the app (UI preference). -->
+  <script>document.documentElement.classList.add('light');try{if(localStorage.getItem('rt-theme')==='dark')document.documentElement.classList.remove('light')}catch(e){}</script>
+  <meta name="description" content="Progress Report — R-Tracker driver stats, practice consistency, curriculum mastery.">
+  <title>Progress Report — R-Tracker</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="stylesheet" href="../css/fonts.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/report.css">
+  <script src="../js/schema.js"></script>
+  <script src="../js/store.js"></script>
+  <script defer src="../js/sidebar.js"></script>
+  <script defer src="../js/curriculum/lessons.js"></script>
+  <script defer src="../js/bkt.js"></script>
+  <script defer src="../js/charts.js"></script>
+  <script defer src="../js/report-templates.js"></script>
+  <script defer src="../js/report.js"></script>
+</head>
+
+<body>
+<a href="#main-content" class="skip-to-content">Skip to main content</a>
+<div id="rt-overlay" aria-hidden="true"><div id="rt-overlay-logo"><span class="ol-r">R-</span><span class="ol-t">Tracker</span></div></div>
+<div id="rt-atmosphere" aria-hidden="true"></div>
+  <header class="topbar">
+    <div class="topbar-left"><a href="../index.html">← Home</a></div>
+    <div class="topbar-right">Progress Report</div>
+  </header>
+
+  <main class="main-wrap" id="main-content">
+    <div class="report-content">
+
+      <div class="rpt-empty-banner" id="rpt-empty-banner" hidden>
+        Nothing here yet. Your report builds itself from what you do in <a href="teleop.html">TeleOp Practice</a> and the <a href="curriculum.html">Curriculum</a> — all of it stays in this browser.
+      </div>
+
+      <!-- Section 1: Driver Overview + next step -->
+      <div class="rpt-card" id="rpt-overview">
+        <div class="rpt-card-title">Driver Overview</div>
+        <div id="overview-content">
+          <div class="rpt-skel-row">
+            <div class="skeleton" style="width:80px;height:60px;border-radius:8px"></div>
+            <div style="flex:1">
+              <div class="skeleton skel-line" style="width:50%;height:14px"></div>
+              <div class="skeleton skel-line" style="width:70%;height:12px;margin-top:8px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Skill Breakdown -->
+      <div class="rpt-card rpt-animate" id="rpt-skills">
+        <div class="rpt-card-title">Skill Breakdown</div>
+        <div id="skills-content"><div class="skeleton skel-bar"></div><div class="skeleton skel-bar"></div><div class="skeleton skel-bar"></div></div>
+      </div>
+
+      <!-- Section 3: Practice Consistency -->
+      <div class="rpt-card rpt-animate" id="rpt-consistency">
+        <div class="rpt-card-title">Practice Consistency</div>
+        <div id="consistency-content"><div class="skeleton skel-line" style="width:60%;height:14px"></div></div>
+      </div>
+
+      <!-- Section 4: Curriculum & Mastery -->
+      <div class="rpt-card rpt-animate" id="rpt-curriculum">
+        <div class="rpt-card-title">Curriculum &amp; Mastery</div>
+        <div id="curriculum-content"><div class="skeleton skel-line" style="width:60%;height:14px"></div></div>
+      </div>
+
+      <!-- Section 5: Coach Analysis -->
+      <div class="rpt-card rpt-animate" id="rpt-ai">
+        <div class="rpt-card-title">Coach Analysis</div>
+        <div id="ai-content"><div class="skeleton skel-line" style="width:40%;height:14px"></div></div>
+      </div>
+
+      <!-- Section 6: All-Time Stats -->
+      <div class="rpt-card rpt-animate" id="rpt-alltime">
+        <div class="rpt-card-title">All-Time Stats</div>
+        <div id="alltime-content"><div class="rpt-stats-grid"><div class="rpt-stat skeleton" style="height:80px"></div><div class="rpt-stat skeleton" style="height:80px"></div><div class="rpt-stat skeleton" style="height:80px"></div></div></div>
+      </div>
+
+      <!-- Section 7: Levels Progress -->
+      <div class="rpt-card rpt-animate" id="rpt-levels">
+        <div class="rpt-card-title">Levels Progress</div>
+        <div id="levels-content"><div class="rpt-levels-grid"><div class="skeleton" style="width:100%;height:50px;border-radius:6px"></div></div></div>
+      </div>
+
+      <!-- Section 8: Session History -->
+      <div class="rpt-card rpt-animate" id="rpt-history">
+        <div class="rpt-card-title">Session History</div>
+        <div id="history-content"><div class="skeleton skel-line" style="width:80%;height:12px"></div></div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // Deferred scripts run before DOMContentLoaded; render once they are all in.
+    document.addEventListener('DOMContentLoaded', function () {
+      if (window.RTReport) window.RTReport.render();
+    });
+  </script>
+<script>
+(function() {
+  var overlay = document.getElementById('rt-overlay');
+  if (!overlay) return;
+  if (sessionStorage.getItem('rt-nav') === '1') {
+    sessionStorage.removeItem('rt-nav');
+    overlay.classList.add('visible');
+    setTimeout(function() {
+      overlay.classList.remove('visible');
+      document.body.classList.add('rt-entering');
+    }, 200);
+    setTimeout(function() { document.body.classList.remove('rt-entering'); }, 400);
+  }
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('a[href]');
+    if (!link) return;
+    var href = link.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+    if (link.hasAttribute('download') || href.startsWith('blob:')) return;
+    if (href.startsWith('http') && href.indexOf(location.host) === -1) return;
+    if (link.target === '_blank') return;
+    e.preventDefault();
+    sessionStorage.setItem('rt-nav', '1');
+    overlay.classList.add('visible');
+    setTimeout(function() { window.location.href = href; }, 150);
+  });
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted) {
+      overlay.classList.remove('visible');
+      document.body.classList.remove('rt-entering');
+    }
+  });
+})();
+</script>
+</body>
+</html>

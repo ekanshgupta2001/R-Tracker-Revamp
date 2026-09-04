@@ -1,0 +1,601 @@
+/* ── R-Tracker Progress Report — Summit Atmosphere ────────────────────────
+   Eight glass cards over the sky (bounded, so each card blurs); everything
+   inside a card — stats, level cells, pills, rows — is a flat --glass-inset
+   fill. Colours ride the tokens in global.css, so there is no light/dark
+   block: both themes come from the same rules. Charts (js/charts.js) read the
+   --chart-* tokens and re-draw on rt-themechange. */
+
+/* ── Main wrap — responds to sidebar ───────────────────────────────────── */
+.main-wrap {
+  margin-left: var(--sidebar-width);
+  padding-top: 48px;
+  min-height: 100vh;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: pageIn 0.35s ease-out both;
+}
+
+.sidebar-collapsed .main-wrap { margin-left: 0; }
+
+/* ── Centered content ──────────────────────────────────────────────────── */
+.report-content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Report Card ───────────────────────────────────────────────────────── */
+.rpt-card {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow-sm);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  color: var(--text);
+}
+
+.rpt-card-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-muted);
+  font-weight: 650;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--divider);
+}
+
+/* ── Accent colour classes (status tokens; legible in both themes) ─────── */
+.clr-green  { color: var(--good); }
+.clr-orange { color: var(--warn); }
+.clr-red    { color: var(--bad); }
+.clr-cyan   { color: var(--info); }
+.clr-gold   { color: var(--gold-text); }
+.clr-purple { color: var(--burgundy-text); }
+
+/* ── Empty state ───────────────────────────────────────────────────────── */
+.rpt-empty {
+  text-align: center;
+  padding: 24px 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.rpt-empty-icon { display: block; margin: 0 auto 8px; width: 28px; height: 28px; color: var(--text-faint); }
+.rpt-empty-icon svg { width: 100%; height: 100%; }
+.rpt-empty p { margin: 2px 0; }
+.rpt-empty .rpt-empty-sub { font-size: 12px; color: var(--text-faint); }
+
+.rpt-empty a {
+  color: var(--link);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.rpt-empty a:hover { text-decoration: underline; }
+
+/* ── Skeleton loading ──────────────────────────────────────────────────── */
+.skeleton {
+  background: var(--glass-inset-hover);
+  border-radius: 4px;
+  animation: skeletonPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.skel-line { height: 12px; margin-bottom: 8px; border-radius: 3px; }
+.skel-bar { height: 6px; width: 100%; margin-bottom: 10px; border-radius: 3px; }
+
+.rpt-skel-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* ── Section 1: Driver Overview ────────────────────────────────────────── */
+.ov-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.ov-score-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.ov-score {
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -1.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ov-grade {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.ov-info {
+  flex: 1;
+}
+
+.ov-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--gold-soft);
+  border: 1px solid rgba(232, 176, 75, 0.55);
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.ov-percentile {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ── Section 2: Skill Breakdown ────────────────────────────────────────── */
+.sk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: fadeSlideIn 0.4s ease-out both;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.sk-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  width: 110px;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+.sk-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: var(--glass-inset-hover);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.sk-bar {
+  height: 100%;
+  border-radius: 3px;
+  width: 0;
+  transition: width 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.sk-good { background: var(--good); }
+.sk-ok   { background: var(--warn); }
+.sk-poor { background: var(--bad); }
+
+.sk-val {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  width: 30px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── Section 5: Coach Analysis (rule-based) ────────────────────────────── */
+.ai-profile-badge {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.ai-profile-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.ai-comparison {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--glass-inset);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border);
+}
+
+.ai-comp-label { color: var(--text-muted); }
+.ai-delta.up { color: var(--good); font-weight: 700; }
+.ai-delta.down { color: var(--bad); font-weight: 700; }
+.ai-delta.neutral { color: var(--text-muted); }
+
+.ai-summary {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.ai-summary.ai-typing {
+  animation: typingReveal 1.5s ease-out both;
+}
+
+@keyframes typingReveal {
+  from { max-height: 0; opacity: 0; }
+  to { max-height: 500px; opacity: 1; }
+}
+
+.ai-section-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin: 16px 0 8px;
+  font-weight: 650;
+}
+
+.ai-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai-item {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 4px 0;
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ai-icon { flex-shrink: 0; font-size: 14px; }
+.ai-strength .ai-icon { color: var(--good); }
+.ai-weakness .ai-icon { color: var(--warn); }
+
+.ai-detailed {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.ai-plan {
+  padding-left: 20px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai-plan li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.ai-generate-btn {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 18px;
+  background: var(--gold);
+  color: var(--gold-ink);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 650;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 2px 8px rgba(232, 176, 75, 0.35);
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.ai-generate-btn:hover {
+  background: var(--gold-hover);
+  color: var(--gold-ink);
+  transform: translateY(-1px);
+}
+
+/* ── Section 6: All-Time Stats ─────────────────────────────────────────── */
+.rpt-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.rpt-stat {
+  padding: 16px;
+  background: var(--glass-inset);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.rpt-stat-val {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rpt-stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ── Section 7: Levels Progress ────────────────────────────────────────── */
+.rlg-summary {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.rpt-levels-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+.rlg-cell {
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 6px 10px;
+  cursor: pointer;
+  border: 1px solid var(--glass-border);
+  border-top: 2px solid var(--glass-border-strong);
+  background: var(--glass-inset);
+  transition: border-color 0.3s ease, background-color 0.3s ease, transform 0.2s ease;
+  position: relative;
+  aspect-ratio: 1;
+  min-height: 60px;
+}
+
+.rlg-cell:hover {
+  transform: scale(1.04);
+  border-color: var(--glass-border-strong);
+}
+
+.rlg-num {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-faint);
+  line-height: 1;
+}
+
+.rlg-name {
+  font-size: 8px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-top: 2px;
+}
+
+.rlg-stars {
+  display: flex;
+  gap: 1px;
+  margin-top: 4px;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.rlg-star {
+  opacity: 0.35;
+  color: var(--text-faint);
+}
+
+.rlg-star.lit {
+  opacity: 1;
+}
+
+.rlg-lock {
+  width: 14px; height: 14px;
+  line-height: 1;
+  color: var(--text-faint);
+  opacity: 0.7;
+}
+.rlg-lock svg { width: 100%; height: 100%; display: block; }
+
+/* Medal ratings: soft tint + coloured top edge, no glow */
+.rlg-cell.gold   { background: var(--medal-gold-soft);   border-top-color: var(--medal-gold); }
+.rlg-cell.gold .rlg-num, .rlg-cell.gold .rlg-star.lit { color: var(--medal-gold); }
+.rlg-cell.silver { background: var(--medal-silver-soft); border-top-color: var(--medal-silver); }
+.rlg-cell.silver .rlg-num, .rlg-cell.silver .rlg-star.lit { color: var(--medal-silver); }
+.rlg-cell.bronze { background: var(--medal-bronze-soft); border-top-color: var(--medal-bronze); }
+.rlg-cell.bronze .rlg-num, .rlg-cell.bronze .rlg-star.lit { color: var(--medal-bronze); }
+
+/* Locked */
+.rlg-cell.locked {
+  background: transparent;
+  cursor: default;
+  border-style: dashed;
+  border-top-style: dashed;
+  border-top-width: 1px;
+  border-color: var(--glass-border);
+}
+.rlg-cell.locked .rlg-name { color: var(--text-faint); }
+.rlg-cell.locked:hover { transform: none; border-color: var(--glass-border); }
+
+/* Level tooltip popup */
+.rlg-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--glass-tool);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  z-index: 50;
+  min-width: 170px;
+  box-shadow: var(--glass-shadow);
+  animation: fadeSlideIn 0.15s ease;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.rlg-tip-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--divider);
+  padding-bottom: 5px;
+}
+
+.rlg-tip-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  padding: 3px 0;
+  gap: 12px;
+}
+
+.rlg-tip-row span:first-child {
+  color: var(--text-muted);
+}
+
+.rlg-tip-row span:last-child {
+  font-weight: 700;
+}
+
+/* ── Section 8: Session History ────────────────────────────────────────── */
+.sh-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.sh-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--divider);
+  font-size: 13px;
+}
+
+.sh-item:last-child { border-bottom: none; }
+
+.sh-text {
+  color: var(--text-secondary);
+}
+
+.sh-action {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: right;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Next step, callouts, consistency, curriculum & mastery ─────────────── */
+.rpt-empty-banner {
+  margin-bottom: 2px; padding: 12px 16px; border-radius: var(--radius); font-size: 13px; line-height: 1.5;
+  background: var(--glass-tool); border: 1px solid var(--glass-border-strong); color: var(--text-secondary);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+}
+.rpt-empty-banner[hidden] { display: none; }
+.rpt-empty-banner a { color: var(--link); font-weight: 600; }
+.ov-text { font-size: 12.5px; color: var(--text-secondary); margin-top: 8px; line-height: 1.5; }
+.rpt-next {
+  display: block; margin-top: 14px; padding: 12px 14px; border-radius: 10px; text-decoration: none;
+  background: var(--glass-inset);
+  border: 1px solid var(--glass-border); transition: border-color 0.2s, background-color 0.2s, transform 0.2s;
+}
+.rpt-next:hover { border-color: var(--gold); background: var(--gold-soft); transform: translateY(-1px); }
+.rpt-next-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold-text); font-weight: 650; margin-bottom: 4px; }
+.rpt-next-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.rpt-next-text { font-size: 12.5px; color: var(--text-secondary); margin-top: 3px; }
+.rpt-callouts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.rpt-callout {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+  background: var(--glass-inset); border: 1px solid var(--glass-border); color: var(--text-secondary);
+}
+.rpt-callout-icon { display: inline-flex; width: 13px; height: 13px; color: var(--gold-text); }
+.rpt-callout-icon svg { width: 100%; height: 100%; }
+.rpt-headline { font-size: 14px; font-weight: 600; color: var(--text); }
+.rpt-headline-sub { margin-top: 16px; }
+.rpt-detail { font-size: 12.5px; color: var(--text-muted); margin-top: 3px; margin-bottom: 10px; line-height: 1.5; }
+.rpt-stats-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.rpt-chart-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); font-weight: 600; margin: 12px 0 6px; }
+.rpt-chart-wrap { width: 100%; }
+.rpt-chart-wrap canvas { display: block; width: 100%; }
+.sk-layout { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.sk-radar-wrap { flex: 0 0 240px; display: flex; justify-content: center; }
+.sk-layout .sk-list { flex: 1 1 260px; }
+.rpt-phases { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.rpt-phase-pill {
+  font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 999px;
+  border: 1px solid var(--glass-border); background: var(--glass-inset); color: var(--text-muted);
+}
+.rpt-pill-in-progress { border-color: transparent; background: var(--gold-soft); color: var(--gold-text); }
+.rpt-pill-submitted   { border-color: transparent; background: var(--info-soft); color: var(--info); }
+.rpt-pill-verified    { border-color: transparent; background: var(--good-soft); color: var(--good); }
+.rpt-pill-not-started { color: var(--text-secondary); }
+.rpt-pill-locked      { color: var(--text-faint); }
+.rpt-mastery { border-bottom: 1px solid var(--divider); }
+.rpt-mastery summary { list-style: none; cursor: pointer; display: flex; align-items: center; flex-wrap: wrap; }
+.rpt-mastery summary::-webkit-details-marker { display: none; }
+.rpt-mastery summary .sk-row { flex: 1 1 100%; }
+.rpt-mastery summary .sk-label { width: 170px; }
+.rpt-mastery-meta { font-size: 10.5px; color: var(--text-faint); margin: -4px 0 8px 0; padding-left: 2px; }
+.rpt-mastery-modules { padding: 2px 0 8px 14px; border-left: 2px solid var(--glass-border-strong); margin: 0 0 8px 6px; }
+.sk-row-sub .sk-label { font-size: 11.5px; color: var(--text-muted); }
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .main-wrap { margin-left: 0; }
+  .report-content { padding: 16px 12px 32px; }
+  .rpt-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .rpt-levels-grid { grid-template-columns: repeat(4, 1fr); }
+  .ov-score { font-size: 36px; }
+  .ov-grade { font-size: 22px; }
+}
+
+@media (max-width: 640px) { .rpt-stats-grid-4 { grid-template-columns: repeat(2, 1fr); } .sk-radar-wrap { flex-basis: 100%; } }
+
+@media (max-width: 480px) {
+  .rpt-levels-grid { grid-template-columns: repeat(3, 1fr); }
+  .rpt-stats-grid { grid-template-columns: 1fr 1fr; }
+}

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <!-- v2 theme: `light` = light glass and is the default; no class = dark glass. rt-theme is the only localStorage key in the app (UI preference). -->
+  <script>document.documentElement.classList.add('light');try{if(localStorage.getItem('rt-theme')==='dark')document.documentElement.classList.remove('light')}catch(e){}</script>
+  <title>Path Planner — R-Tracker</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="stylesheet" href="../css/fonts.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/pathplanner.css">
+  <script src="../js/schema.js"></script>
+  <script src="../js/store.js"></script>
+  <script defer src="../js/sidebar.js"></script>
+</head>
+
+<body>
+<a href="#main-content" class="skip-to-content">Skip to main content</a>
+<div id="rt-overlay" aria-hidden="true"><div id="rt-overlay-logo"><span class="ol-r">R-</span><span class="ol-t">Tracker</span></div></div>
+<div id="rt-atmosphere" aria-hidden="true"></div>
+  <header class="topbar" id="topbar">
+    <div class="topbar-left">
+      <a href="../index.html" class="home-btn">← Home</a>
+      <span class="topbar-sep" aria-hidden="true"></span>
+      <span class="topbar-title">Path Planner</span>
+    </div>
+  </header>
+
+  <main class="main-wrap" id="main-content">
+    <!-- Field Canvas (left) -->
+    <div class="field-panel" id="fieldPanel">
+      <canvas id="fieldCanvas"></canvas>
+      <div class="field-overlay-btns">
+        <button class="fob-btn active" id="btnGrid" onclick="toggleGrid()">Grid</button>
+        <button class="fob-btn" id="btnRobotAnim" onclick="toggleAnim()" disabled><span class="rt-icon" data-rt-icon="play"></span>Play</button>
+        <button class="fob-btn" id="btnStopAnim" onclick="stopAnim()" disabled><span class="rt-icon" data-rt-icon="stop"></span>Stop</button>
+      </div>
+    </div>
+
+    <!-- Control Panel (right) -->
+    <div class="ctrl-panel">
+
+      <!-- Path Actions -->
+      <div class="section">
+        <div class="section-title">Path Actions</div>
+        <div class="toolbar">
+          <button class="tbtn primary" onclick="addWaypointAtCenter()">+ Add Point</button>
+          <button class="tbtn" id="btnDelSel" onclick="deleteSelected()" disabled>Delete Selected</button>
+          <button class="tbtn" onclick="clearAll()">Clear All</button>
+          <button class="tbtn" onclick="exportPath()">Export JSON</button>
+          <button class="tbtn" onclick="openPathModal('save')"><span class="rt-icon" data-rt-icon="save"></span>Save</button>
+          <button class="tbtn" onclick="openPathModal('load')"><span class="rt-icon" data-rt-icon="folder"></span>Load</button>
+        </div>
+      </div>
+
+      <!-- Waypoint List -->
+      <div class="section">
+        <div class="section-title">
+          <span>Waypoints</span>
+          <span id="wpCount" style="color:var(--text-muted);font-size:10px;font-weight:400;float:right;">0 points</span>
+        </div>
+        <div class="wp-list" id="wpList">
+          <div class="wp-empty">Click the field to place waypoints.</div>
+        </div>
+      </div>
+
+      <!-- Editor (waypoint or segment) -->
+      <div class="section" id="editorSection">
+        <div class="section-title" id="editorSectionTitle">Selection</div>
+        <div id="editorContent">
+          <div class="no-select-msg">Click a waypoint or path segment to select it.</div>
+        </div>
+      </div>
+
+      <!-- Path Settings -->
+      <div class="section">
+        <div class="section-title">Path Settings</div>
+        <div class="setting-row">
+          <div class="setting-label"><span>Animation Speed</span><span class="setting-val" id="speedVal">1.0×</span></div>
+          <input type="range" id="speedSlider" min="0.1" max="1.0" step="0.05" value="1.0" oninput="updatePathSettings()">
+        </div>
+        <div style="margin-top:8px;">
+          <div class="form-label" style="margin-bottom:6px;">Robot Dimensions (inches)</div>
+          <div class="dim-inputs">
+            <div class="form-group">
+              <label class="form-label">Width</label>
+              <input type="number" class="form-input" id="robotW" value="18" min="6" max="24" oninput="drawAll()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Length</label>
+              <input type="number" class="form-input" id="robotL" value="18" min="6" max="24" oninput="drawAll()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Code Export -->
+      <div class="section">
+        <div class="section-title">Pedro Pathing Code</div>
+        <div class="code-block" id="codeBlock">// Add waypoints to generate code</div>
+        <div class="copy-row">
+          <button class="copy-btn" id="copyBtn" onclick="copyCode()">Copy Code</button>
+        </div>
+      </div>
+
+    </div><!-- /ctrl-panel -->
+  </main><!-- /main-wrap -->
+
+  <!-- Saved Paths Modal (paths live in the tab's progress state and the exported file only) -->
+  <div id="pp-cloud-backdrop" onclick="if(event.target===this)closePathModal()">
+    <div id="pp-cloud-modal">
+      <div class="ppc-header">
+        <div class="ppc-title">Save Path</div>
+        <button class="ppc-close" onclick="closePathModal()">&#10005;</button>
+      </div>
+      <div class="ppc-input-row" id="ppc-save-row">
+        <input id="ppc-name-input" class="ppc-input" type="text" placeholder="Path name (e.g. Auto Path 1)"
+               onkeydown="if(event.key==='Enter')savePath()">
+        <button class="ppc-save-btn" onclick="savePath()">Save</button>
+      </div>
+      <div id="ppc-load-section" style="display:none">
+        <div class="ppc-section-title">Your Saved Paths</div>
+        <div id="ppc-path-list"><div class="ppc-empty">No saved paths yet.</div></div>
+      </div>
+      <div class="ppc-msg" id="ppc-msg"></div>
+    </div>
+  </div>
+
+  <!-- Pathplanner JS modules -->
+  <script defer src="../js/pathplanner/canvas.js"></script>
+  <script defer src="../js/pathplanner/waypoints.js"></script>
+  <script defer src="../js/pathplanner/animation.js"></script>
+  <script defer src="../js/pathplanner/codegen.js"></script>
+  <script defer src="../js/pathplanner/ui.js"></script>
+<script>
+(function() {
+  var overlay = document.getElementById('rt-overlay');
+  if (!overlay) return;
+  if (sessionStorage.getItem('rt-nav') === '1') {
+    sessionStorage.removeItem('rt-nav');
+    overlay.classList.add('visible');
+    setTimeout(function() {
+      overlay.classList.remove('visible');
+      document.body.classList.add('rt-entering');
+    }, 200);
+    setTimeout(function() { document.body.classList.remove('rt-entering'); }, 400);
+  }
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('a[href]');
+    if (!link) return;
+    var href = link.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+    if (link.hasAttribute('download') || href.startsWith('blob:')) return;
+    if (href.startsWith('http') && href.indexOf(location.host) === -1) return;
+    if (link.target === '_blank') return;
+    e.preventDefault();
+    sessionStorage.setItem('rt-nav', '1');
+    overlay.classList.add('visible');
+    setTimeout(function() { window.location.href = href; }, 150);
+  });
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted) {
+      overlay.classList.remove('visible');
+      document.body.classList.remove('rt-entering');
+    }
+  });
+})();
+</script>
+</body>
+</html>

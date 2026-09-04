@@ -1,0 +1,208 @@
+/* ── R-Tracker Home Page — v2 Summit Atmosphere ──────────────────────────────
+   Mountain intensity: high (full-bleed sky + cloud sea). Glass: medium.
+   Layout mirrors v1 (hero → first-run → carousel → rating → footer). */
+
+/* The sky (#rt-atmosphere), the pageIn keyframes and the .rt-stat card live in
+   css/global.css — every page shares them now. */
+
+/* ── Main wrap ───────────────────────────────────────────────────────────── */
+.main-wrap {
+  margin-left: var(--sidebar-width);
+  height: 100vh; overflow-y: auto; overflow-x: hidden;
+  display: flex; flex-direction: column;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative; z-index: 1;
+}
+.sidebar-collapsed .main-wrap { margin-left: 0; }
+
+.home-content {
+  max-width: 1200px; width: 100%; margin: 0 auto;
+  padding: 36px 28px 0;
+  flex: 1 1 0; min-height: 0;
+  display: flex; flex-direction: column;
+  animation: pageIn 0.3s ease-out both;
+}
+
+/* ── Hero ────────────────────────────────────────────────────────────────── */
+.home-hero {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  margin: 0 auto 26px; flex-shrink: 0; text-align: center;
+}
+.home-logo { display: flex; align-items: center; gap: 14px; font-size: 38px; font-weight: 800; letter-spacing: -0.9px; line-height: 1; white-space: nowrap; }
+.home-mark { width: 38px; height: 38px; flex: none; display: block; }
+.home-logo .hero-r { color: #c9526f; text-shadow: 0 1px 14px rgba(10, 30, 60, 0.35); }
+.home-logo .hero-tracker { color: var(--text-on-sky); text-shadow: 0 1px 14px rgba(10, 30, 60, 0.35); }
+.home-tagline { font-size: 13px; font-weight: 550; color: #f4f8fd; letter-spacing: 0.2px; text-shadow: 0 1px 3px rgba(10, 30, 60, 0.55), 0 2px 14px rgba(10, 30, 60, 0.45); }
+
+/* ── First-run panel ─────────────────────────────────────────────────────── */
+.first-run {
+  margin: 0 auto 20px; max-width: 680px; width: 100%; padding: 18px 20px;
+  border-radius: 16px; text-align: left;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%); backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 -1px 0 rgba(128, 0, 32, 0.10), var(--glass-shadow);
+}
+.first-run[hidden] { display: none; }
+.first-run-title { font-size: 16px; font-weight: 650; color: var(--text); margin-bottom: 5px; }
+.first-run-text { font-size: 13.5px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 14px; }
+.first-run-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.first-run-name {
+  flex: 1 1 220px; min-width: 0; font-family: inherit; font-size: 13px; padding: 9px 12px;
+  border-radius: var(--radius-sm); border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text); outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.first-run-name::placeholder { color: var(--text-faint); }
+.first-run-name:focus { border-color: var(--burgundy-bright); box-shadow: var(--focus-ring); }
+.first-run-btn {
+  font-family: inherit; font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: var(--radius-sm);
+  border: 1px solid var(--btn-secondary-border); background: var(--btn-secondary-bg); color: var(--text); cursor: pointer; white-space: nowrap;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+.first-run-btn:hover { background: var(--card-hover); border-color: var(--glass-border-strong); }
+.first-run-btn.primary {
+  font-weight: 650; background: var(--gold); border-color: rgba(255, 255, 255, 0.5); color: var(--gold-ink);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 2px 8px rgba(232, 176, 75, 0.35);
+}
+.first-run-btn.primary:hover { background: var(--gold-hover); }
+.first-run-btn:active { transform: translateY(1px); }
+
+/* ── Carousel ────────────────────────────────────────────────────────────── */
+.carousel-section { flex-shrink: 0; margin-bottom: 12px; }
+.home-carousel-container {
+  position: relative; padding: 14px 60px; overflow: hidden;
+  max-width: 1400px; margin: 0 auto; cursor: grab; touch-action: pan-y;
+}
+.home-carousel-container.dragging { cursor: grabbing; }
+.home-carousel-track { position: relative; height: 340px; user-select: none; -webkit-user-select: none; }
+
+/* Geometry — transform, opacity, z-index, pointer-events — is written inline by
+   initCarousel() in index.html, which keeps EVERY card in the layout (the ones
+   off-stage just sit at opacity 0) so a drag can be continuous and cards
+   entering or leaving the stage animate like the rest. A `display: none` or a
+   `transform` in these rules would break that: display:none cancels the
+   transition on the incoming card, and a class transform is dead weight under
+   the inline one. Hover lift therefore uses the independent `translate`
+   property, which composes with the inline `transform` instead of replacing it. */
+.carousel-card {
+  width: 500px; height: 320px; border-radius: 18px; padding: 32px 28px;
+  text-align: center; cursor: pointer; text-decoration: none; color: var(--text);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  position: absolute; top: 50%; left: 50%;
+  opacity: 0;
+  background: var(--glass-side);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 20px 60px rgba(10, 30, 60, 0.14);
+  will-change: transform, opacity;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+              translate 0.25s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.3s ease, border-color 0.3s ease;
+}
+.carousel-card.cc-center {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(22px) saturate(140%); backdrop-filter: blur(22px) saturate(140%);
+  border-color: var(--glass-border-strong);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 -1px 0 rgba(128, 0, 32, 0.10), 0 20px 60px rgba(10, 30, 60, 0.18);
+}
+.carousel-card.cc-center:hover { translate: 0 -2px; border-color: #fff; }
+html:not(.light) .carousel-card.cc-center:hover { border-color: rgba(255, 255, 255, 0.3); }
+
+.card-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border-strong);
+  color: var(--text-secondary); transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.3s ease;
+}
+.card-icon svg { width: 26px; height: 26px; display: block; }
+.cc-center .card-icon {
+  width: 60px; height: 60px; border-radius: 16px; margin-bottom: 4px; color: var(--text);
+  background: rgba(255, 255, 255, 0.55); box-shadow: inset 0 1px 0 #fff, 0 4px 14px rgba(10, 30, 60, 0.08);
+}
+.cc-center .card-icon svg { width: 30px; height: 30px; }
+html:not(.light) .card-icon { background: rgba(255, 255, 255, 0.08); }
+html:not(.light) .cc-center .card-icon { background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2); }
+.carousel-card.cc-center:hover .card-icon { transform: translateY(-1px); }
+
+.card-title { font-size: 22px; font-weight: 650; color: var(--text); }
+.cc-center .card-title { font-size: 24px; font-weight: 700; letter-spacing: -0.3px; }
+.card-desc { font-size: 15px; color: var(--text-secondary); line-height: 1.5; max-width: 380px; }
+
+/* Arrows */
+.carousel-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
+  width: 40px; height: 40px; border-radius: 50%; padding: 0;
+  background: var(--glass-nav);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-border); box-shadow: inset 0 1px 0 var(--glass-highlight);
+  color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.carousel-arrow:active { transform: translateY(-50%) scale(0.94); transition-duration: 0.1s; }
+.carousel-arrow svg { width: 16px; height: 16px; display: block; }
+.carousel-arrow:hover { border-color: var(--glass-border-strong); transform: translateY(-50%) scale(1.05); }
+.carousel-left { left: 10px; }
+.carousel-right { right: 10px; }
+
+/* Dots */
+.carousel-dots { display: flex; justify-content: center; gap: 8px; margin-top: 6px; }
+.carousel-dot { width: 6px; height: 6px; border-radius: 3px; background: var(--dot); border: none; padding: 0; cursor: pointer; transition: background-color 0.3s ease, width 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+.carousel-dot.active { width: 20px; background: var(--gold); }
+
+/* ── Driver Rating (4 stat cards + report link) ──────────────────────────── */
+.report-stats-bar { margin: 8px auto 0; display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; }
+/* label + footer sit on the cloud sea (bright in both themes): always slate, light halo for legibility */
+.report-bar-label { font-size: 12px; font-weight: 600; letter-spacing: 0.4px; color: #22314a; text-shadow: 0 1px 6px rgba(255, 255, 255, 0.6); }
+
+.report-bar-row { display: flex; align-items: stretch; gap: 12px; font-variant-numeric: tabular-nums; text-decoration: none; color: inherit; }
+/* .rt-stat itself is in global.css; the row only adds the hover lift. */
+.report-bar-row:hover .rt-stat { transform: translateY(-1px); border-color: var(--glass-border-strong); }
+
+.report-bar-link {
+  display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-radius: var(--radius);
+  font-size: 13.5px; font-weight: 650; white-space: nowrap; color: var(--gold-ink);
+  background: var(--gold); border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 10px 30px rgba(232, 176, 75, 0.3);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.report-bar-link svg { width: 15px; height: 15px; display: block; }
+.report-bar-row:hover .report-bar-link { background: var(--gold-hover); }
+.report-bar-row:active .report-bar-link { transform: translateY(1px); }
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.home-footer-line {
+  text-align: center; font-size: 12px; font-weight: 500; color: #2e3d55; text-shadow: 0 1px 6px rgba(255, 255, 255, 0.6);
+  padding: 16px 0; margin: auto auto 0; border-top: 1px solid var(--divider);
+  flex-shrink: 0; max-width: 600px; width: 100%;
+}
+html:not(.light) .home-footer-line { color: #2e3d55; border-top-color: rgba(30, 45, 70, 0.18); }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .carousel-card { width: 400px; height: 280px; }
+  .home-carousel-track { height: 300px; }
+  .rt-stat { width: 130px; }
+}
+@media (max-width: 900px) {
+  .home-carousel-container { padding: 14px 40px; }
+  .rt-stat:nth-child(3), .rt-stat:nth-child(4) { display: none; }
+  .carousel-card { width: 320px; height: 250px; }
+  .home-carousel-track { height: 270px; }
+  .cc-center .card-title { font-size: 20px; }
+  .card-desc { font-size: 13px; max-width: 260px; }
+}
+@media (max-width: 768px) {
+  .main-wrap { margin-left: 0; }
+  .home-content { padding: 24px 16px 0; }
+  .home-logo { font-size: 30px; }
+  .home-mark { width: 30px; height: 30px; }
+  .home-carousel-container { padding: 12px 30px; }
+  .carousel-card { width: 280px; height: 230px; padding: 20px 16px; }
+  .home-carousel-track { height: 250px; }
+  .cc-center .card-title { font-size: 18px; }
+  .card-desc { font-size: 12px; max-width: 220px; }
+  .carousel-arrow { width: 34px; height: 34px; }
+  .carousel-left { left: 4px; } .carousel-right { right: 4px; }
+  .report-bar-row { flex-wrap: wrap; justify-content: center; }
+  .rt-stat { width: calc(50% - 6px); }
+  .report-bar-link { width: 100%; justify-content: center; }
+}
