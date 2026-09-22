@@ -1,0 +1,56 @@
+---
+title: Deceleration
+---
+
+Deceleration is controlled by three main parameters that work together to ensure the robot can slow down and stop accurately. Understanding these important for tuning your robot's path following behavior.
+
+## Natural Deceleration
+
+The natural deceleration is the maximum braking power your robot can apply in any direction, based on its motor and wheel setup.
+
+### Natural Forward Deceleration
+Measured in units per second² (units/sec²), this represents the maximum deceleration the robot can achieve when moving forward or backward.
+
+- **Configuration**: `naturalForwardDeceleration`
+- **Type**: `ConfigVar<Double>` (required)
+- **Units**: units/sec²
+- **Purpose**: Used to calculate how far the robot will coast when no power is applied, and to estimate excess velocity after coasting through remaining path distance
+
+### Natural Strafe Deceleration
+Measured in units per second² (units/sec²), this represents the maximum deceleration the robot can achieve when strafing.
+
+- **Configuration**: `naturalStrafeDeceleration`
+- **Type**: `ConfigVar<Double>` (required)
+- **Units**: units/sec²
+- **Purpose**: Similar to forward deceleration, but applied to sideways movement
+
+<Callout title="Note" type="info">
+  The algorithm adjusts braking power based on which way the robot is moving, allowing for accurate deceleration regardless of the robot's movement direction.
+</Callout>
+
+## Maximum Deceleration Constraint
+
+The maximum deceleration constraint is an optional limit on how much deceleration the robot can apply during path following. This is useful when you want to limit the robot's deceleration rate, such as to avoid aggressive stops that might cause the robot to tip.
+
+- **Configuration**: `maxDecelerationConstraint`
+- **Type**: `ConfigVar<Double>`
+- **Default**: `Constraint.NONE` (unconstrained/infinity)
+- **Units**: units/sec²
+- **Purpose**: Limits maximum deceleration, this is used to ensure the robot can still reach its target within the remaining path distance
+
+### How It Works
+When the constraint is active (not set to `Constraint.NONE`), the algorithm:
+1. Checks if the robot can stop within the remaining path distance using this deceleration limit
+2. Calculates the velocity needed to coast down to the target velocity
+3. Reduces the target velocity if necessary to ensure the robot can stop in time
+
+If the deceleration constraint is too restrictive, the robot may not be able to stop at the exact target position.
+
+## How Deceleration Parameters Work Together
+
+The Foresight algorithm uses these three parameters in four steps:
+
+1. **Coasting**: The robot coasts (applies no power) to naturally decelerate based on `naturalForwardDeceleration` and `naturalStrafeDeceleration`
+2. **Distance Calculation**: It measures the remaining distance to the target to find the speed needed to stop on time.
+3. **Constraint Application**: If `maxDecelerationConstraint` is set, it checks if the robot can slow down accurately within that limit.
+4. **Velocity Adjustment**: If necessary, it lowers the target speed so the robot stops accurately within the remaining distance.

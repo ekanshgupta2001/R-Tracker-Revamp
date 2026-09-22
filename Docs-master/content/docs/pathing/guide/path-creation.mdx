@@ -1,0 +1,83 @@
+---
+title: Creating a Path
+description: How to create different paths
+---
+
+<Callout title="Prerequisites" type="warning">
+    This page assumes that you have read and completed the previous step: [Create a Pose](/docs/pathing/guide/pose-creation). Read it if you haven't already.
+</Callout>
+
+Now that we have created two `Pose`s, we can create a `path` between them.
+
+If you need help creating Poses, see [Creating a Pose](/docs/pathing/guide/pose-creation).
+
+### Importing Path Methods
+
+The methods in the `Paths` class can be statically imported:
+
+```java
+import static com.pedropathing.api.Paths.*;
+
+import com.pedropathing.paths.Path;
+```
+
+This allows us to use `line()` and `curve()` directly instead of writing `Paths.line()` and `Paths.curve()`.
+
+### Creating a Line
+
+Create a method to return your path just under your poses:
+
+```java
+//poses from before
+
+private Path park() {
+    return line(startPose, park).linear(startPose, park);
+}
+
+```
+
+
+Let's break down the parts of the path quickly:
+
+`line()` creates a straight path from `startPose` to `park`.
+
+The `.linear()` part is our Interpolation. It changes the robot's heading from the heading of `startPose` to the heading of `park` while it moves along the path. You can play around with this on the visualizer.
+
+<Callout title="Tip" type="info">
+    Paths default to **tangential** heading (robot faces the direction it is driving) if you don't add any interpolation. See [Interpolation](/docs/pathing/reference/interpolation) for the available options.
+</Callout>
+
+### Creating a Curve
+
+You can also create curved paths with `curve()`.
+
+First, create a control Pose with your other poses:
+
+```java
+// other poses...
+private final Pose controlPose = p.of(36, 60, 45);
+```
+
+Then we can create a curve by adding the `controlPose` in the middle of our other two poses:
+
+```java
+private Path park() {
+    return curve(startPose, controlPose, park).linear(startPose, park);
+}
+```
+
+The first and last Poses are the start and end of the curve. Any Poses between them are control points that change the shape of the curve.
+
+For our first autonomous, we'll continue using the straight path:
+
+```java
+line(startPose, park).linear(startPose, park);
+```
+
+For more path options, see [Path Creation](/docs/pathing/reference/api). For more information about curves, see [Bezier Curves](/docs/pathing/reference/beziercurves).
+
+### Next Step
+
+Our path is ready. Next, we'll tell the follower to follow it.
+
+Continue to [Following a Path](/docs/pathing/guide/path-following).

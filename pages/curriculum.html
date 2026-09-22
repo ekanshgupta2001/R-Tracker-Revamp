@@ -389,15 +389,15 @@
   <span class="syn-kw">return</span> kP * error + kI * integral + kD * derivative;
 }</div>
 
-      <h3>Odometry and Pedro Pathing</h3>
-      <p>Dead-wheel odometry tracks your robot's position on the field using separate encoder wheels. <strong>Pedro Pathing</strong> uses this position data to follow complex curves autonomously.</p>
+      <h3>Odometry and Pedro Pathing 3</h3>
+      <p>Dead-wheel odometry (the <strong>localizer</strong>) tracks your robot's position on the field using separate encoder wheels. <strong>Pedro Pathing 3</strong> feeds that pose to its follower, which drives <code>line()</code> and <code>curve()</code> paths with a heading interpolation chained on.</p>
 
       <div class="curr-activity">
         <div class="curr-activity-header">&#10067; Tuning Challenge</div>
         <p>Start with kP only. Increase until the robot oscillates, then reduce by 30%. Add kD to dampen oscillation. Only add kI if there's steady-state error.</p>
       </div>
 
-      <blockquote><strong>Mentor Note:</strong> The deliverable requires a multi-waypoint autonomous path that the robot can complete consistently across 5 runs. Use FTC Dashboard for live tuning.</blockquote>
+      <blockquote><strong>Mentor Note:</strong> The deliverable requires a multi-waypoint autonomous path that the robot can complete consistently across 5 runs. Fill in Constants.java with AutoTune before touching any path.</blockquote>
     `;
 
     LESSONS.phase5 = `
@@ -490,7 +490,7 @@ telemetry.<span class="syn-fn">update</span>();</div>
           'Encoder-based distance tracking OR odometry',
           'At least 3 waypoints in the path',
           'Consistent completion (5/5 runs with < 2in variance)',
-          'FTC Dashboard integration for tuning'
+          'Constants.java tuned with AutoTune'
         ]
       },
       phase5: {
@@ -506,12 +506,13 @@ telemetry.<span class="syn-fn">update</span>();</div>
       },
       advanced_command: {
         title: 'Command-Based Refactor',
-        req: 'Take your Phase 4 autonomous and refactor it using FTCLib\'s command-based framework.',
+        req: 'Take your Phase 4 autonomous and rebuild it as Ivy commands.',
         checklist: [
-          'Convert drivetrain subsystem to extend SubsystemBase',
-          'Write a FollowPath command wrapping Pedro Pathing followPath() + isBusy()',
-          'Write a RunIntake command that runs for a specified duration',
-          'Compose a SequentialCommandGroup replicating your original autonomous',
+          'Scheduler.reset() in init and Scheduler.execute() once per loop, next to follower.update()',
+          'Every path followed with follow(follower, path) from PedroCommands',
+          'A runIntake(seconds) command built with Command.build() that stops the motor in setEnd()',
+          'Every command declares what it uses with .requiring(...)',
+          'The routine is one sequential(...) composition — no state enum',
           'Compare both versions: which is easier to read and modify?'
         ]
       },
@@ -531,7 +532,7 @@ telemetry.<span class="syn-fn">update</span>();</div>
         req: 'Build a complete, competition-grade autonomous routine from scratch — one that could run in an actual FTC match.',
         checklist: [
           'All hardware wrapped in subsystem classes with private fields and public methods',
-          'Pedro Pathing for all driving with at least 4 distinct waypoints',
+          'Pedro Pathing 3 for all driving with at least 4 distinct poses',
           'At least one sensor-driven decision with filtering',
           'Telemetry displaying current state, sensor values, motor powers, loop time',
           'Timer-based fallback and emergency park if less than 3 seconds remain',

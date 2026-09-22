@@ -1,0 +1,16 @@
+{
+  "pages": [
+    "posefactory",
+    "api",
+    "interpolation",
+    "deceleration",
+    "coordinates",
+    "endconstraints",
+    "pathconstraints",
+    "foresightoptions",
+    "beziercurves",
+    "velocity",
+    "logging",
+    "controllers"
+  ]
+}

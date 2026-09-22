@@ -13,12 +13,12 @@
     { id: '3',  name: 'L-Shape', tier: 'Beginner' },
     { id: '4',  name: 'The Square', tier: 'Intermediate' },
     { id: '5',  name: 'Zigzag', tier: 'Intermediate' },
-    { id: '6',  name: 'Diamond', tier: 'Intermediate' },
-    { id: '7',  name: 'Specimen Run', tier: 'Advanced' },
-    { id: '8',  name: 'Sample Collect', tier: 'Advanced' },
+    { id: '6',  name: 'Garden Run', tier: 'Intermediate' },
+    { id: '7',  name: 'Pollen Run', tier: 'Advanced' },
+    { id: '8',  name: 'Flower Dock', tier: 'Advanced' },
     { id: '9',  name: 'Spiral In', tier: 'Advanced' },
     { id: '10', name: 'Speed Demon', tier: 'Expert' },
-    { id: '11', name: 'Threading the Needle', tier: 'Expert' },
+    { id: '11', name: 'Flower Circuit', tier: 'Expert' },
     { id: '12', name: 'The Gauntlet', tier: 'Expert' }
   ];
   var TIER_UNLOCK = { Beginner: 0, Intermediate: 3, Advanced: 6, Expert: 9 };

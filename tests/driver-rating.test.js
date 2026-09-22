@@ -155,6 +155,54 @@ test('level table matches js/teleop/levels.js (time limits, path lengths, names)
   }
 });
 
+// Every level path must clear the field elements in js/teleop/robot.js (the BIOBUZZ
+// hive frame and flowers) by the accuracy corridor for the default 18 in robot, so a
+// driver who stays inside the corridor never collides. The only exception is a
+// deliberate dock at a flower: within reach of a checkpoint (where metrics.js excuses
+// a bump) the path may come closer, but never into contact. drive.js treats the
+// robot as an axis-aligned square, so "gap" is per axis and contact needs both.
+test('level paths clear the field elements by the accuracy corridor', () => {
+  const sb = { window: {}, console };
+  sb.window.window = sb.window;
+  vm.createContext(sb);
+  vm.runInContext('const FIELD_FT = 12; let inp = {}, keys = {}, gpIdx = null, inputBuffer = [], inputTime = 0;', sb);
+  for (const f of ['js/teleop/robot.js', 'js/teleop/levels.js']) {
+    vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), sb, { filename: f });
+  }
+  const { LEVELS, COLLISION_ZONES, LVL_CP_RADIUS, LVL_ACC_TOL } =
+    vm.runInContext('({ LEVELS, COLLISION_ZONES, LVL_CP_RADIUS, LVL_ACC_TOL })', sb);
+  const HALF_ROBOT = 18 / 24, WALL = 6 - HALF_ROBOT, REACH = LVL_CP_RADIUS + 0.5;
+  assert.equal(COLLISION_ZONES.length, 5);
+  assert.ok(COLLISION_ZONES.every(z => z.name && z.height > 0), 'every zone is named and has a 3D height');
+
+  // How far the robot centre can move toward the box before its edge touches it.
+  function clearance(px, py, z) {
+    const gapX = Math.max(0, z.x - z.w / 2 - px, px - (z.x + z.w / 2));
+    const gapY = Math.max(0, z.y - z.h / 2 - py, py - (z.y + z.h / 2));
+    return Math.max(gapX, gapY) - HALF_ROBOT;
+  }
+
+  for (const def of LEVELS) {
+    for (const p of def.path) {
+      assert.ok(Math.abs(p.x) <= WALL && Math.abs(p.y) <= WALL, `level ${def.id} point (${p.x},${p.y}) is inside the wall clamp`);
+    }
+    for (const z of COLLISION_ZONES) {
+      assert.ok(clearance(def.path[0].x, def.path[0].y, z) >= LVL_ACC_TOL, `level ${def.id} spawns clear of ${z.name}`);
+      for (let i = 0; i < def.path.length - 1; i++) {
+        const a = def.path[i], b = def.path[i + 1], n = 400;
+        for (let k = 0; k <= n; k++) {
+          const t = k / n, x = a.x + t * (b.x - a.x), y = a.y + t * (b.y - a.y);
+          const c = clearance(x, y, z);
+          if (c >= LVL_ACC_TOL) continue;
+          const docking = def.path.some((cp, j) => j > 0 && Math.hypot(x - cp.x, y - cp.y) <= REACH);
+          assert.ok(docking && c > 0,
+            `level ${def.id} "${def.name}" segment ${i} at (${x.toFixed(2)},${y.toFixed(2)}) clears ${z.name} by ${c.toFixed(2)} ft`);
+        }
+      }
+    }
+  }
+});
+
 test('grades: S 95, A 85, B 75, C 65, D 50, else F', () => {
   assert.equal(R.gradeFromRating(95), 'S');
   assert.equal(R.gradeFromRating(94), 'A');

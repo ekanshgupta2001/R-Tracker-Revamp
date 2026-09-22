@@ -1,0 +1,28 @@
+---
+title: What's new with Pedro 3
+description: Pedro 3 is a major update and full rewrite that brings a lot of new features and improvements.
+---
+
+## Highlights include:
+
+### Foresight
+
+- [Foresight](/docs/pathing/reference/deceleration) is our new algorithm that improves on what we learned from `Predictive Braking`
+- It provides a 36% increase in 12808's robot's top speed in Line Test
+
+### Pose Factory
+- [Pose Factories](/docs/pathing/reference/posefactory) are a new way to create poses that allows for easier management of poses and operations
+- A Pose Factory allows for creating poses in degrees or radians
+- Operations, such as mirroring, can be applied to a factory that applies them to all poses created by it
+
+### Paths
+- The [Path](/docs/pathing/reference/api) API has been redesigned to be more intuitive and easier to use
+- For a path with multiple other paths in it, interpolations can be set per path but also for the overarching path
+
+### AutoTune
+- [AutoTune](/docs/pathing/tuning) is a robot-hosted webpage that allows for automatic tuning
+- Drivetrain, Localizer, and Algorithm config can be tuned automatically with AutoTune
+
+### Logging
+- Pedro 3 has built-in [logging](/docs/pathing/reference/logging) capabilities that allow for detailed tracking of the robot's state
+- Loggers can be added to the Follower that automatically log the `FollowerLog` during each `follower.update()`

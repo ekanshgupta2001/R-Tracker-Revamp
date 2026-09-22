@@ -1,0 +1,45 @@
+{
+  "name": "pedro-pathing-docs",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "export": "next export",
+    "dev": "next dev --turbo",
+    "start": "next start",
+    "postinstall": "fumadocs-mdx"
+  },
+  "dependencies": {
+    "@icons-pack/react-simple-icons": "^13.11.1",
+    "@orama/orama": "^3.1.9",
+    "@tsparticles/engine": "^3.9.1",
+    "@tsparticles/react": "^3.0.0",
+    "@tsparticles/slim": "^3.9.1",
+    "fumadocs-core": "15.5.1",
+    "fumadocs-mdx": "11.6.7",
+    "fumadocs-ui": "15.5.1",
+    "i18n": "^0.15.1",
+    "katex": "^0.16.22",
+    "lucide-react": "^1.8.0",
+    "next": "^15.5.15",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-directive": "^4.0.0",
+    "remark-math": "^6.0.0",
+    "typeit-react": "^2.7.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.8",
+    "@types/mdx": "^2.0.13",
+    "@types/node": "22.15.28",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
+    "postcss": "^8.5.4",
+    "tailwindcss": "^4.1.8",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=22 <25"
+  }
+}

@@ -46,7 +46,10 @@ const ZERO_CMD   = 0.02;   // below this the stick is "released" → braking ins
 let cfg = { maxSpd: 6.5, turnRate: 380, robotSz: 18, deadzone: 0.10, accel: 20, braking: 20, inputDelay: 80 };
 // vFwd/vStr: body velocity in the robot frame (ft/s) — the state the physics integrates;
 // actualVx/actualVy (= vx/vy): the same rotated into the field frame; actualOmega °/s.
-let bot = { x: 0, y: 0, hdg: 0, vx: 0, vy: 0, actualVx: 0, actualVy: 0, actualOmega: 0, vFwd: 0, vStr: 0 };
+// Where the robot starts and where Reset [R] puts it (input.js): in the red LOADING
+// ZONE facing north. The field centre is the HIVE frame (js/teleop/robot.js).
+const SPAWN = { x: -3.5, y: -4.5, hdg: 0 };
+let bot = { x: SPAWN.x, y: SPAWN.y, hdg: SPAWN.hdg, vx: 0, vy: 0, actualVx: 0, actualVy: 0, actualOmega: 0, vFwd: 0, vStr: 0 };
 let mtr = { fl: 0, fr: 0, bl: 0, br: 0 };
 let drivetrain = 'mecanum';
 let driveMode  = 'field';
@@ -165,7 +168,11 @@ function updateBot(dt) {
   if (bot.y < -hf) { bot.y = -hf; bot.actualVy = Math.max(0, bot.actualVy); }
   if (bot.y >  hf) { bot.y =  hf; bot.actualVy = Math.min(0, bot.actualVy); }
 
-  for (const z of appMode === 'levels' ? [] : COLLISION_ZONES) {
+  // Field elements (js/teleop/robot.js) are solid in both modes. A push-out records
+  // the speed the robot arrived at along the axis it was pushed on; metrics.js
+  // reads it as a collision the same way it reads the wall clamp above.
+  bot.zoneImpact = 0;
+  for (const z of COLLISION_ZONES) {
     const zL = z.x - z.w / 2, zR = z.x + z.w / 2;
     const zB = z.y - z.h / 2, zT = z.y + z.h / 2;
     const rL = bot.x - halfRobot, rR = bot.x + halfRobot;
@@ -176,9 +183,11 @@ function updateBot(dt) {
       const minX = Math.min(overlapLeft, overlapRight);
       const minY = Math.min(overlapDown, overlapUp);
       if (minX < minY) {
+        bot.zoneImpact = Math.max(bot.zoneImpact, Math.abs(bot.actualVx));
         if (overlapLeft < overlapRight) { bot.x = zL - halfRobot; bot.actualVx = Math.min(0, bot.actualVx); }
         else                            { bot.x = zR + halfRobot; bot.actualVx = Math.max(0, bot.actualVx); }
       } else {
+        bot.zoneImpact = Math.max(bot.zoneImpact, Math.abs(bot.actualVy));
         if (overlapDown < overlapUp) { bot.y = zB - halfRobot; bot.actualVy = Math.min(0, bot.actualVy); }
         else                         { bot.y = zT + halfRobot; bot.actualVy = Math.max(0, bot.actualVy); }
       }

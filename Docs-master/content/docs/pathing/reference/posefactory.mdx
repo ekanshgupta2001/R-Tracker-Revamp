@@ -1,0 +1,41 @@
+---
+title: Pose Factory
+---
+
+## What is PoseFactory?
+
+The `PoseFactory` is a method for creating and managing poses in a pathing system.
+It allows you to define poses with specific positions and headings, and then use them to create paths for your robot to follow.
+It provides an easy way to apply transformations and easier management of poses to a group of Poses at once, instead of having to manage each pose individually.
+For example, you can create a PoseFactory with a specific mirroring transformation, to mirror all poses across a specific axis.
+
+## Methods
+
+These methods are used on a PoseFactory:
+
+- **`PoseFactory.degrees()`**: Creates a PoseFactory that uses degrees for inputted heading values.
+- **`PoseFactory.radians()`**: Creates a PoseFactory that uses radians for inputted heading values.
+- **`poseFactory.mirrorX(double mirrorLine)`**: Modifies a PoseFactory that mirrors all poses across `x = mirrorLine`.
+- **`poseFactory.mirrorY(double mirrorLine)`**: Modifies a PoseFactory that mirrors all poses across `y = mirrorLine`.
+
+You can use these when creating your PoseFactory, and your can mirror your PoseFactory at any time
+
+```java
+PoseFactory factory = PoseFactory.degrees();
+PoseFactory factoryRadians = PoseFactory.radians();
+
+// Mirror the PoseFactory after creating it, can be done at any time 
+factory = factory.mirrorX(70.75); // field is 141.5 x 141.5, so this mirrors across the center of the field
+factoryRadians = factoryRadians.mirrorY(70.75);
+```
+
+## Pose Creation
+
+If we have a PoseFactory `poseFactory`, we can create a Pose:
+
+```java
+Pose pose = poseFactory.of(x, y, heading);
+```
+
+The heading can be specified in degrees or radians, depending on how the PoseFactory was created.
+If the PoseFactory was created with a mirroring transformation, the Pose will be mirrored across the specified axis.

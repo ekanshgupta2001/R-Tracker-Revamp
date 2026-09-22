@@ -1,19 +1,27 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.pedropathing.api.PoseFactory;
 import com.pedropathing.follower.Follower;
-import com.pedropathing.localization.Pose;
-import com.pedropathing.pathgen.BezierLine;
-import com.pedropathing.pathgen.PathChain;
-import com.pedropathing.pathgen.Point;
+import com.pedropathing.ivy.Command;
+import com.pedropathing.ivy.Scheduler;
+import com.pedropathing.math.Pose;
+import com.pedropathing.paths.Path;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.pedro.Constants;
+
+import static com.pedropathing.api.Paths.*;
+import static com.pedropathing.ivy.Scheduler.schedule;
+import static com.pedropathing.ivy.commands.Commands.*;
+import static com.pedropathing.ivy.groups.Groups.*;
+import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 
 class Intake {
     public enum State { IDLE, RUNNING, REVERSED }
@@ -47,7 +55,11 @@ class Sensors {
         for (int i = 0; i < 5; i++) sum += distance.getDistance(DistanceUnit.CM);
         return sum / 5.0;
     }
-    public boolean seesRed() { return color.red() > color.blue() + 40; }
+    public boolean seesRed() {
+        int red = color.red();
+        if (red > color.blue() + 40) return true;
+        return false;
+    }
 }
 
 class Robot {
@@ -62,81 +74,83 @@ class Robot {
 }
 
 @Autonomous(name = "CapstoneAuto")
-public class CapstoneAuto extends LinearOpMode {
-    enum AutoState { TO_SAMPLE, DECIDE, TO_SCORE, SCORE, TO_PARK, PARKED }
-    private AutoState state = AutoState.TO_SAMPLE;
+public class CapstoneAuto extends OpMode {
     private Follower follower;
     private Robot robot;
+    private Command routine;
     private boolean isRed = true;                       // alliance chosen in init_loop with the gamepad
+    private boolean parking = false;
     private final ElapsedTime matchTimer = new ElapsedTime();
-    private final ElapsedTime pathTimer = new ElapsedTime();
+    private PoseFactory p = PoseFactory.degrees();
     private Pose start, sample, score, park;
-    private PathChain toSample, toScore, toPark;
 
-    // Mirror y across the field centre for the blue alliance
-    private Pose mirror(Pose p) { return isRed ? p : new Pose(p.getX(), 144 - p.getY(), -p.getHeading()); }
+    // Poses are written for the red side; the blue side mirrors the factory across the field centre
+    private void buildPoses() {
+        if (!isRed) p = p.mirrorY(70.75);
+        start = p.of(9, 60, 0);
+        sample = p.of(48, 36, -45);
+        score = p.of(36, 72, 0);
+        park = p.of(60, 96, 90);
+    }
 
-    private void buildPaths() {
-        start = mirror(new Pose(9, 60, 0));
-        sample = mirror(new Pose(48, 36, Math.toRadians(-45)));
-        score = mirror(new Pose(36, 72, Math.toRadians(0)));
-        park = mirror(new Pose(60, 96, Math.toRadians(90)));
-        toSample = follower.pathBuilder().addPath(new BezierLine(new Point(start), new Point(sample))).setLinearHeadingInterpolation(start.getHeading(), sample.getHeading()).build();
-        toScore = follower.pathBuilder().addPath(new BezierLine(new Point(sample), new Point(score))).setLinearHeadingInterpolation(sample.getHeading(), score.getHeading()).build();
-        toPark = follower.pathBuilder().addPath(new BezierLine(new Point(score), new Point(park))).setConstantHeadingInterpolation(park.getHeading()).build();
+    private Path toSample() { return line(start, sample).linear(start, sample); }
+    private Path toScore() { return line(sample, score).linear(sample, score); }
+    private Path toPark() { return line(score, park).constant(park); }
+
+    // One sequential routine; race() against waitMs() is the timeout fallback for every path
+    private Command buildRoutine() {
+        return sequential(
+            race(follow(follower, toSample()), waitMs(6000)),
+            // Sensor-driven decision on a filtered reading: only intake when the sample is ours and close
+            instant(() -> {
+                if (robot.sensors.seesRed() && robot.sensors.filteredDistance() < 15) robot.intake.run();
+            }),
+            race(follow(follower, toScore()), waitMs(6000)),
+            instant(() -> { robot.intake.stop(); robot.scorer.score(); }),
+            waitMs(1500),
+            instant(() -> robot.scorer.stow()),
+            race(follow(follower, toPark()), waitMs(6000))
+        );
     }
 
     @Override
-    public void runOpMode() {
-        follower = new Follower(hardwareMap);
+    public void init() {
+        Scheduler.reset();
+        follower = Constants.create(hardwareMap);
         robot = new Robot(hardwareMap);
-        while (!isStarted() && !isStopRequested()) {
-            if (gamepad1.x) isRed = false;
-            if (gamepad1.b) isRed = true;
-            telemetry.addData("Alliance", isRed ? "RED" : "BLUE");
-            telemetry.update();
-        }
-        buildPaths();
-        follower.setStartingPose(start);
-        matchTimer.reset();
-        follower.followPath(toSample);
-        pathTimer.reset();
+    }
 
-        while (opModeIsActive()) {
-            double loopStart = getRuntime();
-            follower.update();
-            // Emergency park: if fewer than 3 seconds remain, abandon the routine and park
-            if (matchTimer.seconds() > 27 && state != AutoState.PARKED && state != AutoState.TO_PARK) {
-                follower.followPath(toPark); state = AutoState.TO_PARK; pathTimer.reset();
-            }
-            switch (state) {
-                case TO_SAMPLE:
-                    // Timeout fallback: a path that takes too long is abandoned
-                    if (!follower.isBusy() || pathTimer.seconds() > 6) { state = AutoState.DECIDE; }
-                    break;
-                case DECIDE:
-                    if (robot.sensors.seesRed() && robot.sensors.filteredDistance() < 15) { robot.intake.run(); }
-                    follower.followPath(toScore); pathTimer.reset(); state = AutoState.TO_SCORE;
-                    break;
-                case TO_SCORE:
-                    if (!follower.isBusy() || pathTimer.seconds() > 6) { robot.intake.stop(); state = AutoState.SCORE; pathTimer.reset(); }
-                    break;
-                case SCORE:
-                    robot.scorer.score();
-                    if (pathTimer.seconds() > 1.5) { robot.scorer.stow(); follower.followPath(toPark); pathTimer.reset(); state = AutoState.TO_PARK; }
-                    break;
-                case TO_PARK:
-                    if (!follower.isBusy() || pathTimer.seconds() > 6) state = AutoState.PARKED;
-                    break;
-                case PARKED:
-                    break;
-            }
-            telemetry.addData("State", state);
-            telemetry.addData("Distance", robot.sensors.filteredDistance());
-            telemetry.addData("Intake", robot.intake.getState());
-            telemetry.addData("Pose", follower.getPose());
-            telemetry.addData("Loop ms", (getRuntime() - loopStart) * 1000);
-            telemetry.update();
+    @Override
+    public void init_loop() {
+        if (gamepad1.x) isRed = false;
+        if (gamepad1.b) isRed = true;
+        telemetry.addData("Alliance", isRed ? "RED" : "BLUE");
+    }
+
+    @Override
+    public void start() {
+        buildPoses();
+        follower.setPose(start);
+        routine = buildRoutine();
+        schedule(routine);
+        matchTimer.reset();
+    }
+
+    @Override
+    public void loop() {
+        double loopStart = getRuntime();
+        follower.update();
+        Scheduler.execute();
+        // Emergency park: if fewer than 3 seconds remain, abandon the routine and park
+        if (matchTimer.seconds() > 27 && !parking) {
+            routine.cancel();
+            schedule(follow(follower, toPark()));
+            parking = true;
         }
+        telemetry.addData("Mode", follower.mode());
+        telemetry.addData("Distance", robot.sensors.filteredDistance());
+        telemetry.addData("Intake", robot.intake.getState());
+        telemetry.addData("Pose", follower.pose());
+        telemetry.addData("Loop ms", (getRuntime() - loopStart) * 1000);
     }
 }

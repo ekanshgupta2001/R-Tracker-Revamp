@@ -3,23 +3,32 @@
 const LVL_CP_RADIUS = 0.5;
 const LVL_ACC_TOL   = 1 / 3;
 
+// Level paths on the BIOBUZZ field (feet from the centre, +y north; h = heading of
+// the outgoing segment, clockwise from north). The HIVE frame fills the centre and
+// four FLOWERS sit on the walls (COLLISION_ZONES in js/teleop/robot.js), so every
+// path runs in the ring around the frame: straight legs at ±4.25 clear the flowers
+// by 6 in, inner laps at x ±3.25 / y ±3.5 clear the frame by the accuracy corridor,
+// and "dock" checkpoints stop 4 in short of a flower (a bump there is excused).
+// Themes: (-3,-4.4) is the red LOADING ZONE park, (±4.25,∓4.25) the GARDEN corners,
+// (±3.25,-1) the red launch spots beside the frame. A unit test checks the
+// clearances; timeLimit comes from tools/estimate-pars.mjs (js/level-table.js).
 const LEVELS = [
   // Tier 1: Beginner
-  { id:1,  tier:'Beginner',     name:'Straight Shot',          timeLimit:4,  path:[{x:0,y:-4,h:0},{x:0,y:4,h:0}] },
-  { id:2,  tier:'Beginner',     name:'Side Step',              timeLimit:4,  path:[{x:-3,y:0,h:90},{x:3,y:0,h:90}] },
-  { id:3,  tier:'Beginner',     name:'L-Shape',                timeLimit:8,  path:[{x:-4,y:-4,h:0},{x:-4,y:3,h:90},{x:4,y:3,h:90}] },
+  { id:1,  tier:'Beginner',     name:'Straight Shot',  timeLimit:4,  path:[{x:-4,y:-4,h:0},{x:-4,y:4,h:0}] },
+  { id:2,  tier:'Beginner',     name:'Side Step',      timeLimit:4,  path:[{x:-3,y:-4,h:90},{x:3,y:-4,h:90}] },
+  { id:3,  tier:'Beginner',     name:'L-Shape',        timeLimit:9,  path:[{x:-4,y:-4,h:0},{x:-4,y:3.5,h:90},{x:4,y:3.5,h:90}] },
   // Tier 2: Intermediate
-  { id:4,  tier:'Intermediate', name:'The Square',             timeLimit:17, path:[{x:-4,y:-4,h:0},{x:-4,y:4,h:90},{x:4,y:4,h:180},{x:4,y:-4,h:-90},{x:-4,y:-4,h:-90}] },
-  { id:5,  tier:'Intermediate', name:'Zigzag',                 timeLimit:14, path:[{x:-5,y:-4,h:45},{x:-1,y:0,h:-63},{x:-5,y:2,h:63},{x:-1,y:4,h:-67},{x:-5,y:5.67,h:-67}] },
-  { id:6,  tier:'Intermediate', name:'Diamond',                timeLimit:17, path:[{x:0,y:-5,h:39},{x:4,y:0,h:-39},{x:0,y:5,h:-141},{x:-4,y:0,h:141},{x:0,y:-5,h:141}] },
+  { id:4,  tier:'Intermediate', name:'The Square',     timeLimit:20, path:[{x:-4,y:-4,h:0},{x:-4,y:4,h:90},{x:4,y:4,h:180},{x:4,y:-4,h:-90},{x:-4,y:-4,h:-90}] },
+  { id:5,  tier:'Intermediate', name:'Zigzag',         timeLimit:9,  path:[{x:-5,y:-5,h:49},{x:-3,y:-3.25,h:131},{x:-1,y:-5,h:49},{x:1,y:-3.25,h:113},{x:4.5,y:-4.75,h:113}] },
+  { id:6,  tier:'Intermediate', name:'Garden Run',     timeLimit:16, path:[{x:4.25,y:-4.25,h:-90},{x:-4.25,y:-4.25,h:0},{x:-4.25,y:4.25,h:90},{x:4.25,y:4.25,h:90}] },
   // Tier 3: Advanced
-  { id:7,  tier:'Advanced',     name:'Specimen Run',           timeLimit:14, path:[{x:-4,y:-5,h:0},{x:-4,y:4,h:90},{x:0,y:4,h:180},{x:0,y:-5,h:90},{x:4,y:-5,h:90}] },
-  { id:8,  tier:'Advanced',     name:'Sample Collect',         timeLimit:14, path:[{x:-5,y:-5,h:18},{x:-3,y:1,h:135},{x:0,y:-2,h:45},{x:3,y:1,h:162},{x:5,y:-5,h:162}] },
-  { id:9,  tier:'Advanced',     name:'Spiral In',              timeLimit:23, path:[{x:-5,y:-5,h:0},{x:-5,y:5,h:90},{x:5,y:5,h:180},{x:5,y:-3,h:-90},{x:-2,y:-3,h:0},{x:-2,y:2,h:90},{x:2,y:2,h:90}] },
+  { id:7,  tier:'Advanced',     name:'Pollen Run',     timeLimit:17, path:[{x:-3,y:-4.4,h:87},{x:4.25,y:-4,h:1},{x:4.4,y:2,h:-179},{x:4.25,y:-4,h:-93},{x:-3,y:-4.4,h:-93}] },
+  { id:8,  tier:'Advanced',     name:'Flower Dock',    timeLimit:12, path:[{x:-4.25,y:0.5,h:-177},{x:-4.4,y:-2,h:176},{x:-4.25,y:-4.25,h:91},{x:2,y:-4.4,h:86},{x:4.25,y:-4.25,h:1},{x:4.4,y:2,h:1}] },
+  { id:9,  tier:'Advanced',     name:'Spiral In',      timeLimit:29, path:[{x:-4.25,y:-4.25,h:0},{x:-4.25,y:4.25,h:90},{x:4.25,y:4.25,h:180},{x:4.25,y:-3.5,h:-90},{x:-3.25,y:-3.5,h:0},{x:-3.25,y:3.5,h:90},{x:3.25,y:3.5,h:180},{x:3.25,y:-3.5,h:180}] },
   // Tier 4: Expert
-  { id:10, tier:'Expert',       name:'Speed Demon',            timeLimit:29, path:[{x:-5,y:-5,h:45},{x:5,y:5,h:-90},{x:-5,y:5,h:135},{x:5,y:-5,h:-45},{x:0,y:0,h:-45}] },
-  { id:11, tier:'Expert',       name:'Threading the Needle',   timeLimit:25, path:[{x:-5,y:0,h:27},{x:-3,y:4,h:143},{x:0,y:0,h:37},{x:3,y:4,h:153},{x:5,y:0,h:-153},{x:3,y:-4,h:-37},{x:0,y:0,h:-143},{x:-3,y:-4,h:-27},{x:-5,y:0,h:-27}] },
-  { id:12, tier:'Expert',       name:'The Gauntlet',           timeLimit:32, path:[{x:-5,y:-5,h:0},{x:-5,y:5,h:135},{x:-2,y:2,h:34},{x:0,y:5,h:146},{x:2,y:2,h:45},{x:5,y:5,h:180},{x:5,y:-5,h:-45},{x:2,y:-2,h:-146},{x:0,y:-5,h:-34},{x:-2,y:-2,h:-135},{x:-5,y:-5,h:-135}] },
+  { id:10, tier:'Expert',       name:'Speed Demon',    timeLimit:29, path:[{x:-4.25,y:-4.25,h:90},{x:4.25,y:-4.25,h:0},{x:4.25,y:4.25,h:-90},{x:-4.25,y:4.25,h:180},{x:-4.25,y:-4.25,h:90},{x:4.25,y:-4.25,h:0},{x:4.25,y:4.25,h:0}] },
+  { id:11, tier:'Expert',       name:'Flower Circuit', timeLimit:21, path:[{x:-4.25,y:-4.25,h:-4},{x:-4.4,y:-2,h:1},{x:-4.25,y:4.25,h:86},{x:-2,y:4.4,h:91},{x:4.25,y:4.25,h:176},{x:4.4,y:2,h:-179},{x:4.25,y:-4.25,h:-94},{x:2,y:-4.4,h:-89},{x:-4.25,y:-4.25,h:-89}] },
+  { id:12, tier:'Expert',       name:'The Gauntlet',   timeLimit:26, path:[{x:-3,y:-4.4,h:-4},{x:-3.25,y:-1,h:-131},{x:-4.4,y:-2,h:1},{x:-4.25,y:4.25,h:86},{x:-2,y:4.4,h:91},{x:4.25,y:4.25,h:176},{x:4.4,y:2,h:-159},{x:3.25,y:-1,h:180},{x:3.25,y:-4,h:-108},{x:2,y:-4.4,h:-90},{x:-3,y:-4.4,h:-90}] },
 ];
 
 let appMode = 'freedrive';
@@ -362,7 +371,7 @@ function finishLevel(success) {
   const timeFrac = lvl.elapsed / def.timeLimit;
   const run = buildRunRecord(success, avgAcc);
 
-  console.log(`[Level ${lvl.id}] Finished: ${success ? 'PASSED' : 'FAILED (time out)'}. Waypoints hit: ${Math.max(0, lvl.nextCp - 1)}/${def.path.length - 1}. Accuracy: ${Math.round(avgAcc * 100)}%. Time: ${lvl.elapsed.toFixed(1)}s / ${def.timeLimit}s. Wall hits: ${run.collisions}`);
+  console.log(`[Level ${lvl.id}] Finished: ${success ? 'PASSED' : 'FAILED (time out)'}. Waypoints hit: ${Math.max(0, lvl.nextCp - 1)}/${def.path.length - 1}. Accuracy: ${Math.round(avgAcc * 100)}%. Time: ${lvl.elapsed.toFixed(1)}s / ${def.timeLimit}s. Collisions: ${run.collisions}`);
 
   if (!success) {
     recordLevelAttempt(lvl.id, { success: false, run });
@@ -413,7 +422,7 @@ function showResultCard(stars, acc, time, def, run) {
     ` &nbsp;|&nbsp; Accuracy <b>${Math.round(acc * 100)}%</b>`;
   if (runScore !== null) {
     statsHtml += `<br>Run score <b>${runScore}</b>`;
-    if (run.collisions > 0) statsHtml += ` &nbsp;|&nbsp; Wall hits <b>${run.collisions}</b>`;
+    if (run.collisions > 0) statsHtml += ` &nbsp;|&nbsp; Collisions <b>${run.collisions}</b>`;
     if (run.rated === false) statsHtml += `<br><span class="rc-unrated">Custom physics settings: stored, not rated</span>`;
   }
   document.getElementById('rc-stats').innerHTML = statsHtml;

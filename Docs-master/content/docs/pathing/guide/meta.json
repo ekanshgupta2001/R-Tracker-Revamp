@@ -1,0 +1,12 @@
+{
+  "pages": [
+    "setting-up-auto",
+    "pose-creation",
+    "path-creation",
+    "path-following",
+    "auto-usage",
+    "teleop-usage",
+    "follow-state",
+    "debugging"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "pages": [
+    "pinpoint",
+    "octoquad",
+    "otos",
+    "two-wheel",
+    "three-wheel",
+    "three-wheel-imu"
+  ]
+}

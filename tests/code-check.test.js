@@ -24,9 +24,9 @@ const EXPECT_MISSING = {
   phase1: ['servo', 'y-invert', 'telemetry', 'mechanism'],
   phase2: ['drivetrain-class', 'robot-class', 'enum', 'private-fields'],
   phase3: ['sensor-type', 'sensor-read', 'state-machine', 'decision'],
-  phase4: ['pid', 'pedro', 'bezier', 'waypoints'],
+  phase4: ['pid', 'pedro', 'paths', 'waypoints'],
   phase5: ['bug-notes', 'bug-explained'],
-  advanced_command: ['subsystem-base', 'command-base', 'sequential', 'follow-path'],
+  advanced_command: ['scheduler', 'commands', 'sequential', 'follow-path'],
   capstone: ['robot-class', 'pedro', 'waypoints', 'sensor-decision']
 };
 const EXPECT_FORBIDDEN = {
@@ -77,6 +77,37 @@ for (const pid of Object.keys(EXPECT_MISSING)) {
     console.log(`${pid}: good=${good.score} bad=${bad.score}`);
   });
 }
+
+// The curriculum targets Pedro Pathing 3 + Ivy. Old-API code is flagged with a hint that names
+// the change, and the known-good samples themselves must not drift back to the old API.
+const OLD_PEDRO = /pathBuilder|setLinearHeadingInterpolation|setConstantHeadingInterpolation|setStartingPose|followPath\s*\(|BezierLine|PathChain|new\s+Point\s*\(|getPose\s*\(|new\s+Follower\s*\(/;
+const OLD_COMMANDS = /SubsystemBase|CommandBase|SequentialCommandGroup|ParallelCommandGroup|CommandScheduler|isFinished\s*\(|addRequirements|withTimeout/;
+
+test('legacy Pedro 2 and FTCLib APIs are flagged with a migration hint', () => {
+  const pedro2 = 'public class A extends OpMode { Follower follower; PathChain p; void init() { follower.setStartingPose(start); p = follower.pathBuilder().addPath(new BezierLine(new Point(a), new Point(b))).setLinearHeadingInterpolation(0, 1).build(); } void loop() { follower.update(); } }';
+  for (const pid of ['phase4', 'capstone']) {
+    const r = win.checkCode(pid, pedro2);
+    const label = win.CODE_RULES[pid].forbidden.find(f => f.id === 'legacy-api').label;
+    assert.ok(r.issues.some(i => i.description.startsWith(label) && /Pedro 3/.test(i.fix)), pid + ' should flag the Pedro 2 API — issues: ' + r.issues.map(i => i.description).join(' | '));
+  }
+  const ftclib = 'class Drive extends SubsystemBase {} class Go extends CommandBase { public boolean isFinished() { return true; } } class Auto extends SequentialCommandGroup {}';
+  const r = win.checkCode('advanced_command', ftclib);
+  const label = win.CODE_RULES.advanced_command.forbidden.find(f => f.id === 'legacy-commands').label;
+  assert.ok(r.issues.some(i => i.description.startsWith(label) && /Ivy/.test(i.fix)), 'FTCLib API should be flagged — issues: ' + r.issues.map(i => i.description).join(' | '));
+});
+
+test('the known-good samples use the Pedro 3 and Ivy API', () => {
+  for (const pid of ['phase4', 'phase5', 'advanced_command', 'capstone']) {
+    const src = read(pid + '-good.java');
+    assert.doesNotMatch(src, OLD_PEDRO, pid + '-good.java still uses the Pedro 2 API');
+    assert.doesNotMatch(src, OLD_COMMANDS, pid + '-good.java still uses the FTCLib API');
+    assert.ok(src.includes('Constants.create('), pid + '-good.java should create the follower with Constants.create()');
+  }
+  for (const pid of ['phase4', 'advanced_command', 'capstone']) {
+    const src = read(pid + '-good.java');
+    assert.ok(/\bfollow\(follower,/.test(src) && src.includes('Scheduler.execute()'), pid + '-good.java should follow paths with Ivy');
+  }
+});
 
 test('reflection deliverable and unknown phase are never scored', () => {
   const r = win.checkCode('advanced_strategy', 'anything');

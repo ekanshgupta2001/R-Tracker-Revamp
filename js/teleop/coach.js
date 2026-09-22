@@ -85,8 +85,8 @@ function generateCoachReport() {
     let lead = `Rated on ${rr.ratedLevels} level${rr.ratedLevels === 1 ? '' : 's'} over the last ${rr.sessionsInWindow} session${rr.sessionsInWindow === 1 ? '' : 's'}.`;
     if (weakGroup) lead += ` Slowest relative to par: ${weakGroup.label} (${levelIds(weakGroup.levelIds)}) at ${Math.round(weakGroup.meanParRatio * 100)}% of par pace.`;
     if (strongGroup && strongGroup !== weakGroup) lead += ` Fastest: ${strongGroup.label} (${levelIds(strongGroup.levelIds)}) at ${Math.round(strongGroup.meanParRatio * 100)}% of par pace.`;
-    if (windowHits > 0) lead += ` ${windowHits} wall hit${windowHits === 1 ? '' : 's'} cost ${windowHits * 5} run-score points across those sessions.`;
-    else lead += ' No wall hits in the rated runs.';
+    if (windowHits > 0) lead += ` ${windowHits} collision${windowHits === 1 ? '' : 's'} cost ${windowHits * 5} run-score points across those sessions.`;
+    else lead += ' No collisions in the rated runs.';
     parts.push(lead);
   }
 
@@ -156,7 +156,7 @@ function generateCoachReport() {
   if (behind.length) weaknesses.push('Behind par on ' + levelIds(behind));
   breakdown.slice(0, 2).filter(s => s.val >= 65).forEach(s => strengths.push(strengthDescMap[s.label] || s.label));
   bot2.filter(s => s.val < 70).forEach(s => weaknesses.push(weaknessDescMap[s.label] || s.label));
-  if (windowHits > 0) weaknesses.push(`${windowHits} wall hit${windowHits === 1 ? '' : 's'} in the rated runs`);
+  if (windowHits > 0) weaknesses.push(`${windowHits} collision${windowHits === 1 ? '' : 's'} in the rated runs`);
 
   const trainingPlan = [];
   if (weakGroup) {
@@ -188,7 +188,7 @@ function generateCoachReport() {
   if (rr.ratedLevels && rr.accuracyMean < 85) {
     trainingPlan.push('Path accuracy is costing run score: aim to stay inside the corridor for 90% or more of each run before adding speed.');
   }
-  if (windowHits > 0) trainingPlan.push('Brake before the walls: every wall hit costs 5 run-score points.');
+  if (windowHits > 0) trainingPlan.push('Brake before walls and field elements: every collision costs 5 run-score points.');
   trainingPlan.push('Aim for 15+ minutes of focused practice per session. Quality repetitions matter more than time spent.');
 
   const r0 = v => (v === null || v === undefined) ? null : Math.round(v);

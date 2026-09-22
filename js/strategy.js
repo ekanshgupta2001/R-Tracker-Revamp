@@ -654,7 +654,7 @@
     }
 
     fieldImg.crossOrigin = 'anonymous';
-    fieldImg.src = '../assets/decode.webp';
+    fieldImg.src = '../assets/biobuzz.webp';
     fieldImg.onload = function () { resize(); };
 
     cvs.addEventListener('mousedown', onDown);

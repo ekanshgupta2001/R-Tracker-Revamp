@@ -1,0 +1,10 @@
+---
+title: Troubleshooting
+description: Common issues you may run into
+---
+
+**Q: My AutoTune gave me a `ForceStopException` when I pressed stop on my OpMode. What does this mean?**
+**A:** A likely cause of this exception is that the OpMode required you to move your robot. If you stopped the OpMode before moving your robot,
+this produces a divide-by-zero, and therefore induces an output of ∞. To avoid this error, you should move your robot before stopping the OpMode. The exception is handled gracefully, meaning that you don't need to restart the robot; you can simply restart the procedure.
+
+More will be added later

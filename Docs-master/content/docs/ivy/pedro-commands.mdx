@@ -1,0 +1,68 @@
+---
+title: Pedro Commands
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+Ivy includes built-in commands for controlling the robot's movement using
+[Pedro Pathing](https://pedropathing.com). To use them, add the following
+static import:
+
+```java
+import static com.pedropathing.ivy.pedro.PedroCommands.*;
+```
+
+All Pedro commands take a `Follower` as their first argument. Usually, your `Follower`
+is one created using the `create()` method in your [**Constants**](/docs/pathing/tuning/constants) file. 
+Pedro commands return regular Ivy `Command`s, so they work just like any other Ivy command.
+
+<Callout title="Note" type="info">
+    This page is compatible with Pedro 3. See the [Pedro Pathing](/docs/pathing) docs for more information.
+</Callout>
+
+## Follow
+
+Makes the robot follow a [`Path`](/docs/pathing/reference/api). The command finishes as soon as
+the follower stops actively tracking the path (`follower.following()` becomes `false`).
+
+```java
+Command goToBasket = follow(follower, basketPath);
+```
+
+<Callout title="Note on Heading Interpolation" type="info">
+    `follow()` executes the [path](/docs/pathing/guide/path-creation) using the [interpolation](/docs/pathing/reference/interpolation) method that was defined when the [Path](/docs/pathing/guide/path-creation) was created.
+</Callout>
+
+## Hold
+
+Makes the robot go to a [position](/docs/pathing/guide/pose-creation) and then hold it. The robot will hold the position until it is tasked to do something else.
+If no position is sent the robot will hold its current position.
+
+To hold the current position:
+
+```java
+Command holdAtPosition = hold(follower);
+```
+
+To hold a specific position:
+
+```java
+Command holdAtGoal = hold(follower, p.of(120, 80, 0));
+```
+
+## Composing Pedro Commands
+
+Since Pedro commands are regular Ivy commands, you can compose them with
+everything else. For example:
+
+```java
+Command auto = sequential(
+    follow(follower, shootPreloads),
+    Shooter.shoot(), // Call the shoot Command.
+    instant(() -> claw.open()),
+    parallel( // Follow the path while running the intake.
+        follow(follower, pickupCloseSpikemark),
+        instant(() -> intake.activate())
+    )
+);
+```

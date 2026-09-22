@@ -62,7 +62,7 @@ test('export → clear → import restores identical state; banner tracks unsave
   const text = fs.readFileSync(await dl.path(), 'utf8');
   const exported = JSON.parse(text);
   expect(exported.meta.app).toBe('r-tracker');
-  expect(exported.schemaVersion).toBe(2);
+  expect(exported.schemaVersion).toBe(3);
   await expect(page.locator('#rt-dirty-banner')).toBeHidden();
   await expect(page.locator('#sb-progress-status')).toHaveText(/Exported/);
 
@@ -204,10 +204,10 @@ test('imported strings render escaped and unsupported files are rejected', async
   expect(bad.ok).toBe(false);
 });
 
-// Schema 1 → 2: a v1 export (no per-run records, style numbers sampled at any speed)
+// Schema 1 → 3: a v1 export (no per-run records, style numbers sampled at any speed)
 // imports cleanly, keeps every level aggregate, session and coach report, gains an
 // empty driver.runs, and drops the old style numbers to "no reading" (null).
-test('a schema-1 progress file migrates to schema 2 without losing anything', async ({ page }) => {
+test('older progress files migrate to schema 3 without losing anything', async ({ page }) => {
   await page.goto('/', { waitUntil: 'load' });
   await page.waitForSelector('#sidebar');
   const v1 = makeSampleState();
@@ -217,7 +217,7 @@ test('a schema-1 progress file migrates to schema 2 without losing anything', as
   const r = await page.evaluate(s => RTStore.importJSON(JSON.stringify(s)), v1);
   expect(r.ok, r.error).toBe(true);
   const s = await readState(page);
-  expect(s.schemaVersion).toBe(2);
+  expect(s.schemaVersion).toBe(3);
   expect(s.driver.runs).toEqual([]);
   expect(s.driver.levels['1'].bestStars).toBe(3);
   expect(s.driver.levels['2'].attempts).toBe(2);
@@ -230,7 +230,20 @@ test('a schema-1 progress file migrates to schema 2 without losing anything', as
   expect(s.paths.length).toBe(1);
   expect(s.curriculum.phases.phase0.status).toBe('verified');
 
-  // The v2 file round-trips as-is (runs validated, kept).
+  // Schema 2 → 3: planner headings were compass degrees (0 = up, clockwise); Pedro's are
+  // 0 = +x, counter-clockwise. Saved waypoints are rewritten (h = 90 − h_old) so a loaded
+  // path still points the same way; a missing or non-numeric heading is left alone.
+  const old = makeSampleState();
+  old.schemaVersion = 2;
+  old.paths[0].waypoints = [{ x: 24, y: 24, heading: 0 }, { x: 72, y: 72, heading: -90 }, { x: 10, y: 10, heading: 180 }, { x: 5, y: 5 }, { x: 6, y: 6, heading: 'north' }];
+  const ro = await page.evaluate(s => RTStore.importJSON(JSON.stringify(s)), old);
+  expect(ro.ok, ro.error).toBe(true);
+  const wps = (await readState(page)).paths[0].waypoints;
+  expect(wps.slice(0, 3).map(w => w.heading)).toEqual([90, 180, -90]);
+  expect(wps[3].heading).toBeUndefined();
+  expect(wps[4].heading).toBe('north');
+
+  // The current-version file round-trips as-is (runs validated, kept).
   const v2 = makeSampleState();
   const r2 = await page.evaluate(s => RTStore.importJSON(JSON.stringify(s)), v2);
   expect(r2.ok, r2.error).toBe(true);

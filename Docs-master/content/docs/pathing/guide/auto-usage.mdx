@@ -1,0 +1,177 @@
+---
+title: Autonomous Usage
+description: How to use Pedro in autonomous
+---
+
+We now have everything needed to build an autonomous: a follower, Poses, paths, and a way to follow them.
+
+If you need to revisit a step, see [Setting Up Your Autonomous](/docs/pathing/guide/setting-up-auto), [Creating a Pose](/docs/pathing/guide/pose-creation), [Creating a Path](/docs/pathing/guide/path-creation), or [Following a Path](/docs/pathing/guide/path-following).
+
+We'll look at how to build an autonomous both without Ivy and with Ivy.
+
+## With Ivy
+
+[Ivy](/docs/ivy) lets us organize the same autonomous as commands instead of manually keeping track of states.
+
+Add the Ivy imports:
+
+```java title="ExampleAuto.java"
+import com.pedropathing.ivy.Command;
+import com.pedropathing.ivy.Scheduler;
+
+import static com.pedropathing.ivy.Scheduler.schedule;
+import static com.pedropathing.ivy.groups.Groups.sequential;
+import static com.pedropathing.ivy.pedro.PedroCommands.follow;
+```
+
+For a larger autonomous, create the Poses the robot needs to visit:
+
+```java title="ExampleAuto.java"
+private final PoseFactory poseFactory = PoseFactory.degrees();
+
+private final Pose startPose = poseFactory.of(24, 24, 0);
+private final Pose scorePose = poseFactory.of(48, 48, 90);
+private final Pose parkPose = poseFactory.of(72, 48, 90);
+```
+
+
+### Creating the Paths
+
+Create the paths inside of their own methods, calling each method should return a `Path` object:
+
+```java title="ExampleAuto.java"
+private Path startToScore() {
+    return line(startPose, scorePose).linear(startPose, scorePose);
+}
+
+private Path park(){
+    return line(scorePose, parkPose).linear(scorePose, parkPose);
+}
+```
+
+### Creating the Routine
+
+`sequential()` runs each command one after another:
+
+```java title="ExampleAuto.java"
+private Command autoRoutine() {
+    return sequential(
+            follow(follower, startToScore()),
+            // Add mechanism commands here.
+            follow(follower, park())
+    );
+}
+```
+
+The second path begins after the first `follow()` command finishes.
+
+Other Ivy commands can be placed between the paths or run alongside them using different command groups.
+
+### Running the Routine
+
+Reset Ivy and create the follower inside `init()`:
+
+```java title="ExampleAuto.java"
+@Override
+public void init() {
+    Scheduler.reset();
+
+    follower = Constants.create(hardwareMap);
+    follower.setPose(startPose);
+    follower.update();
+}
+```
+
+Schedule the routine inside `start()`:
+
+```java title="ExampleAuto.java"
+@Override
+public void start() {
+    schedule(autoRoutine());
+}
+```
+
+Then update both systems inside `loop()`:
+
+```java title="ExampleAuto.java"
+@Override
+public void loop() {
+    follower.update();
+    Scheduler.execute();
+    // add your other methods needed in the loop here
+}
+```
+
+<Callout title="Tip" type="info">
+    See the [Ivy documentation](/docs/ivy) to learn about commands, sequential groups, parallel groups, and other ways to organize an autonomous.
+</Callout>
+
+### Complete example
+And that is how you make an Autonomous with Ivy! Here is a completed version for reference, with some added extras.
+
+```java title="ExampleAuto.java"
+import com.pedropathing.ivy.Command;
+import com.pedropathing.ivy.Scheduler;
+
+import static com.pedropathing.ivy.Scheduler.schedule;
+import static com.pedropathing.ivy.groups.Groups.sequential;
+import static com.pedropathing.ivy.pedro.PedroCommands.follow;
+
+@Autonomous
+public class ExampleAuto extends OpMode {
+    private Follower follower;
+    private final PoseFactory poseFactory = PoseFactory.degrees();
+
+    // Poses
+    private final Pose startPose = poseFactory.of(24, 24, 0);
+    private final Pose startToScore = poseFactory.of(48, 48, 90);
+    private final Pose park = poseFactory.of(72, 48, 90);
+
+    // Path methods
+    private Path startToScore() {
+        return line(startPose, scorePose).linear(startPose, scorePose);
+    }
+
+    private Path park(){
+        return line(scorePose, parkPose).linear(scorePose, parkPose);
+    }
+
+    private Command autoRoutine() {
+        return sequential(
+                follow(follower, startToScore()),
+                // Add mechanism commands here.
+                follow(follower, park())
+        );
+    }
+
+    @Override
+    public void init() {
+        Scheduler.reset();
+
+        follower = Constants.create(hardwareMap);
+        follower.setPose(startPose);
+        follower.update();
+    }
+
+    @Override
+    public void start() {
+        schedule(autoRoutine());
+    }
+
+    @Override
+    public void loop() {
+        follower.update();
+        Scheduler.execute();
+        // add your other methods needed in the loop here
+
+        telemetryData.addData("X", follower.pose().x());
+        telemetryData.addData("Y", follower.pose().y());
+        telemetryData.addData("Heading", Math.toDegrees(follower.pose().heading()));
+        telemetry.addData("Follower Mode", follower.mode());
+        telemetry.update();
+    }
+}
+```
+
+## Using other command libraries
+We strongly recommend Ivy because it has builtin integration with PedroPathing. In addition, it is very simple and neat to create your own commands for your subystems with. If you want to use other command libraries, refer to [Following a path](/docs/pathing/guide/path-following) on how to make your own follow command.

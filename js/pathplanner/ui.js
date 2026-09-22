@@ -32,7 +32,7 @@ function renderWpList() {
         <div class="wp-num">${i + 1}</div>
         <div class="wp-info">
           <div class="wp-coords">(${wp.x.toFixed(1)}, ${wp.y.toFixed(1)}) in</div>
-          <div class="wp-heading">Heading: ${wp.heading.toFixed(1)}° · ${wp.action}</div>
+          <div class="wp-heading">Heading: ${wp.heading.toFixed(1)}° · ${escapeHTML(wp.action)}</div>
         </div>
         <button class="wp-delete" onclick="event.stopPropagation(); deleteWpAt(${i})" title="Delete">✕</button>
       </div>`;
@@ -45,8 +45,8 @@ function renderWpList() {
         <select class="seg-select${isCurved ? ' curved' : ''}"
           onchange="setSegmentType(${i}, this.value)"
           onclick="event.stopPropagation()">
-          <option value="line"${!isCurved ? ' selected' : ''}>BezierLine</option>
-          <option value="curve"${isCurved ? ' selected' : ''}>BezierCurve</option>
+          <option value="line"${!isCurved ? ' selected' : ''}>line()</option>
+          <option value="curve"${isCurved ? ' selected' : ''}>curve()</option>
         </select>
       </div>`;
     }
@@ -93,7 +93,7 @@ function renderWaypointEditor() {
       </div>
       <div class="form-row">
         <div class="form-group" style="flex:2">
-          <label class="form-label">Heading (°)</label>
+          <label class="form-label">Heading (°, 0 = +x, CCW)</label>
           <div class="angle-row">
             <canvas id="anglePicker" width="40" height="40" title="Click or drag to set heading"></canvas>
             <input type="number" class="form-input" id="edH" value="${wp.heading}" step="1" min="-180" max="180" oninput="editorUpdate()">
@@ -120,9 +120,9 @@ function renderWaypointEditor() {
 function renderSegmentEditor(si) {
   const seg = segments[si];
   const canAdd = seg.cps.length < 2;
-  const typeLabel = seg.cps.length === 0 ? 'BezierLine — straight path'
-                  : seg.cps.length === 1  ? 'BezierCurve — 1 control point'
-                  : 'BezierCurve — 2 control points';
+  const typeLabel = seg.cps.length === 0 ? 'line() — straight path'
+                  : seg.cps.length === 1  ? 'curve() — 1 control point'
+                  : 'curve() — 2 control points';
 
   document.getElementById('editorContent').innerHTML = `
     <div style="display:flex; flex-direction:column; gap:8px;">
@@ -174,7 +174,7 @@ function drawAnglePicker(deg) {
   pctx.beginPath(); pctx.arc(cx, cy, r, 0, Math.PI * 2);
   pctx.strokeStyle = '#c73e5a'; pctx.lineWidth = 1.5; pctx.stroke();
   pctx.fillStyle = '#181818'; pctx.fill();
-  const ang = (deg - 90) * Math.PI / 180;
+  const ang = -deg * Math.PI / 180;   // Pedro heading: 0 = +x, CCW; canvas y points down
   const ex = cx + Math.cos(ang) * (r - 3);
   const ey = cy + Math.sin(ang) * (r - 3);
   pctx.strokeStyle = '#a0334a'; pctx.lineWidth = 2; pctx.lineCap = 'round';
@@ -192,9 +192,9 @@ function initAnglePicker() {
     const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
     const px2 = (e.touches ? e.touches[0].clientX : e.clientX) - cx;
     const py2 = (e.touches ? e.touches[0].clientY : e.clientY) - cy;
-    let deg = Math.atan2(py2, px2) * 180 / Math.PI + 90;
+    let deg = -Math.atan2(py2, px2) * 180 / Math.PI;   // Pedro heading: 0 = +x, CCW
     if (deg > 180) deg -= 360;
-    if (deg < -180) deg += 360;
+    if (deg <= -180) deg += 360;                        // (-180, 180]: west reads 180
     document.getElementById('edH').value = deg.toFixed(1);
     editorUpdate();
   }

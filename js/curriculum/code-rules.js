@@ -22,6 +22,13 @@
   var SUBSYSTEM_NAME = '(Drive|Drivetrain|Chassis|Mecanum|Intake|Lift|Arm|Claw|Shooter|Slide|Wrist|Gripper|Launcher|Elevator|Turret|Outtake)';
   var MEANINGFUL_COMMENT = /\/\/[^\n]{12,}|\/\*[\s\S]{12,}?\*\//;
   var DOUBLE_UPDATE = /follower\.update\s*\(\s*\)[\s\S]{0,300}?follower\.update\s*\(\s*\)/;
+  // Pedro Pathing 3 replaced the 2.x path API; Ivy replaced FTCLib-style commands. Both old
+  // shapes are flagged so a student migrating old code gets told what changed.
+  var LEGACY_PEDRO = /pathBuilder\s*\(|setLinearHeadingInterpolation|setConstantHeadingInterpolation|setTangentHeadingInterpolation|setStartingPose\s*\(|followPath\s*\(|new\s+BezierLine|new\s+Point\s*\(/;
+  var LEGACY_COMMANDS = /SequentialCommandGroup|ParallelCommandGroup|extends\s+CommandBase\b|extends\s+SubsystemBase\b|CommandScheduler/;
+  var HEADING_INTERP = /\.(linear|constant|tangent|facingPoint)\s*\(/;
+  var POSES = /\.of\s*\(\s*-?[\d.]|new\s+Pose\s*\(/;
+  var PEDRO_FOLLOWER = /\bFollower\b|Constants\.create\s*\(|\bfollow\s*\(\s*[\w.]*[fF]ollower\b/;
 
   // Braces must balance in the stripped code — the cheapest "does it even compile" signal.
   function bracesBalanced(stripped) {
@@ -121,17 +128,20 @@
       required: [
         { id: 'encoders', label: 'Encoder-based movement', pattern: /getCurrentPosition\s*\(|RUN_TO_POSITION|RUN_USING_ENCODER|setTargetPosition|STOP_AND_RESET_ENCODER|Encoder\b/, weight: 15, hint: 'Use encoders (getCurrentPosition / RUN_TO_POSITION) or odometry instead of time.' },
         { id: 'pid', label: 'PID / PIDF control', pattern: /\bk[PIDF]\b|PIDController|PIDFCoefficients|PIDCoefficients|PIDFController/, weight: 20, also: /error/, hint: 'Implement a PID (kP, kI, kD, optionally kF) that acts on error = target − current.' },
-        { id: 'pedro', label: 'Pedro Pathing (or equivalent) path following', pattern: /Follower|followPath|PathChain|PathBuilder/, weight: 15, hint: 'Use a Follower with followPath() (Pedro Pathing) or an equivalent path follower.' },
-        { id: 'bezier', label: 'Paths built from BezierLine / BezierCurve', pattern: /BezierLine|BezierCurve/, weight: 10, hint: 'Build each segment as a BezierLine or BezierCurve.' },
-        { id: 'waypoints', label: 'At least 3 waypoints (Pose/Point)', pattern: /new\s+(Pose|Point)\s*\(/, min: 3, weight: 15, hint: 'Define at least three Pose or Point waypoints for the path.' },
-        { id: 'pose-nav', label: 'Pose-based navigation (x, y, heading)', pattern: /new\s+Pose\s*\(|getPose\s*\(|setStartingPose|heading/i, weight: 10, hint: 'Navigate with poses (x, y, heading), not motor timings.' },
+        { id: 'pedro', label: 'Pedro Pathing follower', pattern: PEDRO_FOLLOWER, weight: 15, hint: 'Create the Follower with Constants.create(hardwareMap) and follow paths with follow(follower, path).' },
+        { id: 'paths', label: 'Paths built with line() / curve()', pattern: /\b(line|curve|through)\s*\(\s*\w/, weight: 10, hint: 'Build each path with line(start, end) or curve(start, control…, end) from Paths.' },
+        { id: 'waypoints', label: 'At least 3 poses (p.of / new Pose)', pattern: POSES, min: 3, weight: 10, hint: 'Define at least three poses with a PoseFactory, e.g. p.of(24, 24, 0).' },
+        { id: 'interpolation', label: 'Heading interpolation chained on the path', pattern: HEADING_INTERP, weight: 5, hint: 'Chain .linear(start, end), .constant(pose) or .tangent() onto each path.' },
+        { id: 'pose-nav', label: 'Pose-based navigation (x, y, heading)', pattern: /PoseFactory|\.pose\s*\(|setPose\s*\(|new\s+Pose\s*\(|heading/i, weight: 5, hint: 'Navigate with poses (x, y, heading), not motor timings.' },
         { id: 'follower-update', label: 'follower.update() in the loop', pattern: /follower\.update\s*\(\s*\)/, weight: 5, hint: 'Call follower.update() once every loop iteration.' },
-        { id: 'telemetry', label: 'Telemetry for tuning', pattern: /telemetry\.addData\s*\(/, min: 2, weight: 5, hint: 'Show position/heading/error on telemetry (or FTC Dashboard) while tuning.' },
+        { id: 'scheduler', label: 'Scheduler.execute() in the loop', pattern: /Scheduler\.execute\s*\(/, weight: 5, hint: 'Call Scheduler.execute() once per loop so the follow command advances.' },
+        { id: 'telemetry', label: 'Telemetry for tuning', pattern: /telemetry\.addData\s*\(/, min: 2, weight: 5, hint: 'Show position/heading/error on telemetry while tuning.' },
         { id: 'comments', label: 'Has explanatory comments', pattern: MEANINGFUL_COMMENT, min: 2, weight: 5, raw: true, hint: 'Note your tuned constants and why.' }
       ],
       forbidden: COMMON_FORBIDDEN.concat([
         { id: 'time-based', label: 'No time-based driving', pattern: /\.setPower\s*\([^)]*\)\s*;\s*sleep\s*\(\s*\d{3,}\s*\)/, severity: 'WARNING', penalty: 15, hint: 'setPower(...); sleep(...) is open-loop — Phase 4 is about closed-loop movement.' },
-        { id: 'double-update', label: 'follower.update() called once per loop', pattern: DOUBLE_UPDATE, severity: 'WARNING', penalty: 10, hint: 'Call follower.update() exactly once per loop iteration.' }
+        { id: 'double-update', label: 'follower.update() called once per loop', pattern: DOUBLE_UPDATE, severity: 'WARNING', penalty: 10, hint: 'Call follower.update() exactly once per loop iteration.' },
+        { id: 'legacy-api', label: 'Pedro 2 API', pattern: LEGACY_PEDRO, severity: 'WARNING', penalty: 10, hint: 'This is the Pedro 2 API. Pedro 3 builds paths with line()/curve() + .linear() and follows them with follow(follower, path).' }
       ])
     },
 
@@ -156,15 +166,18 @@
     advanced_command: {
       passThreshold: 75,
       required: [
-        { id: 'subsystem-base', label: 'Drivetrain extends SubsystemBase', pattern: /extends\s+SubsystemBase\b/, weight: 20, hint: 'Make the drivetrain subsystem extend FTCLib\'s SubsystemBase.' },
-        { id: 'command-base', label: 'Commands extend CommandBase', pattern: /extends\s+CommandBase\b|implements\s+Command\b/, min: 2, weight: 15, hint: 'Write each command as a class extending CommandBase.' },
-        { id: 'follow-path', label: 'A FollowPath command wrapping followPath() + isBusy()', pattern: /class\s+FollowPath\w*/i, weight: 15, also: /followPath\s*\(|isBusy\s*\(/, hint: 'FollowPath should call follower.followPath() in initialize() and finish when !follower.isBusy().' },
-        { id: 'run-intake', label: 'A RunIntake command with a duration', pattern: /class\s+RunIntake\w*/i, weight: 10, also: /ElapsedTime|seconds\s*\(|milliseconds\s*\(|duration/i, hint: 'RunIntake should run the intake for a given number of seconds.' },
-        { id: 'is-finished', label: 'Commands implement isFinished()', pattern: /isFinished\s*\(\s*\)/, weight: 10, hint: 'Each command needs an isFinished() that returns true when it is done.' },
-        { id: 'sequential', label: 'A SequentialCommandGroup composes the autonomous', pattern: /SequentialCommandGroup/, weight: 20, hint: 'Compose FollowPath / RunIntake commands in a SequentialCommandGroup.' },
+        { id: 'scheduler', label: 'Scheduler.reset() in init and Scheduler.execute() in the loop', pattern: /Scheduler\.execute\s*\(/, weight: 20, also: /Scheduler\.reset\s*\(/, hint: 'Call Scheduler.reset() at the top of the OpMode and Scheduler.execute() once per loop.' },
+        { id: 'commands', label: 'Commands built with Command.build() or implements Command', pattern: /Command\.build\s*\(|implements\s+Command\b/, weight: 15, hint: 'Write commands with Command.build().setStart(...).setExecute(...).setDone(...).setEnd(...) (or a class that implements Command).' },
+        { id: 'follow-path', label: 'Paths followed with follow(follower, path)', pattern: /\bfollow\s*\(\s*[\w.]*[fF]ollower\b/, weight: 15, hint: 'Use follow(follower, path) from PedroCommands instead of a hand-written FollowPath command.' },
+        { id: 'run-intake', label: 'A runIntake command with a duration', pattern: /[iI]ntake/, weight: 10, also: /waitMs\s*\(|ElapsedTime|seconds\s*\(|milliseconds\s*\(|duration|\.until\s*\(/i, hint: 'runIntake should run the intake for a given number of seconds and stop it in setEnd().' },
+        { id: 'done', label: 'Commands say when they are done (setDone / done())', pattern: /setDone\s*\(|boolean\s+done\s*\(/, weight: 10, hint: 'Each command needs setDone(() -> …) (or done()) that returns true when it has finished.' },
+        { id: 'requiring', label: 'Commands declare requirements with .requiring()', pattern: /\.requiring\s*\(|requirements\s*\(\s*\)/, weight: 10, hint: 'Add .requiring(intake) (or the motor) so two commands never fight over one mechanism.' },
+        { id: 'sequential', label: 'A sequential() composition replaces the state machine', pattern: /\bsequential\s*\(|\.then\s*\(/, weight: 10, hint: 'Compose follow(...) and runIntake(...) in one sequential(...) call.' },
         { id: 'comparison', label: 'A note comparing both versions', pattern: /(easier|readab|modif|compar|maintain)/i, weight: 10, raw: true, hint: 'Add a comment comparing the command-based and original versions: which is easier to read and modify?' }
       ],
-      forbidden: COMMON_FORBIDDEN
+      forbidden: COMMON_FORBIDDEN.concat([
+        { id: 'legacy-commands', label: 'FTCLib command API', pattern: LEGACY_COMMANDS, severity: 'WARNING', penalty: 10, hint: 'That is the FTCLib API; this module uses Ivy: Command.build(), sequential(), Scheduler.' }
+      ])
     },
 
     advanced_strategy: {
@@ -181,22 +194,24 @@
         { id: 'enum', label: 'Enum-based state machines', pattern: /\benum\s+\w+/, weight: 5, hint: 'Use enums for subsystem and autonomous states.' },
         { id: 'sensor-decision', label: 'A sensor-driven decision', pattern: SENSOR_TYPES, weight: 10, also: /if\s*\([^)]*(<=|>=|<|>)[^)]*\)/, hint: 'Read a sensor and branch on it (colour sorting, distance stop, …).' },
         { id: 'filtering', label: 'Sensor filtering', pattern: /average|filter|samples|readings|consecutive/i, weight: 5, hint: 'No single-reading decisions — average or require consecutive readings.' },
-        { id: 'pedro', label: 'Pedro Pathing follower', pattern: /Follower|followPath/, weight: 10, hint: 'Drive with Pedro Pathing\'s Follower.' },
-        { id: 'waypoints', label: 'At least 4 distinct Poses', pattern: /new\s+Pose\s*\(/, min: 4, weight: 10, hint: 'Define at least four Pose waypoints.' },
-        { id: 'heading-interp', label: 'Heading interpolation on paths', pattern: /set(Linear|Constant|Tangent)HeadingInterpolation/, weight: 5, hint: 'Set a heading interpolation on every path segment.' },
-        { id: 'build-paths', label: 'Paths built in a buildPaths() method', pattern: /buildPaths\s*\(/, weight: 5, hint: 'Build the paths in buildPaths(), called from start()/init.' },
+        { id: 'pedro', label: 'Pedro Pathing follower', pattern: PEDRO_FOLLOWER, weight: 5, hint: 'Drive with Pedro Pathing\'s Follower: Constants.create(hardwareMap) and follow(follower, path).' },
+        { id: 'waypoints', label: 'At least 4 distinct poses', pattern: POSES, min: 4, weight: 10, hint: 'Define at least four poses with a PoseFactory (p.of(x, y, heading)).' },
+        { id: 'heading-interp', label: 'Heading interpolation on paths', pattern: HEADING_INTERP, weight: 5, hint: 'Chain .linear(a, b), .constant(pose) or .tangent() onto every path.' },
+        { id: 'path-methods', label: 'Each path returned by its own method', pattern: /\bPath\s+\w+\s*\([^)]*\)\s*\{/, weight: 5, hint: 'Write one method per path that returns a Path, e.g. private Path toScore() { return line(a, b).linear(a, b); }' },
         { id: 'follower-update', label: 'follower.update() once per loop', pattern: /follower\.update\s*\(\s*\)/, weight: 5, hint: 'Call follower.update() every loop.' },
+        { id: 'scheduler', label: 'Scheduler.execute() once per loop', pattern: /Scheduler\.execute\s*\(/, weight: 5, hint: 'Call Scheduler.execute() every loop so the routine advances.' },
         { id: 'telemetry', label: 'Telemetry: state, sensors, powers, loop time', pattern: /telemetry\.addData\s*\(/, min: 4, weight: 5, hint: 'Show current state, sensor values, motor powers and loop time.' },
         { id: 'fallback', label: 'Timer-based fallback / emergency park', pattern: /ElapsedTime|timeout|fallback|park/i, weight: 10, hint: 'Add a timer fallback if a path takes too long and an emergency park near the end.' },
         { id: 'alliance', label: 'Alliance mirroring / selection', pattern: /alliance|mirror|isRed|isBlue/i, weight: 5, hint: 'Support both alliances from one codebase (selection in init, mirrored poses).' }
       ],
       forbidden: COMMON_FORBIDDEN.concat([
         { id: 'double-update', label: 'follower.update() once per loop', pattern: DOUBLE_UPDATE, severity: 'WARNING', penalty: 10, hint: 'follower.update() must run exactly once per loop.' },
-        { id: 'time-based', label: 'No time-based driving', pattern: /\.setPower\s*\([^)]*\)\s*;\s*sleep\s*\(\s*\d{3,}\s*\)/, severity: 'WARNING', penalty: 10, hint: 'No time-based driving in a competition autonomous.' }
+        { id: 'time-based', label: 'No time-based driving', pattern: /\.setPower\s*\([^)]*\)\s*;\s*sleep\s*\(\s*\d{3,}\s*\)/, severity: 'WARNING', penalty: 10, hint: 'No time-based driving in a competition autonomous.' },
+        { id: 'legacy-api', label: 'Pedro 2 API', pattern: LEGACY_PEDRO, severity: 'WARNING', penalty: 10, hint: 'This is the Pedro 2 API. Pedro 3 builds paths with line()/curve() + .linear() and follows them with follow(follower, path).' }
       ])
     }
   };
 
   window.CODE_RULES = RULES;
-  window.CODE_RULES_VERSION = 'rules-1';
+  window.CODE_RULES_VERSION = 'rules-2';
 })();

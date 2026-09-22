@@ -9,9 +9,11 @@
 //     speed, each sample weighted by speed/max, so gentle low-speed driving cannot
 //     buy a score. They explain the rating on the Report Card; they never feed it.
 //
-// Wall collisions are detected here from the effect of the field-boundary clamp in
-// drive.js (the robot is pinned to a wall after moving into it at speed). Physics,
-// controls and level geometry are untouched.
+// Collisions are detected here from the effect of the field-boundary clamp in
+// drive.js (the robot is pinned to a wall after moving into it at speed) and from
+// the push-out off a field element (drive.js records the impact speed in
+// bot.zoneImpact). Either counts once per contact, at ≥ 1.5 ft/s, unless the robot
+// is within reach of a level checkpoint.
 
 const AT_SPEED_FRACTION  = 0.60;   // a frame is sampled when speed ≥ 60% of max
 const MOVING_FRACTION    = 0.05;   // below this the robot is idle (not "moving time")
@@ -77,7 +79,7 @@ let driverMetrics = {
 let _trk = {
   prevLx: 0, prevLy: 0, prevRx: 0, prevHdg: 0,
   prevVx: 0, prevVy: 0,
-  wallX: false, wallY: false,
+  wallX: false, wallY: false, zone: false,
   turn: { active: false, dir: 0, peak: 0 },
   settle: null,            // { dir, peak, releaseTs, coast, counter } after a fast turn ends
   spinStart: null,         // free drive: when |omega| went above 60°/s
@@ -207,6 +209,13 @@ function updateMetrics(dt, prevBx, prevBy) {
     if (!_trk.wallY && !excused && _trk.prevVy * Math.sign(bot.y) >= COLLISION_MIN_FTS) targets.forEach(a => a.collisions++);
     _trk.wallY = true;
   } else _trk.wallY = false;
+  // Field elements (hive frame, flowers): drive.js pushes the robot out and records
+  // the speed it arrived at. Same rule as the walls, once per contact.
+  const zoneImpact = bot.zoneImpact || 0;
+  if (zoneImpact > 0) {
+    if (!_trk.zone && !excused && zoneImpact >= COLLISION_MIN_FTS) targets.forEach(a => a.collisions++);
+    _trk.zone = true;
+  } else _trk.zone = false;
 
   // Recovery in free drive: how quickly heading settles after a spin (>60°/s)
   if (appMode === 'freedrive') {
@@ -446,7 +455,7 @@ function resetMetrics() {
   _trk = {
     prevLx: 0, prevLy: 0, prevRx: 0, prevHdg: bot.hdg,
     prevVx: 0, prevVy: 0,
-    wallX: false, wallY: false,
+    wallX: false, wallY: false, zone: false,
     turn: { active: false, dir: 0, peak: 0 },
     settle: null, spinStart: null,
   };

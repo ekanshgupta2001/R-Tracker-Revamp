@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.pedropathing.follower.Follower;
+import org.firstinspires.ftc.teamcode.pedro.Constants;
 
 class Intake {
     private DcMotor motor;
@@ -21,7 +22,7 @@ public class FixedAuto extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        follower = new Follower(hardwareMap);
+        follower = Constants.create(hardwareMap);
         intake = new Intake(hardwareMap);
         waitForStart();
 

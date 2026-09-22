@@ -1,0 +1,257 @@
+---
+title: Two Wheel
+description: A localizer that uses two odometry wheels and a REV Hub IMU
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Automatic Tuning
+
+The Two Wheel AutoTuner can automatically determine your encoder resolutions,
+encoder directions, and pod offsets.
+
+### Add the Tuner
+
+Inside your `Tuning` class, add:
+
+```java title="Tuning.java"
+@Tuner
+public static Procedure twoWheelTuner() {
+    return new TwoWheelTuner();
+}
+```
+
+Make sure `TwoWheelTuner` is imported:
+
+```java title="Tuning.java"
+import org.firstinspires.ftc.teamcode.pedro.procedures.TwoWheelTuner;
+```
+
+Build and send the updated code to the Robot Controller.
+
+### Open AutoTune
+
+While connected to the Robot Controller, open the following address in your browser: http://192.168.43.1:10158
+
+Select **Two Wheel Tuner**.
+
+### Two Wheel Setup
+
+Enter the **HardwareMap name** of the motor port that your forward pod encoder is
+connected to.
+
+For example, if the forward pod encoder is plugged into the encoder port belonging
+to `leftFront`, enter:
+
+```text
+leftFront
+```
+
+Next, enter the HardwareMap name of the motor port that your strafe pod encoder
+is connected to.
+
+For example:
+
+```text
+rightRear
+```
+
+Enter the HardwareMap name of the REV Hub IMU. This will normally be:
+
+```text
+imu
+```
+
+Next, select the **Logo Facing Direction** and **USB Facing Direction** that
+match how the Control Hub is physically mounted on your robot.
+
+For example:
+
+```java
+RevHubOrientationOnRobot.LogoFacingDirection.UP
+RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
+```
+
+Then press **Submit**.
+
+<Callout title="Important" type="info">
+  The forward and strafe encoder names are the HardwareMap names of the motor
+  ports that the odometry encoders are plugged into. They are not separate
+  HardwareMap names for the odometry pods.
+</Callout>
+
+### Encoder Resolution Setup
+
+The tuner will ask for the exact distance that you will move the robot during
+the encoder resolution tests.
+
+The default distance is:
+
+```text
+48
+```
+
+This value is in inches.
+
+Enter the distance you want to use, then press **Submit**.
+
+<Callout title="Tip" type="info">
+  Measure the test distance as accurately as possible and keep the robot straight
+  while moving it. You can also run the tests multiple times and compare the
+  results.
+</Callout>
+
+### Forward Encoder Resolution Identification
+
+Press **Continue**, then push the robot straight **forward** by the exact distance
+entered during setup.
+
+For example, if the distance was set to 48 inches, push the robot forward exactly
+48 inches.
+
+After moving the robot, stop the OpMode.
+
+The tuner will automatically calculate the forward encoder resolution used by:
+
+```java title="Constants.java"
+c.forwardTicksToInches.set(...);
+```
+
+### Strafe Encoder Resolution Identification
+
+Press **Continue**, then push the robot to the **left** by the exact distance
+entered during setup.
+
+After moving the robot to the left, stop the OpMode.
+
+The tuner will automatically calculate the strafe encoder resolution used by:
+
+```java title="Constants.java"
+c.strafeTicksToInches.set(...);
+```
+
+### Forward Direction Identification
+
+Press **Continue**, then push the robot straight **forward**.
+
+After moving the robot forward, stop the OpMode.
+
+The tuner will determine whether the **x pod**, which is the forward pod, should
+be set to `FORWARD` or `REVERSE`.
+
+The generated configuration will contain either:
+
+```java title="Constants.java"
+c.xPodDirection.set(Encoder.FORWARD);
+```
+
+or:
+
+```java title="Constants.java"
+c.xPodDirection.set(Encoder.REVERSE);
+```
+
+### Strafe Direction Identification
+
+Press **Continue**, then push the robot to the **left**.
+
+After moving the robot to the left, stop the OpMode.
+
+The tuner will determine whether the **y pod**, which is the strafe pod, should
+be set to `FORWARD` or `REVERSE`.
+
+The generated configuration will contain either:
+
+```java title="Constants.java"
+c.yPodDirection.set(Encoder.FORWARD);
+```
+
+or:
+
+```java title="Constants.java"
+c.yPodDirection.set(Encoder.REVERSE);
+```
+
+<Callout title="Important" type="info">
+  During the Strafe Direction Identification step, push the robot to the
+  **left**.
+
+  In Pedro's coordinate system, forward is +X and left is +Y.
+</Callout>
+
+<Callout title="Encoder Directions" type="warning">
+  The encoder direction used by Two Wheel may not match the direction used by
+  another localizer with the same physical odometry pod.
+
+  Pedro's `Encoder` also accounts for the direction of the `DcMotorEx` whose
+  encoder port is being used. Use the direction produced by the Two Wheel tuner.
+</Callout>
+
+### Offsets Identification
+
+Press **Continue**, then rotate the robot in place approximately **180 degrees**.
+
+Try to keep the center of the robot in approximately the same position while
+rotating.
+
+After the robot has completed the rotation, stop the OpMode.
+
+The tuner will automatically calculate the x and y pod offsets.
+
+### Applying the Results
+
+Once the tuner is complete, open the **Java** tab.
+
+AutoTune will generate a complete `TwoWheelConfig` using the values determined
+during the tuning procedure.
+
+The generated configuration includes:
+
+- Forward encoder motor name
+- Strafe encoder motor name
+- IMU HardwareMap name
+- Control Hub orientation
+- Forward ticks to inches
+- Strafe ticks to inches
+- X pod direction
+- Y pod direction
+- X pod offset
+- Y pod offset
+
+Copy the generated configuration into the `TwoWheelConfig` in your
+`Constants.java` file.
+
+<Callout title="Note" type="info">
+  Use the values generated by the tuner for your robot instead of the example
+  values shown on this page.
+</Callout>
+
+### Manual Offset Tuning
+
+Offsets can also be found manually using the diagram below. Offsets are in inches.
+
+Set your odometry pod offsets to define where they are relative to your robot's center of rotation.
+
+<img
+    className="inline-block dark:hidden"
+    src="/docs/odometry-light.png"
+    alt="Odometry Pod Offset Diagram"
+/>
+
+<img
+    className="hidden dark:inline-block"
+    src="/docs/odometry-dark.png"
+    alt="Odometry Pod Offset Diagram"
+/>
+
+## Troubleshooting
+
+If you have any problems, see the
+[troubleshooting page](/docs/pathing/guide/troubleshooting).
+
+## Testing the Localizer
+
+Once you have completed the tuning steps, you can test your localizer as described
+[on the localization page](/docs/pathing/tuning/localization#localization-test).
+
+Congratulations on successfully tuning your localizer!

@@ -10,7 +10,7 @@ var animRunning    = false;
 var pathSettings   = { reversed: false, maxVel: 60, maxAccel: 40, maxAngVel: 180 };
 
 const fieldImg = new Image();
-fieldImg.src = '../../assets/decode.webp';
+fieldImg.src = '../../assets/biobuzz.webp';
 fieldImg.onload = () => drawAll();
 
 const cvs = document.getElementById('fieldCanvas');
@@ -178,7 +178,7 @@ function drawWaypoints() {
 }
 
 function drawHeadingArrow(cx, cy, headingDeg, r, highlight) {
-  const ang = (headingDeg - 90) * Math.PI / 180;
+  const ang = -headingDeg * Math.PI / 180;   // Pedro heading: 0 = +x, CCW; canvas y points down
   const len = r + px(7);
   const ex = cx + Math.cos(ang) * len;
   const ey = cy + Math.sin(ang) * len;
@@ -205,7 +205,7 @@ function drawRobotAtPos() {
   const pos = ftcToCvs(wp.x, wp.y);
   const robotSzIn = parseFloat(document.getElementById('robotW').value) || 18;
   const r = px(robotSzIn / 2);
-  const hdgRad = wp.heading * Math.PI / 180;
+  const hdgRad = (90 - wp.heading) * Math.PI / 180;   // the sprite is drawn facing +y (screen up)
 
   ctx.save();
   ctx.translate(pos.x, pos.y);

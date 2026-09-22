@@ -1,0 +1,148 @@
+---
+title: Foresight
+description: Tuning the Foresight algorithm
+---
+
+## Automatic Tuning
+
+The Foresight AutoTuner can automatically determine your ForesightConfig, which includes max achievable velocities, brake coefficients, and kP values.
+
+### Add the Tuner
+
+Inside your `Tuning` class, add:
+
+```java title="Tuning.java"
+@Tuner
+public static Procedure foresightTuner() {
+    return new ForesightTuner((hardwareMap) -> new PinpointLocalizer(hardwareMap, Constants.localizerConfig), (hardwareMap) -> new Mecanum(hardwareMap, Constants.drivetrainConfig));
+}
+```
+
+Verify that you have the correct localizer and drivetrain set, then build/send the updated code to your Robot.
+
+### Open AutoTune
+
+While connected to the Robot Controller, open the following address in your browser: http://192.168.43.1:10158
+
+Select **Foresight Procedure**.
+
+### Forward Velocity Identification
+
+This will determine the maximum achievable forward velocity of your robot.
+
+It will run forward for the specified distance, then stop the OpMode. It will likely continue drifting past the distance, which is expected.
+
+### Strafe Velocity Identification
+
+This will determine the maximum achievable strafe velocity of your robot.
+
+It will run left for the specified distance, then stop the OpMode. It will likely continue drifting past the distance, which is expected.
+
+### Forward Deceleration Identification
+
+This will determine the natural forward deceleration of your robot.
+
+It will run forward until it reaches the specified velocity, then stop the OpMode. Usually, this will only drive a very short distance.
+
+### Strafe Deceleration Identification
+
+This will determine the natural strafe deceleration of your robot.
+
+It will run left until it reaches the specified velocity, then stop the OpMode. Usually, this will only drive a very short distance.
+
+### Heading Braking Identification
+
+This will determine the heading braking coefficients of your robot.
+
+It will stay in place, spinning back and forth, then will stop.
+
+### Heading Tuner
+
+This will autotune the heading kP of your robot.
+
+It will stay in place, spinning the robot in a direction. After a couple of seconds, it will stop.
+
+### Forward Braking Identification
+
+This will determine the forward braking coefficients of your robot.
+
+It will run forward for a specified distance, then brake.
+
+Then it will drive back to the starting position, repeating that process a few times at different powers, then will stop.
+
+### Strafe Braking Identification
+
+This will determine the strafe braking coefficients of your robot.
+
+It will run left for a specified distance, then brake.
+
+Then it will drive back to the starting position, repeating that process a few times at different powers, then will stop.
+
+### Forward Translational Tuner
+
+This will autotune the forward translational primary and secondary kP values of your robot.
+
+It will run forward for about 12-24 inches, then will stop.
+
+This will also determine the robot's coast and brake kV values.
+
+### Strafe Translational Tuner
+
+This will autotune the strafe translational primary and secondary kP values of your robot.
+
+It will run left for about 12-24 inches, then will stop.
+
+## Applying the Results
+
+Once the tuner is complete, open the **Java** tab.
+
+AutoTune will generate a `ForesightConfig` using the values determined during the tuning procedure.
+
+Copy the generated configuration into the `ForesightConfig` in your `Constants.java` file.
+
+[//]: # (The generated configuration includes:)
+
+[//]: # ()
+[//]: # (- Maximum Achievable Forward Velocity)
+
+[//]: # (- Maximum Achievable Strafe Velocity)
+
+[//]: # (- Natural Forward Deceleration)
+
+[//]: # (- Natural Strafe Deceleration)
+
+[//]: # (- Heading Braking Linear Coefficient)
+
+[//]: # (- Heading Braking Quadratic Coefficient)
+
+[//]: # (- Heading kP)
+
+[//]: # (- Forward Braking Linear Coefficient)
+
+[//]: # (- Forward Braking Quadratic Coefficient)
+
+[//]: # (- Strafe Braking Linear Coefficient)
+
+[//]: # (- Strafe Braking Quadratic Coefficient)
+
+[//]: # (- Forward Translational Primary kP)
+
+[//]: # (- Forward Translational Secondary kP)
+
+[//]: # (- Strafe Translational Primary kP)
+
+[//]: # (- Strafe Translational Secondary kP)
+
+[//]: # (- Coast kV)
+
+[//]: # (- Brake kV)
+
+## Testing the Algorithm
+
+Once you have completed the tuning steps, you can test your Follower on [testing page](/docs/pathing/tuning/test).
+
+Congratulations on successfully tuning your Follower!
+
+## Next Steps
+
+Now, you can move on to implementing your [constants](/docs/pathing/tuning/constants) into your code.

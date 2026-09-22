@@ -43,7 +43,8 @@ test('a completed level run is stored, shown on the result card, and rated by th
   const errors = [];
   await openTeleop(page, errors);
 
-  // Level 1 "Straight Shot" runs from (0,-4) to (0,4); W drives +y in field-centric mode.
+  // Level 1 "Straight Shot" runs from (-4,-4) to (-4,4), the lane left of the hive
+  // frame and inboard of the west flower; W drives +y in field-centric mode.
   expect(await driveLevel(page, 'KeyW')).toBe('result');
 
   const s = await readState(page);
@@ -155,7 +156,8 @@ test('a run at custom physics is stored but not rated', async ({ page }) => {
 test('driving into a wall at speed counts one collision; style metrics gate on time at speed', async ({ page }) => {
   const errors = [];
   await openTeleop(page, errors);
-  // Free drive: hold W for 2.5 s. The robot reaches the top wall at 8 ft/s in under a second.
+  // Free drive: hold W for 2.5 s. From the spawn in the red loading zone (-3.5,-4.5)
+  // the robot runs up the lane past the north flower and reaches the top wall in ~2 s.
   await page.keyboard.down('KeyW');
   await page.waitForTimeout(2500);
   await page.keyboard.up('KeyW');

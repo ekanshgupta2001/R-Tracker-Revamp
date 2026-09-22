@@ -1,0 +1,76 @@
+---
+title: Localization
+---
+
+import { Card, Cards } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+There are many localizers for you to choose from. If you don't have any, you
+can use your drive motor encoders.
+
+All localizers except for the OTOS localizer
+use a pose exponential method of localization, a way of turning movements
+from the robot's coordinate frame to the global coordinate frame.
+
+## Localizers
+
+**Select your localizer below and follow the instructions to tune it. Once
+your localizer is tuned, come back to this page.**
+
+<Cards>
+  <Card href="/docs/pathing/tuning/localization/pinpoint"
+        title="Pinpoint Localizer"
+        description="A localizer that uses the goBILDA Pinpoint Odometry Computer."
+  />
+  <Card href="/docs/pathing/tuning/localization/octoquad"
+        title="OctoQuad Localizer"
+        description="A localizer that uses the OctoQuad."
+  />
+  <Card href="/docs/pathing/tuning/localization/otos"
+        title="OTOS Localizer"
+        description="A localizer that uses the SparkFun Optical Tracking Odometry Sensor."
+  />
+  <Card href="/docs/pathing/tuning/localization/two-wheel"
+        title="Two WheelLocalizer"
+        description="A localizer that uses two odometry wheels."
+  />
+  <Card href="/docs/pathing/tuning/localization/three-wheel"
+        title="Three Wheel Localizer"
+        description="A localizer that uses three odometry wheels."
+  />
+  <Card href="/docs/pathing/tuning/localization/three-wheel-imu"
+        title="Three Wheel + IMU Localizer"
+        description="A localizer that uses three odometry wheels and an IMU."
+  />
+
+</Cards>
+
+## Localization Test
+
+After completing the tuning steps described in your localizer, you can test the accuracy of it.
+
+Make your tests method in Tuning.java use your tuned drivetrain and localizer. Your algorithm will be null.
+
+### [Set up your Tests method in Tuning.java](/docs/pathing/tuning/test)
+
+<Callout title="Important" type="warning">
+    Make sure to use your tuned drivetrain and localizer. Your algorithm will be null.
+</Callout>
+
+```java
+@Tuner
+    public static Procedure tests() {
+        return new Tests(hardwareMap -> new Mecanum(hardwareMap, Constants.drivetrainConfig), (hardwareMap -> new PinpointLocalizer(hardwareMap, Constants.localizerConfig)), null);
+    }
+```
+
+### Steps to Test
+
+1. While connected to the Robot Controller, open the following address in your browser: http://192.168.43.1:10158
+2. Select **Tests** Procedure and select **Localization**.
+3. You should see the robot's position on the field changing and starts at (0, 0).
+4. Observe the movements, make sure moving forward increases `x` and strafing left increases `y`.
+
+## Next Steps
+
+Now, you can move on to tuning your [Foresight](/docs/pathing/tuning/foresight) constants.

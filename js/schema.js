@@ -14,7 +14,7 @@
 (function () {
   'use strict';
 
-  var SCHEMA_VERSION = 2;
+  var SCHEMA_VERSION = 3;
   var APP_VERSION = '2.1.0';
 
   var PHASE_IDS = [
@@ -212,6 +212,24 @@
         st.overallRating = 0;
         st.grade = 'F';
       }
+      return s;
+    },
+    // v3: path planner headings changed convention. v1/v2 stored compass degrees
+    // (0 = +y/up, clockwise); v3 stores Pedro Pathing's (0 = +x, counter-clockwise)
+    // so the number a student types is the number Pedro gets. h_new = 90 - h_old,
+    // wrapped to (-180, 180]. Paths come from imported files: only a finite number
+    // is rewritten, a missing or odd heading is left exactly as it was.
+    3: function (s) {
+      if (!Array.isArray(s.paths)) return s;
+      s.paths.forEach(function (p) {
+        if (!isPlainObject(p) || !Array.isArray(p.waypoints)) return;
+        p.waypoints.forEach(function (wp) {
+          if (!isPlainObject(wp) || typeof wp.heading !== 'number' || !isFinite(wp.heading)) return;
+          var h = ((90 - wp.heading + 180) % 360 + 360) % 360 - 180;   // [-180, 180)
+          if (h === -180) h = 180;                                      // (-180, 180]
+          wp.heading = Math.round(h * 10) / 10;                         // keep one decimal
+        });
+      });
       return s;
     }
   };

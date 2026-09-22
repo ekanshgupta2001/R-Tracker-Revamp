@@ -8,11 +8,13 @@
 // parTimeMs — the time a driver must match to score 70 on a run (see
 //   js/driver-rating.js). Every entry is parSource 'simulated': referenceMs is the
 //   time an idealised reflex driver (full stick straight at the next checkpoint, no
-//   anticipation, no rotation, no braking) takes through the real physics in
+//   anticipation, no rotation, no braking; it steers around a field element only
+//   when its straight line would hit one) takes through the real physics in
 //   js/teleop/drive.js at DEFAULT_PHYSICS — `node tools/estimate-pars.mjs` — and
 //   par = 1.2 × that, rounded up to 100 ms. A human beats the reference by cutting
-//   corners inside the checkpoint radius and by facing the diagonals, which is where
-//   the S band (1.5 × par) lives. Re-run the tool whenever the physics change.
+//   corners inside the checkpoint radius and by not overshooting them, which is
+//   where the S band (1.5 × par) lives. Re-run the tool whenever the physics, the
+//   level paths or the field elements change.
 //   Replace with measured times and set parSource 'measured' when we have them.
 // timeLimit — 2 × par, rounded up to a whole second, so gold (≤ 50% of the limit)
 //   means par pace. Must equal the LEVELS entry in js/teleop/levels.js (unit-tested).
@@ -36,23 +38,23 @@
     strafe:    'strafing',
     corners:   'cornering',
     reversals: 'sharp direction changes',
-    speed:     'high-speed diagonals',
+    speed:     'high-speed lanes',
     precision: 'tight precision runs'
   };
 
   var LEVELS = [
-    { id: 1,  name: 'Straight Shot',        tier: 'Beginner',     timeLimit: 4,  checkpoints: 1,  pathLengthFt: 8.0,  corners: 0, referenceMs: 1450,  parTimeMs: 1800,  parSource: 'simulated', difficultyWeight: 1.0, focus: 'straight'  },
-    { id: 2,  name: 'Side Step',            tier: 'Beginner',     timeLimit: 4,  checkpoints: 1,  pathLengthFt: 6.0,  corners: 0, referenceMs: 1333,  parTimeMs: 1600,  parSource: 'simulated', difficultyWeight: 1.0, focus: 'strafe'    },
-    { id: 3,  name: 'L-Shape',              tier: 'Beginner',     timeLimit: 8,  checkpoints: 2,  pathLengthFt: 15.0, corners: 1, referenceMs: 3317,  parTimeMs: 4000,  parSource: 'simulated', difficultyWeight: 1.0, focus: 'corners'   },
-    { id: 4,  name: 'The Square',           tier: 'Intermediate', timeLimit: 17, checkpoints: 4,  pathLengthFt: 32.0, corners: 3, referenceMs: 6783,  parTimeMs: 8200,  parSource: 'simulated', difficultyWeight: 1.5, focus: 'corners'   },
-    { id: 5,  name: 'Zigzag',               tier: 'Intermediate', timeLimit: 14, checkpoints: 4,  pathLengthFt: 18.9, corners: 3, referenceMs: 5633,  parTimeMs: 6800,  parSource: 'simulated', difficultyWeight: 1.5, focus: 'reversals' },
-    { id: 6,  name: 'Diamond',              tier: 'Intermediate', timeLimit: 17, checkpoints: 4,  pathLengthFt: 25.6, corners: 3, referenceMs: 6767,  parTimeMs: 8200,  parSource: 'simulated', difficultyWeight: 1.5, focus: 'reversals' },
-    { id: 7,  name: 'Specimen Run',         tier: 'Advanced',     timeLimit: 14, checkpoints: 4,  pathLengthFt: 26.0, corners: 3, referenceMs: 5450,  parTimeMs: 6600,  parSource: 'simulated', difficultyWeight: 2.0, focus: 'corners'   },
-    { id: 8,  name: 'Sample Collect',       tier: 'Advanced',     timeLimit: 14, checkpoints: 4,  pathLengthFt: 21.1, corners: 3, referenceMs: 5567,  parTimeMs: 6700,  parSource: 'simulated', difficultyWeight: 2.0, focus: 'reversals' },
-    { id: 9,  name: 'Spiral In',            tier: 'Advanced',     timeLimit: 23, checkpoints: 6,  pathLengthFt: 44.0, corners: 5, referenceMs: 9283,  parTimeMs: 11200, parSource: 'simulated', difficultyWeight: 2.0, focus: 'corners'   },
-    { id: 10, name: 'Speed Demon',          tier: 'Expert',       timeLimit: 29, checkpoints: 4,  pathLengthFt: 45.4, corners: 3, referenceMs: 11800, parTimeMs: 14200, parSource: 'simulated', difficultyWeight: 2.0, focus: 'speed'     },
-    { id: 11, name: 'Threading the Needle', tier: 'Expert',       timeLimit: 25, checkpoints: 8,  pathLengthFt: 37.9, corners: 7, referenceMs: 10400, parTimeMs: 12500, parSource: 'simulated', difficultyWeight: 2.0, focus: 'precision' },
-    { id: 12, name: 'The Gauntlet',         tier: 'Expert',       timeLimit: 32, checkpoints: 10, pathLengthFt: 51.4, corners: 9, referenceMs: 12967, parTimeMs: 15600, parSource: 'simulated', difficultyWeight: 2.0, focus: 'precision' }
+    { id: 1,  name: 'Straight Shot',  tier: 'Beginner',     timeLimit: 4,  checkpoints: 1,  pathLengthFt: 8.0,  corners: 0, referenceMs: 1450,  parTimeMs: 1800,  parSource: 'simulated', difficultyWeight: 1.0, focus: 'straight'  },
+    { id: 2,  name: 'Side Step',      tier: 'Beginner',     timeLimit: 4,  checkpoints: 1,  pathLengthFt: 6.0,  corners: 0, referenceMs: 1333,  parTimeMs: 1600,  parSource: 'simulated', difficultyWeight: 1.0, focus: 'strafe'    },
+    { id: 3,  name: 'L-Shape',        tier: 'Beginner',     timeLimit: 9,  checkpoints: 2,  pathLengthFt: 15.5, corners: 1, referenceMs: 3717,  parTimeMs: 4500,  parSource: 'simulated', difficultyWeight: 1.0, focus: 'corners'   },
+    { id: 4,  name: 'The Square',     tier: 'Intermediate', timeLimit: 20, checkpoints: 4,  pathLengthFt: 32.0, corners: 3, referenceMs: 8150,  parTimeMs: 9800,  parSource: 'simulated', difficultyWeight: 1.5, focus: 'corners'   },
+    { id: 5,  name: 'Zigzag',         tier: 'Intermediate', timeLimit: 9,  checkpoints: 4,  pathLengthFt: 11.8, corners: 3, referenceMs: 3617,  parTimeMs: 4400,  parSource: 'simulated', difficultyWeight: 1.5, focus: 'reversals' },
+    { id: 6,  name: 'Garden Run',     tier: 'Intermediate', timeLimit: 16, checkpoints: 3,  pathLengthFt: 25.5, corners: 2, referenceMs: 6433,  parTimeMs: 7800,  parSource: 'simulated', difficultyWeight: 1.5, focus: 'speed'     },
+    { id: 7,  name: 'Pollen Run',     tier: 'Advanced',     timeLimit: 17, checkpoints: 4,  pathLengthFt: 26.5, corners: 3, referenceMs: 7033,  parTimeMs: 8500,  parSource: 'simulated', difficultyWeight: 2.0, focus: 'corners'   },
+    { id: 8,  name: 'Flower Dock',    tier: 'Advanced',     timeLimit: 12, checkpoints: 5,  pathLengthFt: 19.5, corners: 4, referenceMs: 4950,  parTimeMs: 6000,  parSource: 'simulated', difficultyWeight: 2.0, focus: 'precision' },
+    { id: 9,  name: 'Spiral In',      tier: 'Advanced',     timeLimit: 29, checkpoints: 7,  pathLengthFt: 52.8, corners: 6, referenceMs: 11967, parTimeMs: 14400, parSource: 'simulated', difficultyWeight: 2.0, focus: 'corners'   },
+    { id: 10, name: 'Speed Demon',    tier: 'Expert',       timeLimit: 29, checkpoints: 6,  pathLengthFt: 51.0, corners: 5, referenceMs: 11883, parTimeMs: 14300, parSource: 'simulated', difficultyWeight: 2.0, focus: 'speed'     },
+    { id: 11, name: 'Flower Circuit', tier: 'Expert',       timeLimit: 21, checkpoints: 8,  pathLengthFt: 34.0, corners: 7, referenceMs: 8750,  parTimeMs: 10500, parSource: 'simulated', difficultyWeight: 2.0, focus: 'precision' },
+    { id: 12, name: 'The Gauntlet',   tier: 'Expert',       timeLimit: 26, checkpoints: 10, pathLengthFt: 34.5, corners: 9, referenceMs: 10667, parTimeMs: 12900, parSource: 'simulated', difficultyWeight: 2.0, focus: 'precision' }
   ];
 
   var byId = {};

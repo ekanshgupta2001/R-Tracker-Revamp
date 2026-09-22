@@ -19,7 +19,7 @@ function setMode(m) {
 }
 
 function resetRobot() {
-  bot.x = 0; bot.y = 0; bot.hdg = 0;
+  bot.x = SPAWN.x; bot.y = SPAWN.y; bot.hdg = SPAWN.hdg;   // the loading zone (drive.js)
   bot.vx = 0; bot.vy = 0;
   bot.actualVx = 0; bot.actualVy = 0; bot.actualOmega = 0;
   bot.vFwd = 0; bot.vStr = 0;   // robot-frame state (drive.js)

@@ -1,0 +1,19 @@
+{
+  "pages": [
+    "index",
+    "prerequisites",
+    "installation",
+    "tuning",
+    "faq",
+    "pedro3",
+    "---Guide---",
+    "...guide",
+    "---Reference---",
+    "...reference",
+    "---Other---",
+    "branding"
+  ],
+  "root": true,
+  "title": "Pedro Pathing",
+  "description": "Autonomous Path Follower"
+}

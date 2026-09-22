@@ -1,0 +1,26 @@
+---
+title: Logging
+description: How to log Pedro's states
+---
+
+Make sure you've read and understood [Debugging Guide](/docs/pathing/guide/debugging) before reading this page.
+
+Pedro Pathing has built-in integration with logging software. Here's how to use it:
+
+## Logging
+You can add software to the Follower that automatically logs the FollowerLog during each `follower.update()`.
+
+A logger must be of the form `Consumer<FollowerLog>`, meaning that it must have a way to consume both a value.
+
+You may add as many loggers as you like to the follower, as it stores them in a collection. Here is an example:
+
+```java
+Follower follower = Constants.create(hardwareMap)
+                        .withLogger(log -> telemetry.addData("Follower Logs", log.toString()))
+                        .withLogger(value -> customLogger.log("I love Pedro", value));
+```
+
+<Callout title="Common Mistake" type="warning">
+    The `Follower` will NOT update your logger for you. For example, will still need to call `telemetry.update()` yourself each loop.
+</Callout>
+

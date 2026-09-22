@@ -1,0 +1,154 @@
+---
+title: OctoQuad
+description: A localizer that uses the Digital Chicken Labs OctoQuad MK2 sensor.
+---
+
+<Callout title="Prerequisites" type="info">
+    Ensure that two odometry pods are connected: one that is parallel to the length
+    of your chassis (forward) and another that is perpendicular to your chassis length (lateral).
+    Make sure your OctoQuad is configured to type `OctoQuadFTC` instead of `OctoQuadFWv3`.
+</Callout>
+
+<Callout title="Common Mistakes" type="warning">
+    * Make sure the OctoQuad is plugged into an I2C port **other than port 0**. This is because the Control Hub's built in IMU uses port 0.
+</Callout>
+
+## Automatic Tuning
+
+The OctoQuad AutoTuner can automatically determine your OctoQuadConfig, which includes pod ports, directions, offsets, resolution, etc.
+
+### Add the Tuner
+
+Inside your `Tuning` class, add:
+
+```java title="Tuning.java"
+@Tuner
+public static Procedure octoquadTuner() {
+    return new OctoQuadTuner();
+}
+```
+
+Build and send the updated code to your Robot.
+
+### Open AutoTune
+
+While connected to the Robot Controller, open the following address in your browser: http://192.168.43.1:10158
+
+Select **OctoQuad Procedure**.
+
+### OctoQuad Setup
+
+First, enter the **HardwareMap name** of your OctoQuad.
+
+For example, if your OctoQuad is named `octoquad` in your Configuration on your Driver Hub, enter:
+
+```text
+octoquad
+```
+in the **HardwareMap Name** field.
+
+Then, enter the ports that your forward and strafe pods are plugged into on the OctoQuad.
+
+Next, select the odometry pod type that matches the pods installed on your robot.
+
+Finally, you may either use the default i2c recovery mode (recommended), or select a different i2c recovery mode if that is desired.
+
+You may now press **Submit**.
+
+<Callout title="Note" type="info">
+    The Four Bar and Swing Arm pods are both goBILDA pods. If you are not using goBILDA pods, select the **Custom** option.
+</Callout>
+
+### Heading Scalar Identification
+Input the number of times you wish to turn the robot. More spins will likely make this scalar more accurate to your robot, but the default number is 10.
+
+Start the test, and turn your robot exactly the number of times specified. Then stop the OpMode.
+
+<Callout title="Tip" type="info">
+    Line the robot up against reference lines on the field to ensure you aren't off by a couple degrees due to human error.
+</Callout>
+
+### Custom Resolution Identification
+
+If you are using a **custom pod type**, you will be prompted to run a test to determine the encoder resolution of your pods.
+
+You should input the distance in inches that your want to push your robot forward in the test, the default is 48 inches.
+
+Start the test, and then push the robot forward the distance you specified. After the robot has moved, stop the OpMode.
+
+### Forward Direction Identification
+
+Press **Continue**, then push the robot straight **forward**.
+
+After moving the robot forward, stop the OpMode.
+
+The tuner will determine whether the **x pod**, which is the forward pod, should be set to `FORWARD` or `REVERSED`.
+
+### Strafe Direction Identification
+
+Press **Continue**, then push the robot to the **left**.
+
+After moving the robot to the left, stop the OpMode.
+
+The tuner will determine whether the **y pod**, which is the strafe pod, should be set to `FORWARD` or `REVERSED`.
+
+<Callout title="Important" type="warning">
+    During the Strafe Direction Identification step, push the robot to the **left**.
+</Callout>
+
+### Offsets Identification
+
+Press **Continue**, then rotate the robot in place **180 degrees** counterclockwise.
+
+After the robot has completed the rotation, stop the OpMode.
+
+The tuner will automatically calculate the x and y pod offsets.
+
+### Applying the Results
+
+Once the tuner is complete, open the **Java** tab.
+
+AutoTune will generate an `OctoQuadConfig` using the values determined during the tuning procedure.
+
+Copy the generated configuration into the `OctoQuadConfig` in your `Constants.java` file.
+
+The generated configuration includes:
+
+- HardwareMap name
+- Pod ports
+- Pod type
+- Heading scalar
+- i2c recovery mode
+- Pod resolutions
+- X pod direction
+- Y pod direction
+- X pod offset
+- Y pod offset
+
+### Manual Offset Tuning
+
+Offsets can also be found manually using the diagram below. Offsets are in inches.
+
+Set your odometry pod offsets to define where they are relative to your robot's center of rotation.
+
+<img
+    className="inline-block dark:hidden"
+    src="/docs/odometry-light.png"
+    alt="Odometry Pod Offset Diagram"
+/>
+
+<img
+    className="hidden dark:inline-block"
+    src="/docs/odometry-dark.png"
+    alt="Odometry Pod Offset Diagram"
+/>
+
+## Testing the Localizer
+
+Once you have completed the tuning steps, you can test your localizer as described [on the localization page](/docs/pathing/tuning/localization#localization-test).
+
+Congratulations on successfully tuning your localizer!
+
+## Troubleshooting
+
+If you have any problems, see the [troubleshooting page](/docs/pathing/guide/troubleshooting).

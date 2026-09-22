@@ -765,7 +765,7 @@ public void loop() {
           { text: 'Only when the subsystem is actively being used', correct: false, explanation: 'Even "idle" subsystems need update() to maintain their state (like holding position or running a PID loop).' }
         ]
       },
-      mentorTip: 'This season, a critical bug involved follower.update() being called both directly AND inside robot.periodic(). The robot got double-updated every cycle, causing erratic path following. Know exactly where your update() calls are.'
+      mentorTip: 'This season, a critical bug involved follower.update() being called both directly AND inside robot.update(). The robot got double-updated every cycle, causing erratic path following. Know exactly where your update() calls are.'
     },
     {
       id: 'common-pitfalls',
@@ -1039,7 +1039,7 @@ lastError = error;
     {
       id: 'odometry',
       title: 'Odometry: Knowing Where You Are',
-      learn: 'PID controls one axis. But autonomous needs your robot\'s full <strong>pose</strong> — its (x, y) position and heading on the field. Drive wheel encoders can estimate this, but wheel slip ruins accuracy.<br><br><strong>Dead wheels</strong> (odometry pods) solve this: unpowered wheels with encoders that roll freely on the ground. Because they\'re not driven, they don\'t slip. Two parallel wheels measure forward/backward and turning. One perpendicular wheel measures strafing. Together they track your pose every loop cycle.',
+      learn: 'PID controls one axis. But autonomous needs your robot\'s full <strong>pose</strong> — its (x, y) position and heading on the field. Drive wheel encoders can estimate this, but wheel slip ruins accuracy.<br><br><strong>Dead wheels</strong> (odometry pods) solve this: unpowered wheels with encoders that roll freely on the ground. Because they\'re not driven, they don\'t slip. Two parallel wheels measure forward/backward and turning. One perpendicular wheel measures strafing. Together they track your pose every loop cycle.<br><br>Pedro Pathing calls this part the <strong>localizer</strong> — a goBILDA Pinpoint, a SparkFun OTOS, an OctoQuad or plain two- or three-wheel pods — and the follower reads its pose every loop.',
       check: {
         question: 'Why are dead wheels more accurate than drive wheel encoders for position tracking?',
         type: 'multiple_choice',
@@ -1053,48 +1053,86 @@ lastError = error;
     },
     {
       id: 'pedro-pathing',
-      title: 'Pedro Pathing: Smooth Autonomous Paths',
-      learn: 'Pedro Pathing lets you define smooth paths using <strong>Bezier curves</strong> instead of jerky "drive forward, turn, drive forward" sequences.<br><br><strong>BezierLine</strong> — straight line between two poses. <strong>BezierCurve</strong> — smooth arc using control points that "pull" the path without the robot passing through them.<br><br><strong>PathChains</strong> combine multiple segments. The <strong>Follower</strong> reads odometry, calculates how far off the path the robot is, and outputs motor corrections — like a 2D PID controller for position and heading simultaneously.',
+      title: 'Pedro Pathing 3: Poses and Paths',
+      learn: 'Pedro Pathing follows smooth <strong>Bezier</strong> paths instead of jerky "drive forward, turn, drive forward" sequences. It has its own coordinate system: <strong>inches</strong>, origin at the <strong>bottom-left</strong> corner of the field, +x to the right, +y up the field, and heading <strong>0 = facing +x</strong>, counter-clockwise positive.<br><br>A <strong>PoseFactory</strong> makes every pose for a class and decides whether headings are in degrees or radians: <code>p.of(x, y, heading)</code>. Paths come from the static <code>Paths</code> helpers: <code>line(a, b)</code> is a straight line, <code>curve(a, control…, b)</code> is a curve pulled toward its control poses without ever passing through them (<code>through()</code> exists for points the robot must visit). Chain a <strong>heading interpolation</strong> onto the path: <code>.linear(a, b)</code> turns the robot smoothly from a\'s heading to b\'s, <code>.constant(pose)</code> holds one heading, <code>.tangent()</code> faces along the path (the default if you chain nothing), <code>.facingPoint(pose)</code> keeps looking at one spot. <code>path(p1, p2)</code> joins paths together.<br><br>Each path lives in its own method that returns a <code>Path</code>. The <strong>Follower</strong> — drivetrain + localizer + the Foresight algorithm — comes from <code>Constants.create(hardwareMap)</code>, the class your tuning fills in.',
       code: {
         language: 'java',
-        snippet: `// Define waypoints as Poses (x, y, heading in radians)
-Pose startPose = new Pose(24, 12, Math.toRadians(90));
-Pose scorePose = new Pose(48, 72, Math.toRadians(135));
+        snippet: `import static com.pedropathing.api.Paths.*;   // line(), curve(), path()
 
-// Straight line path
-PathChain scorePath = follower.pathBuilder()
-    .addPath(new BezierLine(startPose, scorePose))
-    .setLinearHeadingInterpolation(
-        startPose.getHeading(), scorePose.getHeading())
-    .build();
+// One factory per class decides the heading unit for every pose
+private final PoseFactory p = PoseFactory.degrees();
 
-// Curved path with control point
-Pose controlPt = new Pose(45, 60, 0);
-Pose pickupPose = new Pose(21, 75, Math.toRadians(180));
+// x, y in inches from the bottom-left corner; heading 0 = +x, counter-clockwise
+private final Pose startPose   = p.of(24, 12, 90);
+private final Pose scorePose   = p.of(48, 72, 135);
+private final Pose controlPose = p.of(45, 60, 0);   // shapes the curve, never visited
+private final Pose pickupPose  = p.of(21, 75, 180);
 
-PathChain pickupPath = follower.pathBuilder()
-    .addPath(new BezierCurve(scorePose, controlPt, pickupPose))
-    .setLinearHeadingInterpolation(
-        scorePose.getHeading(), pickupPose.getHeading())
-    .build();`
+// Straight line; the heading turns smoothly from 90 to 135 on the way
+private Path toScore() {
+    return line(startPose, scorePose).linear(startPose, scorePose);
+}
+
+// Curve pulled toward controlPose
+private Path toPickup() {
+    return curve(scorePose, controlPose, pickupPose).linear(scorePose, pickupPose);
+}`
       },
       check: {
-        question: 'What does a control point in a BezierCurve do?',
+        question: 'What does the control pose in curve(start, control, end) do?',
         type: 'multiple_choice',
         options: [
-          { text: 'The robot drives to the control point, stops, then continues to the end', correct: false, explanation: 'The robot never passes through the control point. It only influences the shape of the curve.' },
-          { text: 'It "pulls" the path into a smooth arc without the robot actually passing through it', correct: true, explanation: 'Correct! Control points act like magnets that bend the path into a curve. The robot follows the smooth arc but never visits the control point itself. This creates natural, flowing movement.' },
-          { text: 'It sets the speed of the robot at that point', correct: false, explanation: 'Speed is controlled by the follower\'s PID, not by control points. Control points only affect the shape of the path.' },
-          { text: 'It tells the robot which direction to face', correct: false, explanation: 'Heading is set by setLinearHeadingInterpolation(), not by control points. Control points only affect the spatial curve.' }
+          { text: 'The robot drives to the control pose, stops, then continues to the end', correct: false, explanation: 'The robot never passes through a control pose. It only influences the shape of the curve.' },
+          { text: 'It "pulls" the path into a smooth arc without the robot actually passing through it', correct: true, explanation: 'Correct! Control poses act like magnets that bend the path into a curve. The robot follows the smooth arc but never visits the control pose itself. This creates natural, flowing movement.' },
+          { text: 'It sets the speed of the robot at that point', correct: false, explanation: 'Speed comes from the Foresight algorithm and its constraints, not from control poses. Control poses only affect the shape of the path.' },
+          { text: 'It tells the robot which direction to face', correct: false, explanation: 'Heading comes from the interpolation you chain onto the path — .linear(), .constant() or .tangent() — not from control poses. Control poses only affect the spatial curve.' }
         ]
       }
     },
     {
       id: 'follower-rules',
-      title: 'Critical Follower Rules',
-      learn: 'These rules will save you hours of debugging:<br><br><strong>1.</strong> Call <code>follower.update()</code> exactly <strong>once</strong> per loop. Not zero, not twice. A double update doubles all PID corrections, causing oscillation.<br><strong>2.</strong> Don\'t set motor powers directly while the follower is running — it fights the follower.<br><strong>3.</strong> Always set heading interpolation, or the robot may spin unexpectedly during curves.<br><strong>4.</strong> Use <code>followPath(path, true)</code> — the <code>true</code> means hold position at the end.<br><strong>5.</strong> Call <code>setStartingPose()</code> before building any paths.',
+      title: 'Following a Path',
+      learn: 'Pedro 3 follows paths through <strong>Ivy</strong>, its command library. You need three lines of it here (Advanced 1 covers the rest): <code>Scheduler.reset()</code> in <code>init()</code>, <code>schedule(follow(follower, path))</code> in <code>start()</code>, and <code>Scheduler.execute()</code> next to <code>follower.update()</code> in <code>loop()</code>. The <code>follow()</code> command finishes on its own when the follower stops tracking the path, so the next command in a sequence starts right after it.<br><br>These rules will save you hours of debugging:<br><br><strong>1.</strong> Call <code>follower.update()</code> exactly <strong>once</strong> per loop. Not zero, not twice. A double update doubles every correction, causing oscillation.<br><strong>2.</strong> Call <code>Scheduler.execute()</code> once per loop too — commands only advance when it runs.<br><strong>3.</strong> Call <code>Scheduler.reset()</code> in <code>init()</code>. The scheduler is static, so commands from the last OpMode would otherwise carry over.<br><strong>4.</strong> Call <code>follower.setPose(startPose)</code> before START, and make sure it matches where the robot really sits.<br><strong>5.</strong> Never call <code>follower.manual()</code> or set drive powers while a path is running — it fights the follower.<br><strong>6.</strong> Chain a heading interpolation onto every path, or the robot faces along the path (tangent) whether you meant it or not.',
+      code: {
+        language: 'java',
+        snippet: `import com.pedropathing.follower.Follower;
+import com.pedropathing.ivy.Scheduler;
+import org.firstinspires.ftc.teamcode.pedro.Constants;
+
+import static com.pedropathing.ivy.Scheduler.schedule;
+import static com.pedropathing.ivy.pedro.PedroCommands.follow;
+
+@Autonomous
+public class ExampleAuto extends OpMode {
+    private Follower follower;
+    // poses and path methods from the previous lesson go here
+
+    @Override
+    public void init() {
+        Scheduler.reset();                        // rule 3
+        follower = Constants.create(hardwareMap);
+        follower.setPose(startPose);              // rule 4
+    }
+
+    @Override
+    public void start() {
+        schedule(follow(follower, toScore()));
+    }
+
+    @Override
+    public void loop() {
+        follower.update();                        // rule 1: once
+        Scheduler.execute();                      // rule 2: once
+
+        telemetry.addData("X", follower.pose().x());
+        telemetry.addData("Y", follower.pose().y());
+        telemetry.addData("Heading", Math.toDegrees(follower.pose().heading()));
+        telemetry.addData("Mode", follower.mode());
+    }
+}`
+      },
       check: {
-        question: 'Your path following is erratic — the robot overshoots every waypoint. You check and find follower.update() is called in your loop AND inside robot.periodic(). What\'s the fix?',
+        question: 'Your path following is erratic — the robot overshoots every waypoint. You check and find follower.update() is called in your loop AND inside your Robot class\'s update(). What\'s the fix?',
         type: 'multiple_choice',
         options: [
           { text: 'Add more kD to compensate for the extra updates', correct: false, explanation: 'Adding D treats the symptom, not the cause. The root problem is double-updating.' },
@@ -1103,20 +1141,56 @@ PathChain pickupPath = follower.pathBuilder()
           { text: 'Increase the path tolerance', correct: false, explanation: 'Larger tolerance would make it less precise, but the oscillation from double-updating would still happen.' }
         ]
       },
-      mentorTip: 'This season, the robot kept colliding with walls during path following. Everyone blamed the library. The root cause was kF set ~40x too high in the drive constants. Lesson: when path following fails, check your constants before blaming the library.'
+      mentorTip: 'This season, the robot kept colliding with walls during path following. Everyone blamed the library. The root cause was a feedforward gain in Constants.java set ~40x too high. Lesson: when path following fails, check your constants before blaming the library.'
     },
     {
       id: 'tuning-process',
-      title: 'Practical Tuning Process',
-      learn: 'Don\'t guess. Follow this order:<br><br><strong>1. Calibrate odometry first.</strong> Push robot 48 inches — does odometry report 48? Turn 360\u00b0 — does heading return to 0? Fix these before anything else.<br><strong>2. Tune translational PID.</strong> Straight line forward. Increase kP until it reaches target, add kD for overshoot.<br><strong>3. Tune heading PID.</strong> Turn in place to a target heading. Same process.<br><strong>4. Test simple paths first.</strong> One straight line. Then one curve. Then two chained segments. Build complexity gradually.<br><strong>5. Consistency test.</strong> Run the path 5 times. Same spots every time = success.',
+      title: 'Tuning with AutoTune',
+      learn: 'Don\'t guess, and don\'t hand-tune PIDs. Pedro 3 tunes itself through <strong>AutoTune</strong>, a web page the robot hosts: connect to the robot\'s WiFi and open <code>http://192.168.43.1:10158</code>. Run its procedures in this order and paste each generated block into <code>Constants.java</code>:<br><br><strong>1. Drivetrain.</strong> Enter the four motor names; the tuner spins each wheel and you confirm its direction. Paste the <code>MecanumConfig</code>.<br><strong>2. Localization.</strong> Push the robot forward, strafe it left, spin it 180 degrees; the tuner works out pod directions and offsets. Paste the <code>PinpointConfig</code> (or your localizer\'s), then run the Localization Test: driving forward must increase x, strafing left must increase y.<br><strong>3. Foresight.</strong> The path-following algorithm measures its own top speeds, decelerations, braking and correction gains. Paste the <code>ForesightConfig</code>.<br><strong>4. Tests.</strong> Line Test (48 in out and back), then Curved Test. Fix localization before touching any Foresight value.<br><strong>5. Consistency.</strong> Run your own path 5 times. Same spots every time = success.',
+      code: {
+        language: 'java',
+        snippet: `// Constants.java — filled in by AutoTune, read by every OpMode
+public class Constants {
+    public static MecanumConfig drivetrainConfig = new MecanumConfig(c -> {
+        c.frontLeftName.set("lf");
+        c.backLeftName.set("lr");
+        c.frontRightName.set("rf");
+        c.backRightName.set("rr");
+        c.frontLeftDirection.set(DcMotorSimple.Direction.REVERSE);
+        c.backLeftDirection.set(DcMotorSimple.Direction.REVERSE);
+        c.frontRightDirection.set(DcMotorSimple.Direction.FORWARD);
+        c.backRightDirection.set(DcMotorSimple.Direction.FORWARD);
+    });
+
+    public static PinpointConfig localizerConfig = new PinpointConfig(c -> {
+        c.name.set("pinpoint");
+        c.xPodOffset.set(2.187);      // inches, from the AutoTune offsets step
+        c.yPodOffset.set(-4.572);
+        c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        c.yPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD);
+    });
+
+    public static ForesightConfig foresightConfig = new ForesightConfig(c -> {
+        // pasted from the Foresight tuner: velocities, decelerations, gains
+    });
+
+    public static Follower create(HardwareMap h) {
+        return new Follower(
+            new PinpointLocalizer(h, localizerConfig),
+            new Mecanum(h, drivetrainConfig),
+            new Foresight(foresightConfig)
+        );
+    }
+}`
+      },
       check: {
         question: 'Your robot follows paths but drifts slightly left over long distances. What should you check FIRST?',
         type: 'multiple_choice',
         options: [
-          { text: 'Heading PID constants', correct: false, explanation: 'PID tuning is step 2-3. The most common cause of consistent drift is a calibration error, not a tuning problem.' },
-          { text: 'Odometry calibration — specifically the dead wheel track width measurement', correct: true, explanation: 'Correct! Consistent drift in one direction usually means your track width (distance between left and right dead wheels) is slightly wrong. Even 1mm of error compounds into heading drift over long paths. Calibrate first, tune second.' },
-          { text: 'Motor directions', correct: false, explanation: 'Wrong motor directions cause obvious problems (spinning in circles), not subtle drift. Drift is almost always a calibration issue.' },
-          { text: 'Battery voltage', correct: false, explanation: 'Low battery causes slower movement, not directional drift. Consistent left drift points to a mechanical or calibration issue.' }
+          { text: 'The Foresight heading gain', correct: false, explanation: 'Foresight is step 3. The most common cause of consistent drift is the localizer, not the algorithm — tune Foresight only once localization is right.' },
+          { text: 'Localization — run the Localization Test and check the pod directions and offsets', correct: true, explanation: 'Correct! Consistent drift in one direction usually means the localizer is lying: a reversed pod direction, a wrong offset, or swapped pods. Even a small offset error compounds over long paths. Fix localization first, then re-run the Foresight tuner.' },
+          { text: 'Motor directions', correct: false, explanation: 'Wrong motor directions cause obvious problems (spinning in circles, driving off in the wrong direction), not subtle drift.' },
+          { text: 'Battery voltage', correct: false, explanation: 'Low battery causes slower movement, not directional drift. Consistent left drift points to a localization issue.' }
         ]
       }
     }
@@ -1251,8 +1325,8 @@ telemetry.addData("Auto State", currentPhase);
 telemetry.addData("Drive | L/R Power", "%.2f / %.2f",
     leftPower, rightPower);
 telemetry.addData("Pose | X, Y, H", "%.1f, %.1f, %.1f",
-    pose.getX(), pose.getY(),
-    Math.toDegrees(pose.getHeading()));
+    pose.x(), pose.y(),
+    Math.toDegrees(pose.heading()));
 telemetry.addData("Intake State", intake.getCurrentState());
 telemetry.addData("Loop Time (ms)", "%.1f",
     loopTimer.milliseconds());`
@@ -1308,13 +1382,13 @@ public void rotateTo(double targetAngle) {
     {
       id: 'bug-double-update',
       title: 'Bug Pattern: The Double Update',
-      learn: '<strong>Symptom:</strong> Path following is erratic. Robot overshoots, oscillates, or moves at double speed.<br><br><strong>Root cause:</strong> <code>follower.update()</code> is called twice per loop — once directly and once inside a method like <code>robot.periodic()</code>. Each call calculates motor powers, so two calls means double correction — equivalent to doubling all PID constants.<br><br><strong>How to spot it:</strong> Search your ENTIRE codebase for every <code>.update()</code> call. If any subsystem is updated in more than one place, that\'s your bug.',
+      learn: '<strong>Symptom:</strong> Path following is erratic. Robot overshoots, oscillates, or moves at double speed.<br><br><strong>Root cause:</strong> <code>follower.update()</code> is called twice per loop — once directly and once inside a method like <code>robot.update()</code>. Each call calculates motor powers, so two calls means double correction — equivalent to doubling all PID constants.<br><br><strong>How to spot it:</strong> Search your ENTIRE codebase for every <code>.update()</code> call. If any subsystem is updated in more than one place, that\'s your bug.',
       check: {
         question: 'Your robot oscillates wildly during path following. You search the codebase and find follower.update() in two places. What do you do?',
         type: 'multiple_choice',
         options: [
           { text: 'Reduce all PID constants by half to compensate', correct: false, explanation: 'That treats the symptom, not the cause. You\'d have to remember this hack forever, and it breaks if you ever fix the real problem.' },
-          { text: 'Remove one of the two update() calls', correct: true, explanation: 'Correct! The follower should be updated exactly once per loop cycle. Remove the duplicate. If it\'s inside robot.periodic(), either remove it there or remove the direct call — but never both.' },
+          { text: 'Remove one of the two update() calls', correct: true, explanation: 'Correct! The follower should be updated exactly once per loop cycle. Remove the duplicate. If it\'s inside robot.update(), either remove it there or remove the direct call — but never both.' },
           { text: 'Add a boolean flag to skip every other update', correct: false, explanation: 'Creative but wrong. You\'d be running at half the update rate, which introduces its own control problems. Just remove the duplicate.' },
           { text: 'Switch to a different path following library', correct: false, explanation: 'The library is fine. The bug is in how you\'re calling it. Switching libraries would just move the problem.' }
         ]
@@ -1427,77 +1501,151 @@ if (useTimerFallback) {
      ══════════════════════════════════════════════════════════════════════ */
   var ADVANCED_1_CONTENT = {
     type: 'advanced',
-    title: 'Command-Based Programming',
-    estimatedTime: '20 minutes',
+    title: 'Command-Based Programming with Ivy',
+    estimatedTime: '30 minutes',
     sections: [
       {
         title: 'Why Command-Based?',
-        content: 'In Phases 2-5, you built subsystems with state machines and called <code>update()</code> every loop. This works well for simple robots. But as your robot gets more complex — 6+ subsystems, multi-step autonomous sequences, mechanisms that need to coordinate timing — manually managing all those state transitions becomes fragile.<br><br>Command-Based architecture solves this with a <strong>scheduler</strong> that handles orchestration. Instead of writing state machines yourself, you define small, reusable <strong>commands</strong> and let the scheduler run them.<br><br><strong>The key mental shift:</strong> In your current architecture, the OpMode decides what happens and when. In command-based, you declare <em>what should happen</em> and the scheduler figures out the <em>when</em>.'
+        content: 'In Phases 2-5, you built subsystems with state machines and called <code>update()</code> every loop. This works well for simple robots. But as your robot gets more complex — 6+ subsystems, multi-step autonomous sequences, mechanisms that need to coordinate timing — manually managing all those state transitions becomes fragile.<br><br>Command-Based architecture solves this with a <strong>scheduler</strong> that handles orchestration. Instead of writing state machines yourself, you define small, reusable <strong>commands</strong> and let the scheduler run them.<br><br><strong>The key mental shift:</strong> In your current architecture, the OpMode decides what happens and when. In command-based, you declare <em>what should happen</em> and the scheduler figures out the <em>when</em>.<br><br>Pedro Pathing ships its own command library, <strong>Ivy</strong>, and its docs recommend a command framework over a hand-written state machine. You already used three lines of it in Phase 4 to follow a path; this module is the rest.'
       },
       {
         title: 'Commands: The Building Blocks',
-        content: 'A command is a small, self-contained action with four lifecycle methods: <code>initialize()</code> runs once when starting, <code>execute()</code> runs every loop, <code>isFinished()</code> returns true when done, and <code>end(interrupted)</code> handles cleanup.',
-        code: `public class DriveToDistance extends CommandBase {
-    private final Drivetrain drivetrain;
-    private final double targetCM;
+        content: 'A command is a small, self-contained action with four lifecycle methods: <code>start()</code> runs once when the command is scheduled, <code>execute()</code> runs every loop, <code>done()</code> returns true when the command is finished, and <code>end(endCondition)</code> cleans up — whether the command finished, was interrupted or was suspended.<br><br>Most commands need no class at all. Build them with <code>Command.build()</code> and lambdas; every setter is optional. To reuse a command with different parameters, wrap the builder in a static method — each call returns a fresh, stateless command. Only a command that must keep its own internal state needs the class form (<code>implements Command</code>, with <code>start</code>/<code>execute</code>/<code>done</code>/<code>end</code> plus <code>requirements()</code> and the priority methods).',
+        code: `// Builder form: the normal way to write a command
+Command raiseArm = Command.build()
+    .setStart(() -> pidController.setTarget(RAISED_ARM_POSITION))
+    .setExecute(() -> {
+        armMotor.setPower(pidController.calculate(armMotor.getCurrentPosition()));
+    })
+    .setDone(() -> Math.abs(pidController.getTarget() - armMotor.getCurrentPosition()) < 10)
+    .setEnd(endCondition -> armMotor.setPower(0))
+    .requiring(armMotor);
 
-    public DriveToDistance(Drivetrain drivetrain, double targetCM) {
-        this.drivetrain = drivetrain;
-        this.targetCM = targetCM;
-        addRequirements(drivetrain);
-    }
-
-    @Override
-    public void initialize() { drivetrain.resetEncoders(); }
-
-    @Override
-    public void execute() {
-        double error = targetCM - drivetrain.getDistanceCM();
-        drivetrain.drive(error * 0.02, 0);
-    }
-
-    @Override
-    public boolean isFinished() {
-        return Math.abs(targetCM - drivetrain.getDistanceCM()) < 1.0;
-    }
-
-    @Override
-    public void end(boolean interrupted) { drivetrain.stop(); }
+// Reusable form: a static method that returns a fresh command each call
+public static Command raiseArm(double target) {
+    return Command.build()
+        .setStart(() -> pid.setTarget(target))
+        .setExecute(() -> armMotor.setPower(pid.calculate(armMotor.getCurrentPosition())))
+        .setDone(() -> Math.abs(target - armMotor.getCurrentPosition()) < 10)
+        .setEnd(endCondition -> armMotor.setPower(0))
+        .requiring(armMotor);
 }`
       },
       {
-        title: 'Command Composition: The Real Power',
-        content: 'The real power is composing commands — chaining them sequentially or running them in parallel:',
-        code: `// Sequential: drive, then intake, then drive back
-Command autoSequence = new SequentialCommandGroup(
-    new DriveToDistance(drivetrain, 100),
-    new RunIntake(intake, 0.8).withTimeout(2.0),
-    new DriveToDistance(drivetrain, -100)
+        title: 'Running Commands: The Scheduler',
+        content: 'The <strong>Scheduler</strong> is a static class — there is no instance to create. <code>schedule(cmd)</code> (or <code>cmd.schedule()</code>) hands it a command. <code>Scheduler.execute()</code>, called once per loop, runs one cycle of every active command: <code>execute()</code> on each, checks which are done, starts queued commands whose requirements freed up. Commands scheduled together run <strong>in parallel</strong> by default. <code>cmd.cancel()</code> stops one early. <code>Scheduler.reset()</code> clears everything — call it at the top of every OpMode, because the scheduler is static and commands would otherwise carry over from the previous OpMode.',
+        code: `import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.pedropathing.ivy.Scheduler;
+
+import static com.pedropathing.ivy.commands.Commands.*;
+import static com.pedropathing.ivy.groups.Groups.*;
+
+@TeleOp
+public class MyOpMode extends LinearOpMode {
+    @Override
+    public void runOpMode() {
+        //Since the scheduler is static, we need to reset it before each OpMode
+        //so commands don't carry over from one OpMode to the next
+        Scheduler.reset();
+
+        // Initialize hardware
+        DcMotor armMotor = hardwareMap.get(DcMotor.class, "arm");
+        Servo claw = hardwareMap.get(Servo.class, "claw");
+
+        // Define commands
+        Command raiseArm = Command.build()
+            .setExecute(() -> armMotor.setPower(0.5))
+            .setDone(() -> armMotor.getCurrentPosition() > 1000)
+            .setEnd(endCondition -> armMotor.setPower(0))
+            .requiring(armMotor);
+
+        Command openClaw = instant(() -> claw.setPosition(1.0));
+
+        // Compose: raise the arm, wait 200ms, then open the claw
+        Command sequence = sequential(
+                raiseArm,
+                waitMs(200),
+                openClaw
+        );
+
+        waitForStart();
+
+        // Schedule the sequence when the OpMode starts
+        schedule(sequence);
+
+        while (opModeIsActive()) {
+            // Run the scheduler each loop
+            Scheduler.execute();
+        }
+    }
+}`
+      },
+      {
+        title: 'Composition: The Real Power',
+        content: 'A composition is a command made of commands, so they nest freely. <code>sequential(a, b, c)</code> runs them one after another (or <code>a.then(b)</code>); <code>parallel(a, b)</code> runs them together and finishes when all are done (<code>a.with(b)</code>); <code>race(a, b)</code> finishes when the <em>first</em> one does and cancels the rest; <code>deadline(d, a, b)</code> finishes when <code>d</code> does. Utilities from <code>Commands</code>: <code>instant(() -> …)</code> runs once, <code>waitMs(n)</code> pauses, <code>waitUntil(cond)</code> waits for a condition, <code>infinite(() -> …)</code> runs until cancelled. Decorators return a new command: <code>.until(cond)</code> (a race against <code>waitUntil</code>), <code>.unless(cond)</code> skips it. There is no timeout decorator — race against <code>waitMs()</code> instead.',
+        code: `import static com.pedropathing.ivy.commands.Commands.*;
+import static com.pedropathing.ivy.groups.Groups.*;
+
+// A timed intake: setEnd() stops the motor however the command ends
+public static Command runIntake(Intake intake, double seconds) {
+    ElapsedTime timer = new ElapsedTime();
+    return Command.build()
+        .setStart(() -> timer.reset())
+        .setExecute(() -> intake.run(1.0))
+        .setDone(() -> timer.seconds() >= seconds)
+        .setEnd(endCondition -> intake.run(0))
+        .requiring(intake);
+}
+
+// Sequential: drive, intake for 2 s, drive back
+Command autoSequence = sequential(
+    follow(follower, toPickup()),
+    runIntake(intake, 2.0),
+    follow(follower, toScore())
 );
 
-// Parallel: spin up shooter WHILE driving
-Command scorePrep = new ParallelCommandGroup(
-    new DriveToDistance(drivetrain, 50),
-    new SpinUpShooter(shooter, 290)
+// Parallel: spin up the shooter WHILE driving
+Command scorePrep = parallel(follow(follower, toShoot()), shooter.spinUp(290));
+
+// Give up on a path after 5 s
+Command scoreOrSkip = race(follow(follower, toScore()), waitMs(5000));`
+      },
+      {
+        title: 'Pedro Commands',
+        content: 'Ivy ships two commands for the follower (<code>import static com.pedropathing.ivy.pedro.PedroCommands.*;</code>). <code>follow(follower, path)</code> drives the path and finishes as soon as the follower stops actively tracking it; the heading comes from the interpolation you chained onto the path. <code>hold(follower)</code> holds the current position; <code>hold(follower, p.of(120, 80, 0))</code> goes to a pose and holds it. Both are ordinary commands, so they compose with everything else. Remember: the follower still needs <code>follower.update()</code> every loop next to <code>Scheduler.execute()</code>.',
+        code: `Command auto = sequential(
+    follow(follower, shootPreloads),
+    Shooter.shoot(), // Call the shoot Command.
+    instant(() -> claw.open()),
+    parallel( // Follow the path while running the intake.
+        follow(follower, pickupCloseSpikemark),
+        instant(() -> intake.activate())
+    )
 );`
       },
       {
-        title: 'When to Use Command-Based vs Phase 2 Architecture',
-        content: '<strong>Stick with Phase 2 architecture when:</strong> 3 or fewer subsystems, fewer than 10 auto steps, team is still learning, you want explicit control over timing.<br><br><strong>Consider command-based when:</strong> 5+ subsystems needing coordination, complex parallel autonomous actions, multiple programmers working on different sequences, frequent state transition bugs.<br><br>Command-based isn\'t "better" — it\'s more abstract. That abstraction helps at scale but adds complexity for simple robots. Most FTC teams do fine without it.'
+        title: 'Requirements and Priorities',
+        content: '<code>.requiring(x)</code> declares that a command uses <code>x</code> — any object: a motor, a servo, or your own subsystem class. Ivy has no subsystem base class; a requirement is whatever you pass in. When a new command needs something a running command already holds, priorities decide (default 0). A higher priority wins and the running command\'s <strong>InterruptedBehavior</strong> applies: <code>END</code> (default) stops it for good, <code>SUSPEND</code> pauses it and resumes it later. A lower priority triggers the newcomer\'s <strong>BlockedBehavior</strong>: <code>CANCEL</code> (default) or <code>QUEUE</code>. Equal priority uses <strong>ConflictBehavior</strong>: <code>OVERRIDE</code> (default — the newest command takes over), <code>QUEUE</code> or <code>CANCEL</code>. In every case <code>end()</code> runs on the command that lost, which is why cleanup belongs in <code>setEnd()</code>. Requirements are optional — plenty of teams ship without them — but they turn "the intake can only do one thing at a time" into a rule the scheduler enforces.'
       },
       {
-        title: 'FTC Libraries',
-        content: '<strong>FTCLib</strong> is the most popular FTC command-based library, modeled after WPILib (FRC\'s framework). If you adopt command-based, start by refactoring one subsystem at a time. Don\'t rewrite everything at once.'
+        title: 'When to Use Command-Based vs Phase 2 Architecture',
+        content: '<strong>Stick with Phase 2 architecture when:</strong> 3 or fewer subsystems, fewer than 10 auto steps, team is still learning, you want explicit control over timing.<br><br><strong>Consider command-based when:</strong> 5+ subsystems needing coordination, complex parallel autonomous actions, multiple programmers working on different sequences, frequent state transition bugs.<br><br>Command-based isn\'t "better" — it\'s more abstract. That abstraction helps at scale but adds complexity for simple robots. For path following the choice is made for you: Pedro\'s own docs recommend Ivy\'s <code>follow()</code> over a hand-written state machine. For the rest of the robot it is your team\'s call.'
+      },
+      {
+        title: 'Installing Ivy',
+        content: 'Ivy is one Gradle line in <code>build.dependencies.gradle</code>, next to the Pedro Pathing dependencies (the <code>repo.dairy.foundation</code> repository is already there for Pedro):<br><br><code>implementation \'com.pedropathing.ivy:pedro:1.1.1\'</code><br><br><strong>FTCLib</strong> and <strong>SolversLib</strong> are the older command libraries, modelled on WPILib (FRC\'s framework): the same ideas under different names, and no built-in follow command. If you adopt command-based, start by refactoring one subsystem at a time. Don\'t rewrite everything at once.'
       }
     ],
     deliverable: {
       title: 'Command-Based Refactor',
-      description: 'Take your Phase 4 autonomous and refactor it using FTCLib\'s command-based framework.',
+      description: 'Take your Phase 4 autonomous and rebuild it as Ivy commands.',
       requirements: [
-        'Convert drivetrain subsystem to extend SubsystemBase',
-        'Write a FollowPath command wrapping Pedro Pathing followPath() + isBusy()',
-        'Write a RunIntake command that runs for a specified duration',
-        'Compose a SequentialCommandGroup replicating your original autonomous',
+        'Scheduler.reset() in init and Scheduler.execute() once per loop, next to follower.update()',
+        'Every path followed with follow(follower, path) from PedroCommands',
+        'A runIntake(seconds) command built with Command.build() that stops the motor in setEnd()',
+        'Every command declares what it uses with .requiring(...)',
+        'The routine is one sequential(...) composition — no state enum',
         'Compare both versions: which is easier to read and modify?'
       ]
     }
@@ -1535,11 +1683,9 @@ Command scorePrep = new ParallelCommandGroup(
         title: 'Fail-Safe Design Patterns',
         content: 'Three essential patterns:',
         code: `// Pattern 1: Timer-Based Fallback
-// If a path takes too long, skip it and park
-if (autoTimer.getElapsedTimeSeconds() > 5.0) {
-    follower.breakFollowing();
-    pathState = PARK;
-}
+// If a path takes too long, give up on it and move on to parking
+Command scoreOrSkip = race(follow(follower, toScore()), waitMs(5000));
+Command routine = sequential(scoreOrSkip, follow(follower, park()));
 
 // Pattern 2: Sensor Validation
 double distance = distanceSensor.getDistance(DistanceUnit.CM);
@@ -1547,10 +1693,12 @@ if (Double.isNaN(distance) || distance > 300) {
     useTimerFallback = true;
 }
 
-// Pattern 3: Autonomous End Protection
-if (autoTimer.getElapsedTimeSeconds() > 27.0) {
-    // <3 seconds left — emergency park!
-    pathState = EMERGENCY_PARK;
+// Pattern 3: Autonomous End Protection (in loop())
+if (autoTimer.seconds() > 27.0 && !parking) {
+    // <3 seconds left — cancel the routine and park!
+    routine.cancel();
+    schedule(follow(follower, park()));
+    parking = true;
 }`
       },
       {
@@ -1597,10 +1745,10 @@ if (autoTimer.getElapsedTimeSeconds() > 27.0) {
         'Fallback behavior if sensor returns garbage data'
       ]},
       { category: 'Path Following (Phase 4)', items: [
-        'Pedro Pathing for all driving with at least 4 distinct waypoints',
-        'Heading interpolation on every path segment',
-        'follower.update() called exactly once per loop',
-        'Poses defined as class fields, paths built in buildPaths() from start()'
+        'Pedro Pathing 3 for all driving with at least 4 distinct poses from a PoseFactory',
+        'A heading interpolation (.linear / .constant / .tangent) chained on every path',
+        'follower.update() and Scheduler.execute() each called exactly once per loop',
+        'Poses as class fields, each path returned by its own method, the routine composed with sequential()'
       ]},
       { category: 'Robustness (Phase 5)', items: [
         'Telemetry displaying: current state, sensor values, motor powers, loop time',
@@ -1609,7 +1757,7 @@ if (autoTimer.getElapsedTimeSeconds() > 27.0) {
         'Survives 5 consecutive runs without crashing'
       ]},
       { category: 'Strategy (Advanced)', items: [
-        'Alliance mirroring — works on both sides from one codebase',
+        'Alliance mirroring — one codebase for both sides (a mirrored PoseFactory)',
         'Alliance selection via gamepad during init_loop()',
         'Documented expected value calculation'
       ]}
@@ -1617,7 +1765,7 @@ if (autoTimer.getElapsedTimeSeconds() > 27.0) {
     deliverables: [
       'The complete code — all subsystem files, Robot class, and autonomous OpMode',
       'Strategy document (1 page) — scoring strategy, expected value, fallback plan, risks',
-      'Tuning log — odometry calibration, PID constants, accuracy observations, bugs fixed',
+      'Tuning log — AutoTune results, Constants.java values, accuracy observations, bugs fixed',
       'Live demo — 5 consecutive runs, at least 4 scoring within 80% of predicted value',
       'Code review defense — explain any part of your code when asked'
     ],
@@ -1700,7 +1848,7 @@ if (autoTimer.getElapsedTimeSeconds() > 27.0) {
     });
 
     // 5. FTC-specific types
-    var types = ['DcMotor', 'Servo', 'HardwareMap', 'LinearOpMode', 'OpMode', 'Gamepad', 'Telemetry', 'ElapsedTime', 'Range', 'Pose', 'BezierLine', 'BezierCurve', 'PathChain', 'Follower', 'ColorSensor', 'ColorRangeSensor', 'DistanceSensor', 'TouchSensor', 'TeleOp', 'Autonomous', 'DistanceUnit', 'Direction', 'Math'];
+    var types = ['DcMotor', 'Servo', 'HardwareMap', 'LinearOpMode', 'OpMode', 'Gamepad', 'Telemetry', 'ElapsedTime', 'Range', 'Pose', 'PoseFactory', 'Path', 'Paths', 'Follower', 'Constants', 'Command', 'Scheduler', 'PedroCommands', 'EndCondition', 'ColorSensor', 'ColorRangeSensor', 'DistanceSensor', 'TouchSensor', 'TeleOp', 'Autonomous', 'DistanceUnit', 'Direction', 'Math'];
     types.forEach(function(t) {
       var regex = new RegExp('\\b(' + t + ')\\b', 'g');
       tokenized = tokenized.replace(regex, '<span class="syn-type">$1</span>');

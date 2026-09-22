@@ -175,14 +175,14 @@
       scene.add(w);
     });
 
-    // Collision zone boxes (semi-transparent burgundy)
+    // Field element boxes (semi-transparent burgundy), as tall as the element
     var zoneMat = new THREE.MeshStandardMaterial({
       color: 0x800020, transparent: true, opacity: 0.15, roughness: 0.5
     });
 
     if (typeof COLLISION_ZONES !== 'undefined') {
       COLLISION_ZONES.forEach(function (z) {
-        var zH = 6;
+        var zH = z.height || 6;
         var g = new THREE.BoxGeometry(z.w * SCALE, zH, z.h * SCALE);
         var m = new THREE.Mesh(g, zoneMat);
         m.position.set(z.x * SCALE, zH / 2, -z.y * SCALE);

@@ -1,0 +1,54 @@
+---
+title: Path Creation
+---
+
+### Creating Paths
+Paths can be created by using the static methods in the Paths class. The following methods are available:
+* `Paths.line(Pose start, Pose end)`: Creates a straight line path from the start pose to the end pose.
+* `Paths.curve(Pose... poses)`: Creates a Bézier curve path from the start pose (first pose) to the end pose (last pose), using the other provided poses as control points.
+* `Paths.path(Path... paths)`: Creates a path that is a concatenation of the provided paths.
+
+### Examples of creating paths
+
+Let's use these poses to demonstrate each of the path creation methods:
+```java
+PoseFactory poseFactory = PoseFactory.degrees();
+
+Pose start = poseFactory.of(0, 0, 180); // 180 degrees 
+Pose end = poseFactory.of(10, 10, 90); // 90 degrees 
+Pose control = poseFactory.of(10, 20, 45); // 45 degrees 
+```
+
+<Callout title="Tip" type="info">
+    Using a PoseFactory is the recommended way to create poses, as it allows for easier management of poses and transformations.
+    More info on the [Pose Factory](posefactory) page.
+</Callout>
+
+```java
+Path line = Paths.line(start, end);
+
+Path curve = Paths.curve(start, control, end);
+
+Path path = Paths.path(line, curve);
+```
+
+### Recommended path usage
+We recommend using methods to return paths rather than storing them as fields. For example:
+
+```java
+public Path linePath() {
+    return Paths.line(start, end);
+}
+
+public Path curvePath() {
+    return Paths.curve(start, control, end);
+}
+
+public Path compoundPath() {
+    return Paths.path(linePath(), curvePath());
+}
+```
+This is the same format that the visualiser returns code. 
+### Interpolation
+
+Reference the [Interpolation](interpolation) page for information on the usage and types of available interpolations.

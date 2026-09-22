@@ -1,10 +1,17 @@
 // ── R-Tracker TeleOp — Robot Drawing ─────────────────────────────────────
 
+// BIOBUZZ (2026-27) field elements the robot can hit. Feet from the field centre,
+// +y north; x/y is the centre, w/h the footprint, `height` inches for the 3D view.
+// Dimensions from the Competition Manual §9 (nominal, ±1 in); the flowers sit on
+// the perimeter wall at tile seams 2 and 4, read off the field image. Tape zones
+// (loading zones, gardens) are not obstacles. Solid in Free Drive and in Levels;
+// hitting one at speed counts as a collision (js/teleop/metrics.js).
 const COLLISION_ZONES = [
-  { x: 5,   y: 5.25, w: 2,   h: 1.5 },  // Blue GOAL
-  { x: -5,  y: 5.25, w: 2,   h: 1.5 },  // Red GOAL
-  { x: 5.8, y: 3,    w: 0.6, h: 6   },  // Blue RAMP
-  { x: -5.8,y: 3,    w: 0.6, h: 6   },  // Red RAMP
+  { name: 'HIVE frame',     x: 0,     y: 0,     w: 3.25, h: 4.12, height: 44 },  // 38.95 × 49.46 in base; the cells overhang above robot height (pivots 43.95 in up)
+  { name: 'FLOWER (north)', x: -2,    y: 5.75,  w: 0.83, h: 0.5,  height: 22 },  // 10 in along the wall × 6 in out; top ring 21.5 in up
+  { name: 'FLOWER (east)',  x: 5.75,  y: 2,     w: 0.5,  h: 0.83, height: 22 },
+  { name: 'FLOWER (south)', x: 2,     y: -5.75, w: 0.83, h: 0.5,  height: 22 },
+  { name: 'FLOWER (west)',  x: -5.75, y: -2,    w: 0.5,  h: 0.83, height: 22 },
 ];
 
 let debugCollisions = false;

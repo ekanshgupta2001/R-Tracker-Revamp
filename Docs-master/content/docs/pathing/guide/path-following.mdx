@@ -1,0 +1,77 @@
+---
+title: Following a Path
+description: How to follow a path with Ivy
+---
+
+Now that we have a path, we can make the robot follow it.
+
+If you need help creating Poses, see [Creating a Pose](/docs/pathing/guide/pose-creation). If you need help creating a path, see [Creating a Path](/docs/pathing/guide/path-creation).
+
+A path can be followed directly with the `Follower` or by using Ivy.
+
+## Following a Path
+
+[Ivy](/docs/ivy) provides a `follow()` command that lets path following be used like any other Ivy command.
+
+The advantage of this is that you don't have to manually check if the path has finished before running more paths or commands. 
+
+Ivy does not come included by default, so make sure it is installed before using this method.
+
+Add the imports (after installing Ivy):
+
+```java
+import com.pedropathing.ivy.Scheduler;
+
+import static com.pedropathing.ivy.Scheduler.schedule;
+import static com.pedropathing.ivy.pedro.PedroCommands.follow;
+```
+
+Reset the scheduler inside `init()`:
+
+```java
+@Override
+public void init() {
+    Scheduler.reset();
+
+    follower = Constants.create(hardwareMap);
+    follower.setPose(startPose);
+}
+```
+
+Then schedule the path when the OpMode starts:
+
+```java
+@Override
+public void start() {
+    schedule(follow(follower, park()));
+    // using the same park path from the last page
+}
+```
+
+Both the follower and scheduler need to be updated:
+
+```java
+@Override
+public void loop() {
+    follower.update();
+    Scheduler.execute();
+}
+```
+
+The Ivy `follow()` command finishes when the follower is no longer busy.
+
+<Callout title="Tip" type="info">
+    Ivy is useful when you want to combine paths with other robot commands. See the [Ivy documentation](/docs/ivy) for more information.
+</Callout>
+
+<Callout type="warning" title="Using other command libraries">
+We **strongly** recommend using Ivy for its simplicity. Creating a custom [follow](/docs/ivy/pedro-commands) command takes time and can introduce bugs. If you are new to Pedro Pathing and command frameworks, stick with Ivy. We also recommend using Pedro Pathing with a command framework rather than a manual state machine.
+</Callout>
+
+### Next Step
+
+We now know how to create and follow a path.
+
+Next, we'll use these pieces to build a larger autonomous routine.
+
+Continue to [Autonomous Usage](/docs/pathing/guide/auto-usage).

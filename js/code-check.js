@@ -49,7 +49,7 @@
     phase4: [
       'Uses encoder-based movement (not time-based)',
       'Implements PID or PIDF control for at least one mechanism',
-      'Uses Pedro Pathing or equivalent path following with BezierLine/BezierCurve',
+      'Uses Pedro Pathing 3 paths built with line()/curve() and a heading interpolation',
       'Has at least 3 waypoints in the autonomous path',
       'Uses pose-based navigation (x, y, heading)'
     ],
@@ -61,10 +61,10 @@
       'Demonstrates systematic debugging approach'
     ],
     advanced_command: [
-      'Drivetrain subsystem extends SubsystemBase',
-      'A FollowPath command wraps Pedro Pathing followPath() and isBusy()',
-      'A RunIntake command runs for a specified duration',
-      'A SequentialCommandGroup replicates the original autonomous',
+      'Scheduler.reset() in init and Scheduler.execute() once per loop',
+      'Every path followed with follow(follower, path) from PedroCommands',
+      'A runIntake command with a duration, built with Command.build() and stopped in setEnd()',
+      'One sequential(...) composition replaces the original state machine',
       'Includes a short comparison of both versions (readability, modifiability)'
     ],
     advanced_strategy: [

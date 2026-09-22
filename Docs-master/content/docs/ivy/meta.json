@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "index",
+    "what-are-commands",
+    "requirements-and-priorities",
+    "command-builder",
+    "command-compositions",
+    "utilities-and-decorators",
+    "class-api",
+    "creating-opmodes",
+    "pedro-commands",
+    "example-repos"
+  ],
+  "root": true,
+  "title": "Ivy",
+  "description": "Control Flow Framework"
+}

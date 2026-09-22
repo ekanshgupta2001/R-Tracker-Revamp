@@ -1,0 +1,83 @@
+---
+title: Creating a Pose
+description: How to create poses with PoseFactory
+---
+
+<Callout title="Prerequisites" type="warning">
+    This page assumes that you have read and completed the previous step: [Setting Up Your Autonomous](/docs/pathing/guide/setting-up-auto). Read it if you haven't already.
+</Callout>
+
+Now that we have our Autonomous class and follower setup, it's time to start pathing. To do this we need to use `Pose`s. 
+
+A `Pose` represents a position and heading on the field using three values: `x`, `y`, and `heading`. We use the [Pedro Coordinates](/docs/pathing/reference/coordinates) system instead of the [FTC official coordinate system](https://ftc-docs.firstinspires.org/en/latest/game_specific_resources/field_coordinate_system/field-coordinate-system.html).
+
+### Creating a PoseFactory
+
+We'll use a `PoseFactory` to create our Poses.
+
+First, add these imports:
+
+```java
+import com.pedropathing.api.PoseFactory;
+import com.pedropathing.math.Pose;
+```
+
+For this guide, we'll use degrees for our heading values. Add this line after where you inititialized your follower:
+
+```java
+public class ExampleAuto extends OpMode {
+
+    private Follower follower; // you added this before
+    private final PoseFactory p = PoseFactory.degrees(); // add this
+```
+
+If you prefer radians, you can use `PoseFactory.radians()` instead.
+
+### Creating the Poses
+
+We'll create two Poses specifying the startpoint and endpoint of the path we want the robot to follow.
+Poses should be declared outside of any method, so that they are accessible anywhere:
+
+```java
+private final PoseFactory p = PoseFactory.degrees(); // the factory we added before, we are still at the top of the class
+
+// our poses
+private final Pose startPose = p.of(24, 24, 0);
+private final Pose park = p.of(48, 48, 90);
+```
+
+The values are entered in this order:
+
+```java
+p.of(x, y, heading);
+```
+
+So `startPose` is at `(24, 24)` facing `0` degrees, and `park` is at `(48, 48)` facing `90` degrees.
+
+### Setting the Starting Pose
+
+The follower also needs to know where the robot starts on the field.
+
+Add `setPose()` after creating the follower in your `init` method:
+
+```java
+@Override
+public void init() {
+    follower = Constants.create(hardwareMap);
+    follower.setPose(startPose);
+}
+```
+
+The Pose given to `setPose()` should match where the robot is actually placed at the start of the OpMode.
+
+<Callout title="Tip" type="info">
+    See [Coordinates](/docs/pathing/reference/coordinates) for more information about the field coordinate system and headings.
+</Callout>
+
+For more technical information about `PoseFactory`, see the [Pose Factory](/docs/pathing/reference/posefactory) reference.
+
+### Next Step
+
+Now that we have `startPose` and `park`, we can create a path between them.
+
+Continue to [Creating a Path](/docs/pathing/guide/path-creation).
