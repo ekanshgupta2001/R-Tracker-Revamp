@@ -128,15 +128,17 @@ R-Tracker/
 ├── js/
 │   ├── schema.js               # RTSchema — state shape, LIMITS, migrate, validateImport
 │   ├── store.js                # RTStore — the only persistence layer
-│   ├── grader.js               # gradeTheoryAnswer()  (Phase 4; stub until then)
-│   ├── code-check.js           # checkCode(), getPhaseRequirements()  (Phase 5; stub until then)
+│   ├── grader.js               # gradeTheoryAnswer() — rubric-2 (copy / keyword-dump / negation flags)
+│   ├── java-structure.js       # RTJavaStructure — tolerant Java tokenizer + block/statement parser (never executes)
+│   ├── code-check.js           # checkCode(), getPhaseRequirements() — structural-2 engine (gates → criteria → forbidden)
 │   ├── bkt.js / report.js / report-templates.js / charts.js   (Phase 3)
 │   ├── level-table.js          # per-level par time, difficulty weight, focus (rating input)
 │   ├── driver-rating.js        # RTDriverRating — run score, windowed rating, grade (pure)
 │   ├── sidebar.js              # Sidebar nav, theme toggle, Export/Import progress
 │   ├── curriculum/
 │   │   ├── lessons.js          # Lesson content (Phases 1-5, Advanced, Capstone) + renderer
-│   │   └── code-rules.js       # Per-phase structural rules (Phase 5)
+│   │   ├── code-rules.js       # rules-3: per-phase gates / weighted criteria / forbidden rules (functions over the parse model)
+│   │   └── phase5-kit.js       # RT_PHASE5_KIT — the "Debug Under Pressure" program with 5 seeded, checkable bugs
 │   ├── teleop/                 # field, robot, drive, timer, input, metrics, levels, coach, view3d, ui
 │   ├── pathplanner/            # canvas, waypoints, animation, codegen, ui
 │   ├── strategy.js
@@ -213,6 +215,12 @@ R-Tracker/
   and confirms before overwriting.
 - Schema 3 (2026-09-22): path-planner waypoint headings are Pedro's convention (0 = +x,
   counter-clockwise); migration 3 maps older files' compass headings through `90 − h`.
+- Schema 4 (2026-09-24): non-phase0 phases carry `checkedWith` (the code-check `graderVersion` that
+  last passed). **Import rule, every schema version, no legacy exemption:** a phase marked `verified`
+  must carry a passing review (`result.status === 'graded' && passed && score >= 75` from a
+  `structural-N/rules-M` grader; phase0: `passed && score >= 80`) or `validateImport` downgrades it
+  to `in_progress` with a warning (the sidebar shows the warnings after import). `reviews[]` is
+  capped at 10 but the newest passing review is never evicted.
 
 ### Path planner
 - `js/pathplanner/codegen.js` emits a Pedro Pathing 3 class: `PoseFactory.degrees()`, one `Path`
@@ -224,12 +232,45 @@ R-Tracker/
 - Phase 0: Java quiz (10 MC, 80% to pass, unlocks Phase 1). Phases 1–2: code lessons with MC checks.
   Phases 3–5: theory sections first (written answers, rubric-graded), then code sections. Advanced 1–2:
   reference modules. Capstone: project brief with rubric.
-- Theory: each `written_answer` check carries a `rubric` (required concepts with accepted phrasings,
-  disqualifiers, threshold, per-concept hints) or `graded: false` ("Reflection — share with your
-  mentor"). Pass = `score >= 70`.
-- Code: `checkCode(phaseId, code)` runs the per-phase rules in `js/curriculum/code-rules.js` and returns
-  `{ status, passed, score, summary, strengths, issues, requirements_met, next_steps }`. Auto-verify
-  needs `status === 'graded' && passed && score >= 75`. It is a structural check, and the UI says so.
+- Theory (`js/grader.js`, `rubric-2`): each `written_answer` check carries a `rubric` (required
+  concepts with accepted phrasings, disqualifiers, threshold, per-concept hints, optional
+  `negatable: true` per concept) and `minWords` (30/40), or `graded: false` ("Reflection — share with
+  your mentor"). Before concepts are scored the answer is rejected (score ≤ 30, `flags[]`) when it is
+  too short, when its 4-gram overlap with question + `learn` + hints + labels + phrases is ≥ 0.50
+  (`copied`; 0.35–0.50 only adds `copy-note`), when its stopword ratio is < 0.18 or ≥ 80% of its words
+  are rubric phrases (`keyword-dump`); a `negatable` concept preceded by a negator within 2 tokens is
+  `negated:<id>`. Calibrated on `tests/fixtures/theory-samples.json` (83 samples incl. 35 attacks;
+  correct answers reach at most 0.25 overlap / 0.52 density) — keep the originals at 48/48 and no
+  correct sample flagged. Resubmitting a passed answer logs `graded: false` (no BKT credit);
+  10 s cooldown (`RT_THEORY_COOLDOWN_MS` override).
+- Code (`js/code-check.js` `structural-2` + `js/curriculum/code-rules.js` `rules-3`):
+  `checkCode(phaseId, code, { references, kit })` parses the submission with `RTJavaStructure`
+  (`js/java-structure.js`: tokens → block tree → statements → flat indexes of types/fields/methods/
+  calls/assigns/conds, name-based reachability from the OpMode entry methods, bounded `flowsTo`
+  dataflow, 5-gram shingle `coverage`; never throws, never executes) and runs **gates** (`parses`,
+  `opmode-present` — CRITICAL in every phase —, `declared-identifiers`, `lesson-copy` at ≥ 0.85 of
+  the phase's lesson snippets; `kit-similarity` for phase5), then weighted **criteria** with partial
+  credit (`credit` 0..1, `evidence: [{line, text}]`, weights sum to 100; only live code — reachable
+  and not under `if (false)` — earns credit; hardware must be used, values must flow to `setPower`,
+  poses must be distinct, calls must sit in the loop/init bodies the rule names), then **forbidden**
+  rules. Returns `{ status, passed, score, summary, strengths, issues, requirements_met[{id,
+  requirement, met, credit, explanation, evidence, hint}], next_steps, gates[], graderVersion }`.
+  Auto-verify needs `status === 'graded' && passed && score >= 75` and no CRITICAL gate. The page's
+  "Checked automatically" list is generated from `getPhaseRequirements(pid)`; only the mentor
+  checklist is hand-written. `RTCodeCheck.H` holds the shared helpers rules are written against.
+- Phase 5 is checked against the shipped program `RT_PHASE5_KIT` (lesson section
+  `debug-under-pressure`, "Load into the deliverable editor"): five seeded bugs (double
+  `follower.update()`, inverted `isBusy()`, kP = 50, a guard that can never pass, no
+  `telemetry.update()`), each a 15-point criterion with `fixed` / `changed` (deleted instead of
+  fixed, 0.5) / `broken` states, plus 25 points of bug notes; the submission must keep ≥ 0.50 of the
+  program's 5-gram shingles. Auto-verify therefore needs 4 of 5 bugs. Mentors may still substitute
+  their own program via mentor review.
+- MC checks: options are shuffled per render (`RTLessons.mcOrder`, seeded by phase/section/attempt),
+  a wrong click locks the check for 20 s (`RT_MC_LOCK_MS`) and re-shuffles. Phase 0 quiz: questions
+  and options shuffled per attempt (`rtQuizOrder`), nothing revealed until a pass, 60 s retry wait
+  (`RT_QUIZ_RETRY_WAIT_MS`), no re-logging on reload; the static key is balanced across A–D.
+- A phase verified under an older `graderVersion` keeps its status; the deliverable card shows
+  "Checked with an earlier rubric" until a re-check passes (`checkedWith`). Nothing is revoked.
 - A `submitted` deliverable (submit for mentor review) unlocks the next phase but is never shown as
   "verified".
 - Every graded check appends to `curriculum.attempts`; BKT reads only `graded: true` events.
@@ -288,6 +329,14 @@ R-Tracker/
 ## Testing
 - `npm test` runs Playwright; `playwright.config.js` starts `tests/serve.js` on `http://127.0.0.1:5501` (its own port, so VS Code Live Server on 5500 never interferes).
   `npm run serve` starts the same server for manual use. `npm run test:unit` runs fixture tests.
+- Grading regression sets, all under `tests/`: `java-structure.test.js` (parser incl. fuzz and a
+  50 KB timing budget), `code-check.test.js` (every phase's good/bad/stuffed/deadcode/partial/renamed
+  fixture in `fixtures/code-samples/` plus `labels.json` agreement ≥ 90%, lesson-snippet paste flagged,
+  the never-executes source scan), `phase5-kit.test.js` (one-bug-fixed matrix must be diagonal),
+  `grader.test.js` (theory fixtures + attacks), `schema-import.test.js` (verified-without-proof
+  downgrade), `quiz.spec.js`, and the MC-lock / hint-paste cases in `curriculum.spec.js`. To run
+  Playwright specs concurrently with `npm test`, use a scratch config that re-exports
+  `playwright.config.js` with another port, an absolute `webServer.command` and `cwd`.
 - Tests navigate with `page.goto`, never by clicking sidebar links (the page-transition script delays
   navigation). Wait on app globals with `waitForFunction`, never on `networkidle`.
 

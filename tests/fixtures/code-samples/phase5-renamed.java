@@ -1,4 +1,4 @@
-// fixture: kit with all five bugs fixed in place, five "// BUG: ... because ..." notes and an observed/hypothesis/verified note; expect all bug checks fixed and the phase5 check to pass (>= 90)
+// fixture: the fully fixed kit with robot->bot, state->phase, timer->clock renamed and the five BUG notes; expect all bug checks fixed and a pass with at most a WARNING kit-similarity gate
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -68,7 +68,7 @@ class Lift {
     }
 }
 
-// Everything on the robot, built once from the hardware map
+// Everything on the bot, built once from the hardware map
 class Robot {
     final Follower follower;
     final Intake intake;
@@ -100,9 +100,9 @@ public class BuzzAuto extends LinearOpMode {
     private final Pose scorePose = p.of(40, 72, 45);
     private final Pose parkPose = p.of(60, 108, 90);
 
-    private Robot robot;
-    private State state = State.TO_SCORE;
-    private final ElapsedTime timer = new ElapsedTime();
+    private Robot bot;
+    private State phase = State.TO_SCORE;
+    private final ElapsedTime clock = new ElapsedTime();
 
     private Path toScore() {
         return line(startPose, scorePose).linear(startPose, scorePose);
@@ -115,50 +115,50 @@ public class BuzzAuto extends LinearOpMode {
     @Override
     public void runOpMode() {
         Scheduler.reset();
-        robot = new Robot(hardwareMap);
-        robot.follower.setPose(startPose);
+        bot = new Robot(hardwareMap);
+        bot.follower.setPose(startPose);
         telemetry.addData("Status", "Ready");
         telemetry.update();
 
         waitForStart();
-        schedule(follow(robot.follower, toScore()));
+        schedule(follow(bot.follower, toScore()));
 
         while (opModeIsActive()) {
-            robot.follower.update();
+            bot.follower.update();
             Scheduler.execute();
-            robot.update();
+            bot.update();
 
-            switch (state) {
+            switch (phase) {
                 case TO_SCORE:
-                    // At the basket: raise the lift and start the scoring timer
+                    // At the basket: raise the lift and start the scoring clock
                     // BUG: the isBusy() check was inverted, so the transition fired while the path was still running; negated it because busy means still driving
-                    if (!robot.follower.isBusy()) {
-                        state = State.SCORE;
-                        robot.lift.goTo(LIFT_HIGH);
-                        timer.reset();
+                    if (!bot.follower.isBusy()) {
+                        phase = State.SCORE;
+                        bot.lift.goTo(LIFT_HIGH);
+                        clock.reset();
                     }
                     break;
                 case SCORE:
                     // Spit the piece out for 1.5 s, then drive to park
-                    if (timer.seconds() < 1.5) {
-                        robot.intake.run(-1.0);
+                    if (clock.seconds() < 1.5) {
+                        bot.intake.run(-1.0);
                     } else {
-                        robot.intake.run(0);
-                        schedule(follow(robot.follower, toPark()));
-                        state = State.TO_PARK;
+                        bot.intake.run(0);
+                        schedule(follow(bot.follower, toPark()));
+                        phase = State.TO_PARK;
                     }
                     break;
                 case TO_PARK:
-                    if (!robot.follower.isBusy()) state = State.DONE;
+                    if (!bot.follower.isBusy()) phase = State.DONE;
                     break;
                 case DONE:
                     break;
             }
 
-            telemetry.addData("State", state);
-            telemetry.addData("Pose", robot.follower.pose());
-            telemetry.addData("Lift", robot.lift.position());
-            telemetry.addData("Busy", robot.follower.isBusy());
+            telemetry.addData("State", phase);
+            telemetry.addData("Pose", bot.follower.pose());
+            telemetry.addData("Lift", bot.lift.position());
+            telemetry.addData("Busy", bot.follower.isBusy());
             // BUG: telemetry values never reached the screen because telemetry.update() was missing from the loop, so the display stayed frozen
             telemetry.update();
         }

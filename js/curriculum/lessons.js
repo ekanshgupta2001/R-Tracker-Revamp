@@ -472,13 +472,13 @@ public class CleanTeleOp extends OpMode {
       check: {
         question: 'A color sensor reads red = 200 in your workshop but red = 110 at competition, even though you\'re reading the exact same red game element. (1) Name at least two physical factors that change the reading (think about light, distance, angle, surface). (2) Explain why a fixed threshold like if (red > 150) is unreliable from one room to the next.',
         type: 'written_answer',
-        minLength: 50,
+        minWords: 30,
         rubric: {
           threshold: 0.67,
           concepts: [
-            { id: 'lighting', label: 'ambient lighting differs between rooms', hint: 'The gym\'s lights are not the workshop\'s lights — ambient light adds to what the sensor sees.',
+            { id: 'lighting', negatable: true, label: 'ambient lighting differs between rooms', hint: 'The gym\'s lights are not the workshop\'s lights — ambient light adds to what the sensor sees.',
               phrases: ['ambient light', 'ambient lighting', 'room lighting', 'gym lighting', 'gym lights', 'lighting is different', 'lighting changed', 'different lighting', 'lights are different', 'lighting', 'ambient', 'fluorescent', 'sunlight', 'brighter room', 'darker room'] },
-            { id: 'distance-angle', label: 'distance, angle or surface changes the reflected light', hint: 'Reflected light drops with distance (roughly distance squared) and depends on the sensor angle and the surface.',
+            { id: 'distance-angle', negatable: true, label: 'distance, angle or surface changes the reflected light', hint: 'Reflected light drops with distance (roughly distance squared) and depends on the sensor angle and the surface.',
               phrases: ['distance', 'farther', 'closer', 'angle', 'distance squared', 'inverse square', 'surface', 'texture', 'reflect', 'how far'] },
             { id: 'threshold-depends', label: 'a fixed threshold fails because the number depends on conditions, not just colour', hint: 'The raw value is not a property of the object alone, so one cutoff cannot be right in every room.',
               phrases: ["can't use a", 'cannot use a', "won't work", 'wont work', "doesn't work", 'does not work', 'unreliable', 'not reliable', 'fails', 'breaks', 'depends on', 'varies with', 'changes with', 'different rooms', 'in one room', 'each room', 'every room', 'environment', 'conditions', 'not just the color', 'not just the colour', 'not just on the object'] }
@@ -497,13 +497,13 @@ public class CleanTeleOp extends OpMode {
       check: {
         question: 'Explain in your own words why Hue is more stable than raw RGB values across different lighting conditions. Include: (1) what RGB values measure (absolute intensity), (2) what Hue is based on (the ratio between channels), and (3) what happens to each when the lighting changes.',
         type: 'written_answer',
-        minLength: 50,
+        minWords: 30,
         rubric: {
           threshold: 0.67,
           concepts: [
-            { id: 'rgb-absolute', label: 'RGB measures absolute light intensity', hint: 'RGB numbers are raw brightness — more light raises every channel.',
+            { id: 'rgb-absolute', negatable: true, label: 'RGB measures absolute light intensity', hint: 'RGB numbers are raw brightness — more light raises every channel.',
               phrases: ['absolute', 'brightness', 'intensity', 'raw light', 'how much light', 'all three channels', 'all channels', 'every channel', 'scale up', 'scale down', 'go up together', 'drop together', 'rise together'] },
-            { id: 'hue-ratio', label: 'Hue is a ratio between the channels', hint: 'Hue comes from how the red, green and blue channels compare to each other, not their size.',
+            { id: 'hue-ratio', negatable: true, label: 'Hue is a ratio between the channels', hint: 'Hue comes from how the red, green and blue channels compare to each other, not their size.',
               phrases: ['ratio', 'ratios', 'relationship between', 'relative', 'proportion', 'proportions', 'compared to each other', 'relation between'] },
             { id: 'lighting-effect', label: 'when light changes, RGB shifts but the ratio (Hue) stays about the same', hint: 'Dimmer light lowers all three channels together, so their ratio — and the Hue — barely moves.',
               phrases: ['stays the same', 'stays roughly', 'stay the same', 'stays about', 'about the same', 'barely moves', 'stable', 'unchanged', 'roughly the same', "doesn't change", 'does not change', 'cancels out', 'cancel out', 'same amount', 'together'] }
@@ -522,13 +522,13 @@ public class CleanTeleOp extends OpMode {
       check: {
         question: 'Your distance sensor reads: 15, 14, 3, 15, 14, 10, 9, 8. The reading of 3 is clearly noise. (1) Say what goes wrong if the code reacts to that single reading. (2) Explain how a moving average handles a one-off spike. (3) Compute the moving average with window size 3 at the point where the raw reading was 3 — show the numbers.',
         type: 'written_answer',
-        minLength: 50,
+        minWords: 30,
         rubric: {
           threshold: 1.0,
           concepts: [
             { id: 'spike-reaction', label: 'reacting to one noisy reading causes a false reaction', hint: 'One glitch would make the robot think something is suddenly close and do the wrong thing.',
               phrases: ['outlier', 'spike', 'glitch', 'false', 'overreact', 'over-react', 'wrong decision', 'wrong thing', 'trigger', 'react to', 'reacting to', 'one reading', 'single reading', 'one bad', 'one noisy', 'individual reading', 'suddenly'] },
-            { id: 'averaging', label: 'an average blends the spike with its neighbours', hint: 'Averaging the last few readings dilutes a single bad value instead of acting on it.',
+            { id: 'averaging', negatable: true, label: 'an average blends the spike with its neighbours', hint: 'Averaging the last few readings dilutes a single bad value instead of acting on it.',
               phrases: ['average', 'averaging', 'averages', 'smooth', 'smooths', 'dilute', 'diluted', 'blend', 'blends', 'neighbours', 'neighbors', 'last three', 'last 3', 'window'] },
             { id: 'value', label: 'the window-3 average at that point is (15 + 14 + 3) / 3 ≈ 10.7', hint: 'Average the reading with the two before it: (15 + 14 + 3) / 3 = 32 / 3 ≈ 10.7.',
               phrases: ['10.7', '10.67', '10.6', '10.66', '32/3', '32 / 3', '10 2/3', 'about 11', 'around 11', 'approximately 11', 'roughly 11', 'nearly 11', '11'] }
@@ -547,7 +547,7 @@ public class CleanTeleOp extends OpMode {
       check: {
         question: 'Compare open-loop and closed-loop approaches to driving a robot to a specific position. Include: (1) what open-loop relies on (a fixed command, no measurement), (2) what closed-loop does (measure, compare to the target, correct, repeat), (3) why closed-loop is more reliable \u2014 name a real source of variation, and (4) what physically flows around the "loop" and where.',
         type: 'written_answer',
-        minLength: 50,
+        minWords: 30,
         rubric: {
           threshold: 0.75,
           concepts: [
@@ -555,7 +555,7 @@ public class CleanTeleOp extends OpMode {
               phrases: ['no feedback', 'without feedback', "doesn't check", 'does not check', 'hope', 'hopes', 'assumes', 'fixed time', 'fixed power', 'set time', 'just a command', 'blind', 'no sensor', 'no sensors', 'without sensors', "doesn't use sensors", 'does not use sensors', "doesn't measure", 'does not measure', 'without measuring', 'without checking', 'pre-planned', 'preplanned'] },
             { id: 'closed-loop', label: 'closed-loop measures, compares and corrects repeatedly', hint: 'Closed-loop reads a sensor, compares to the target and adjusts the motors, over and over.',
               phrases: ['measure', 'measures', 'measuring', 'sensor', 'sensors', 'compare', 'compares', 'correct', 'corrects', 'correcting', 'adjust', 'adjusts', 'adjusting', 'feedback'] },
-            { id: 'variation', label: 'closed-loop copes with real variation (battery, friction, slip)', hint: 'The same command gives different results when battery voltage, friction or wheel slip change.',
+            { id: 'variation', negatable: true, label: 'closed-loop copes with real variation (battery, friction, slip)', hint: 'The same command gives different results when battery voltage, friction or wheel slip change.',
               phrases: ['battery', 'voltage', 'friction', 'slip', 'slipping', 'wheel slip', 'weight', 'variation', 'varies', 'vary', 'noise', 'noisy', 'not deterministic', 'unpredictable'] },
             { id: 'loop-flow', label: 'the loop is information flowing sensor \u2192 controller \u2192 motor \u2192 world \u2192 sensor', hint: 'The motors move the robot, the sensor measures the result, and that measurement feeds back into the controller.',
               phrases: ['sensor to', 'sensors to', 'feeds back', 'fed back', 'flows back', 'back to the controller', 'back into', 'output feeds', 'controller', 'motor', 'motors', 'robot moves', 'measure the result', 'measures the result', 'reads again', 'read again', 'repeat', 'flow of information', 'information flows'] }
@@ -797,13 +797,13 @@ public void loop() {
       check: {
         question: 'Explain in 2-3 sentences why running a motor at 0.5 power for 2 seconds does NOT guarantee the robot travels the same distance every time. Name at least two physical factors that cause variation (for example battery voltage, friction, wheel slip, weight), and say what is missing that would let the robot correct itself.',
         type: 'written_answer',
-        minLength: 50,
+        minWords: 30,
         rubric: {
           threshold: 0.67,
           concepts: [
-            { id: 'battery', label: 'battery voltage changes the speed for the same power', hint: 'Motor power is a fraction of battery voltage, and the battery drains during a match.',
+            { id: 'battery', negatable: true, label: 'battery voltage changes the speed for the same power', hint: 'Motor power is a fraction of battery voltage, and the battery drains during a match.',
               phrases: ['battery', 'voltage', 'drains', 'charge', 'volts'] },
-            { id: 'friction-slip-weight', label: 'friction, wheel slip, surface or weight vary', hint: 'Floor surface, dust, wheel slip, load and motor temperature all change how far the wheels move the robot.',
+            { id: 'friction-slip-weight', negatable: true, label: 'friction, wheel slip, surface or weight vary', hint: 'Floor surface, dust, wheel slip, load and motor temperature all change how far the wheels move the robot.',
               phrases: ['friction', 'slip', 'slipping', 'weight', 'load', 'heavier', 'carpet', 'tile', 'tiles', 'dust', 'dusty', 'temperature', 'surface', 'traction'] },
             { id: 'no-feedback', label: 'nothing measures the distance, so nothing corrects the error', hint: 'Time-based driving has no feedback — no encoder or sensor tells the code how far it really went.',
               phrases: ['no feedback', 'without feedback', 'nothing is measuring', 'nothing measures', 'not measuring', "doesn't measure", 'does not measure', 'never corrected', 'no correction', "can't correct", 'cannot correct', 'no sensor', 'no sensors', 'open loop', 'open-loop', 'blind', "doesn't check", 'no encoder', 'no encoders', 'time-based', 'time based', 'nothing to correct'] }
@@ -822,15 +822,15 @@ public void loop() {
       check: {
         question: 'Using the spring analogy, explain what happens physically when kP is set too high on a drivetrain: (1) what a too-stiff spring does to the robot as it approaches the target, (2) why the robot ends up past the target, and (3) what the resulting back-and-forth motion is called.',
         type: 'written_answer',
-        minLength: 50,
+        minWords: 30,
         rubric: {
           threshold: 0.67,
           concepts: [
-            { id: 'stiff-pull', label: 'a stiff spring pulls too hard / accelerates the robot aggressively', hint: 'With a high kP the "spring" is stiff: even a small error produces a strong pull.',
+            { id: 'stiff-pull', negatable: true, label: 'a stiff spring pulls too hard / accelerates the robot aggressively', hint: 'With a high kP the "spring" is stiff: even a small error produces a strong pull.',
               phrases: ['stiff', 'too strong', 'pulls too hard', 'pull too hard', 'pulled too hard', 'hard pull', 'aggressive', 'accelerates hard', 'too much force', 'yanks', 'yank', 'strong pull', 'too hard'] },
-            { id: 'overshoot', label: 'the robot overshoots because it cannot stop instantly', hint: 'Momentum carries the robot past the target.',
+            { id: 'overshoot', negatable: true, label: 'the robot overshoots because it cannot stop instantly', hint: 'Momentum carries the robot past the target.',
               phrases: ['overshoot', 'past the target', 'past the setpoint', 'past it', "can't stop", 'cannot stop', 'momentum', 'carries it past', 'blows past', 'goes past', 'shoots past', 'flies past'] },
-            { id: 'oscillation', label: 'it gets pulled back and forth \u2014 oscillation', hint: 'Pulled back past the target again and again, the robot oscillates instead of settling.',
+            { id: 'oscillation', negatable: true, label: 'it gets pulled back and forth \u2014 oscillation', hint: 'Pulled back past the target again and again, the robot oscillates instead of settling.',
               phrases: ['oscillat', 'back and forth', 'back-and-forth', 'bounce', 'bounces', 'bouncing', 'never settles', "doesn't settle", 'keeps correcting', 'keeps overshooting'] }
           ],
           disqualifiers: [
@@ -847,15 +847,15 @@ public void loop() {
       check: {
         question: 'A robot drives in a straight line for 100 inches, but the odometry track width is calibrated 2mm too wide. Explain: (1) how heading is computed from the two dead wheels (what the track width divides), (2) what a too-large track width does to the computed heading over time, and (3) why a wrong heading makes the reported (x, y) position drift even on a perfectly straight path.',
         type: 'written_answer',
-        minLength: 50,
+        minWords: 30,
         rubric: {
           threshold: 0.67,
           concepts: [
-            { id: 'heading-formula', label: 'heading change = (right − left) ÷ track width', hint: 'The difference between the left and right wheel distances is divided by the track width.',
+            { id: 'heading-formula', negatable: true, label: 'heading change = (right − left) ÷ track width', hint: 'The difference between the left and right wheel distances is divided by the track width.',
               phrases: ['divid', 'divisor', 'difference between the left', 'difference between left', 'left and right wheel', 'left/right', 'right minus left', 'right - left', 'wheel difference', 'divided by'] },
-            { id: 'heading-drift', label: 'the computed heading under-reports turning and drifts from the true heading', hint: 'Dividing by a bigger number makes every heading change smaller than reality, and the error accumulates.',
+            { id: 'heading-drift', negatable: true, label: 'the computed heading under-reports turning and drifts from the true heading', hint: 'Dividing by a bigger number makes every heading change smaller than reality, and the error accumulates.',
               phrases: ['heading drift', 'heading drifts', 'heading slowly', 'under-report', 'under report', 'underreport', 'less than the real', 'smaller than', 'changes less', 'drifts away', 'drift away', 'wrong heading', 'heading is wrong', 'heading will be wrong', 'heading error', 'accumulate', 'compound', 'builds up', 'too small', 'reported heading'] },
-            { id: 'position-drift', label: 'each position step is added along the wrong heading, so x/y curve away', hint: 'Every Δx/Δy uses cos/sin of the estimated heading — a wrong angle points each step slightly sideways.',
+            { id: 'position-drift', negatable: true, label: 'each position step is added along the wrong heading, so x/y curve away', hint: 'Every Δx/Δy uses cos/sin of the estimated heading — a wrong angle points each step slightly sideways.',
               phrases: ['along the wrong heading', 'direction of the estimated heading', 'wrong direction', 'uses the heading', 'trig', 'cos', 'sin', 'x and y', 'x/y', 'curves away', 'sideways', 'position drift', 'position drifts', 'drift sideways', 'each step', 'every step', 'each little step', 'position update', 'position estimate', 'wrong angle'] }
           ],
           disqualifiers: [
@@ -872,15 +872,15 @@ public void loop() {
       check: {
         question: 'You have a start pose at (24, 24) and an end pose at (120, 24). You place a control point at (72, 96). Describe the resulting Bezier curve: (1) where it starts and ends, (2) which direction it arcs and whether it actually passes through the control point, and (3) one reason to choose this curve instead of a straight line.',
         type: 'written_answer',
-        minLength: 50,
+        minWords: 30,
         rubric: {
           threshold: 0.67,
           concepts: [
-            { id: 'endpoints', label: 'starts at (24, 24) and ends at (120, 24)', hint: 'The curve begins at the start pose and finishes at the end pose.',
+            { id: 'endpoints', negatable: true, label: 'starts at (24, 24) and ends at (120, 24)', hint: 'The curve begins at the start pose and finishes at the end pose.',
               phrases: ['starts at', 'start at', 'begins at', 'ends at', 'end at', 'finishes at', '24 24', '120 24', 'from 24', 'to 120', 'start pose', 'end pose'] },
             { id: 'arc-direction', label: 'it arcs upward toward the control point without passing through it', hint: 'The control point pulls the curve toward it like a magnet, but the path never reaches it.',
               phrases: ['toward', 'towards', 'upward', 'upwards', 'bows', 'bow', 'arcs', 'arc', 'hump', 'bulge', 'bulges', 'curves up', 'positive y', '+y', 'higher y', 'does not touch', "doesn't touch", "doesn't pass through", 'does not pass through', 'without touching', 'without passing', "doesn't reach", 'does not reach', "won't touch", 'pulled toward', 'pulls the curve', 'magnet', 'never touches', 'never reaches'] },
-            { id: 'why-curve', label: 'a curve avoids obstacles or keeps the motion smooth and fast', hint: 'Curves go around things and let the robot keep speed instead of stop-and-turn corners.',
+            { id: 'why-curve', negatable: true, label: 'a curve avoids obstacles or keeps the motion smooth and fast', hint: 'Curves go around things and let the robot keep speed instead of stop-and-turn corners.',
               phrases: ['obstacle', 'obstacles', 'around', 'avoid', 'smooth', 'smoother', 'continuous', 'maintain speed', 'keep speed', 'keeps speed', 'without stopping', 'stop and turn', 'stop-and-turn', 'sharp corner', 'sharp corners', 'corners', 'approach angle', 'better angle', 'faster', 'saves time', 'wastes time', 'accelerat', 'decelerat'] }
           ],
           disqualifiers: [
@@ -898,13 +898,13 @@ public void loop() {
       check: {
         question: 'You\'re tuning a PID controller for a lift mechanism that holds a heavy arm. With kP = 0.05, the arm gets close to the target but stops about 8 degrees short and stays there. (1) Name this behaviour (the lesson calls it steady-state error) and say why P alone is stuck. (2) Say which term(s) you would add or adjust — the integral (impatience) and/or feedforward (anti-gravity) — and why, using the analogies. (3) Say why simply cranking kP is risky.',
         type: 'written_answer',
-        minLength: 50,
+        minWords: 30,
         rubric: {
           threshold: 0.67,
           concepts: [
             { id: 'steady-state', label: 'steady-state error: at a small error P is too weak to beat gravity/friction', hint: 'Near the target the error is tiny, so kP × error is not enough force to move a heavy arm.',
               phrases: ['steady-state', 'steady state', 'stops short', 'stopping short', 'too weak', 'not enough power', 'not enough force', "can't overcome", 'cannot overcome', 'overcome gravity', 'fight gravity', 'against gravity', 'friction is winning', 'friction wins', 'spring is too weak', 'small error', 'tiny error', 'not enough to lift'] },
-            { id: 'integral-feedforward', label: 'add the integral (impatience) and/or feedforward (anti-gravity) term', hint: 'The integral term builds up while the error persists; a feedforward term supplies the constant holding force against gravity.',
+            { id: 'integral-feedforward', negatable: true, label: 'add the integral (impatience) and/or feedforward (anti-gravity) term', hint: 'The integral term builds up while the error persists; a feedforward term supplies the constant holding force against gravity.',
               phrases: ['integral', 'ki', 'impatience', 'impatient', 'accumulat', 'builds up', 'build up', 'feedforward', 'feed forward', 'feed-forward', 'kf', 'kg', 'anti-gravity', 'anti gravity', 'antigravity', 'holding force', 'constant power', 'baseline', 'constant force'] },
             { id: 'kp-risk', label: 'raising kP alone risks overshoot and oscillation', hint: 'A stiffer spring may fix the short stop but will overshoot and oscillate.',
               phrases: ['oscillat', 'overshoot', 'unstable', 'too stiff', 'bounce', "don't just", 'dont just', 'risk', 'risks', 'risky', 'crank', 'cranking', 'just raising kp', 'just increasing kp'] }
@@ -1206,11 +1206,11 @@ public class Constants {
       check: {
         question: 'Your robot\'s arm motor doesn\'t move when you press the A button. List three meaningfully different hypotheses \u2014 for example one about hardware/wiring, one about configuration (Hardware Map names), and one about the gamepad/input \u2014 and for each, describe one test you could perform WITHOUT changing code to confirm or eliminate it.',
         type: 'written_answer',
-        minLength: 80,
+        minWords: 40,
         rubric: {
           threshold: 0.75,
           concepts: [
-            { id: 'hardware', label: 'a hardware or wiring hypothesis', hint: 'Could the motor, its cable, or the hub port be the problem?',
+            { id: 'hardware', negatable: true, label: 'a hardware or wiring hypothesis', hint: 'Could the motor, its cable, or the hub port be the problem?',
               phrases: ['wiring', 'wire', 'wires', 'cable', 'cables', 'port', 'unplugged', 'plugged', 'motor is dead', 'motor itself', 'burned', 'burnt', 'hardware', 'hub', 'power', 'battery', 'loose connection', 'connector'] },
             { id: 'config', label: 'a configuration hypothesis (Hardware Map name mismatch)', hint: 'Does the name in the code match the robot configuration on the Driver Hub?',
               phrases: ['config', 'configuration', 'hardware map', 'hardwaremap', 'name', 'named', 'names', 'mismatch', 'driver hub', 'robot controller'] },
@@ -1233,15 +1233,15 @@ public class Constants {
       check: {
         question: 'Your autonomous works perfectly 8 out of 10 times, but occasionally the robot stops mid-path and doesn\'t continue. (1) Name the bug category from this lesson (configuration, logic, timing or integration) that fits best. (2) Explain what about "8 out of 10" points to that category. (3) Describe a debugging approach suited to it.',
         type: 'written_answer',
-        minLength: 50,
+        minWords: 30,
         rubric: {
           threshold: 0.67,
           concepts: [
-            { id: 'category', label: 'a timing (intermittent) or integration bug', hint: 'Bugs that appear only some of the time are timing bugs; two parts fighting is an integration bug.',
+            { id: 'category', negatable: true, label: 'a timing (intermittent) or integration bug', hint: 'Bugs that appear only some of the time are timing bugs; two parts fighting is an integration bug.',
               phrases: ['timing', 'intermittent', 'race condition', 'race', 'non-deterministic', 'nondeterministic', 'not deterministic', 'integration'] },
             { id: 'reasoning', label: 'it only fails sometimes, so something varies between runs', hint: 'A bug that is not reproducible every run depends on something that changes — timing, sensor noise, loop speed.',
               phrases: ["isn't reproducible", 'not reproducible', "doesn't happen every", 'not every time', 'only sometimes', 'varies between runs', 'something that varies', 'depends on', 'works sometimes', 'sometimes works', 'most of the time', '8 out of 10', '8/10', 'not consistent', 'inconsistent', 'random', 'sometimes fails', 'occasionally'] },
-            { id: 'approach', label: 'log/telemetry every loop and compare good and bad runs', hint: 'Record state transitions and sensor values each loop so you can see what was different when it failed.',
+            { id: 'approach', negatable: true, label: 'log/telemetry every loop and compare good and bad runs', hint: 'Record state transitions and sensor values each loop so you can see what was different when it failed.',
               phrases: ['log', 'logging', 'telemetry', 'record', 'compare a good run', 'compare', 'reproduce', 'capture', 'isbusy', 'timeout', 'state transition', 'state transitions', 'watch', 'every loop', 'each loop'] }
           ],
           disqualifiers: [
@@ -1259,17 +1259,17 @@ public class Constants {
       check: {
         question: 'A team notices their robot\'s intake motor sometimes doesn\'t respond to button presses. They "fix" it by adding a 200ms sleep() after each button check to "give the motor time to respond." (1) Explain why this is a symptom fix — what does the sleep actually change, and what does it not explain? (2) Name a side effect of the sleep. (3) Name at least one likely root cause and how you would investigate it.',
         type: 'written_answer',
-        minLength: 50,
+        minWords: 30,
         rubric: {
           threshold: 0.75,
           concepts: [
             { id: 'masks', label: 'the sleep masks the symptom without explaining the cause', hint: 'The motor still fails for the same underlying reason; the sleep just changes the timing so it shows less.',
               phrases: ['mask', 'masks', 'hides', 'hide', 'hidden', 'symptom', "doesn't explain", 'does not explain', 'still fails', 'still happens', 'same reason', 'underlying', 'actual cause', 'real cause', 'root cause', 'covers up', 'papers over', 'band-aid', 'bandaid'] },
-            { id: 'side-effect', label: 'sleep stalls the loop and makes everything laggy', hint: 'A 200 ms sleep blocks the whole control loop, so every other control feels slow.',
+            { id: 'side-effect', negatable: true, label: 'sleep stalls the loop and makes everything laggy', hint: 'A 200 ms sleep blocks the whole control loop, so every other control feels slow.',
               phrases: ['slow', 'slower', 'lag', 'laggy', 'stall', 'stalls', 'blocks', 'blocking', 'loop time', 'freezes', 'delay', 'delays', 'unresponsive', 'other controls', 'whole loop', 'loop slower'] },
-            { id: 'root-cause', label: 'a plausible root cause: power overwritten elsewhere, missed short presses, loop timing, wiring/config', hint: 'Look for two places setting the motor power, a loop too slow to catch short presses, or a wiring/config issue.',
+            { id: 'root-cause', negatable: true, label: 'a plausible root cause: power overwritten elsewhere, missed short presses, loop timing, wiring/config', hint: 'Look for two places setting the motor power, a loop too slow to catch short presses, or a wiring/config issue.',
               phrases: ['overwrit', 'overrid', 'two places', 'set twice', 'somewhere else', 'later in the loop', 'another', 'missed', 'misses', 'loop is too slow', 'loop too slow', 'short press', 'debounce', 'wiring', 'config', 'state machine', 'reset', 'conflict', 'fighting'] },
-            { id: 'investigate', label: 'investigate with telemetry/logging of the button and motor power', hint: 'Show the button state and the motor power each loop so you can see what happens on a missed press.',
+            { id: 'investigate', negatable: true, label: 'investigate with telemetry/logging of the button and motor power', hint: 'Show the button state and the motor power each loop so you can see what happens on a missed press.',
               phrases: ['telemetry', 'log', 'logging', 'print', 'watch', 'trace', 'look for', 'search', 'investigate', 'check whether', 'check if', 'check for', 'see what', 'find out'] }
           ],
           disqualifiers: [
@@ -1286,7 +1286,7 @@ public class Constants {
       check: {
         question: 'You\'re at competition. Your autonomous was working perfectly during practice matches, but in your first qualification match, the robot initializes and then does nothing when Start is pressed. You have 4 minutes until your next match. Walk through your diagnostic process step by step \u2014 what do you check first, second, and third? What\'s your fallback plan if you can\'t find the bug in time?',
         type: 'written_answer',
-        minLength: 80,
+        minWords: 40,
         graded: false   // reflection: there are many valid triage orders \u2014 kept for the mentor, never scored
       }
     }
@@ -1477,6 +1477,23 @@ if (useTimerFallback) {
         ]
       },
       mentorTip: 'At competition, your backup autonomous should be dead simple: drive forward, park. No sensors, no path following, just motor power and a timer. If everything else fails, this gets you parking points. Always have it ready.'
+    },
+    {
+      id: 'debug-under-pressure',
+      title: 'Debug Under Pressure: the program',
+      learn: 'Every lesson in this phase showed one bug on its own. The program below is a whole Phase 4-style autonomous \u2014 <strong>BuzzAuto</strong>: a Robot class with an intake, a lift held by a P controller, and a Pedro follower driven by a state machine \u2014 and <strong>five bugs are hidden in it</strong>. Each one matches a lesson in this phase: a double <code>update()</code>, an inverted <code>isBusy()</code> check, a kP catastrophe, a silent <code>return</code>, and a missing <code>telemetry.update()</code>.<br><br><strong>Read the whole program before you change a line.</strong> Write down every place you suspect and the lesson it matches. Some code that looks odd is correct \u2014 \u201cfixing\u201d working code is how new bugs are born.<br><br>Load the program into the deliverable editor, fix it in place, and mark every fix with a comment that starts <code>// BUG:</code> and says what was wrong <em>because</em> of what \u2014 for example <code>// BUG: &lt;what went wrong&gt; because &lt;why it happened&gt;</code>. The checker verifies each fix and that the program is still this program, so a rewrite from scratch does not count.',
+      code: { language: 'java', kit: 'phase5' },
+      check: {
+        question: 'Before changing any line, what do you do first?',
+        type: 'multiple_choice',
+        options: [
+          { text: 'Fix the first line that looks wrong, then run the checker to see what changed', correct: false, explanation: 'Fixing while you read means changing code before you understand it \u2014 and the first line that looks wrong may be correct. Read everything first.' },
+          { text: 'Rewrite the program from scratch so it is clean', correct: false, explanation: 'A rewrite throws away the working parts and hides what the bugs were. The checker also expects this program, fixed in place.' },
+          { text: 'Read the whole program once and list the places you suspect, with the lesson each matches', correct: true, explanation: 'Correct! A list of suspects, each tied to a known bug pattern, turns five mysteries into five hypotheses you can check one at a time \u2014 the scientific method from the start of this phase.' },
+          { text: 'Add sleep() calls between the steps until the robot behaves', correct: false, explanation: 'Sleeps change the timing and mask symptoms. The root-cause lesson showed why that is a symptom fix, not a bug fix.' }
+        ]
+      },
+      mentorTip: 'Time it: 20 minutes is a realistic pit-stop budget. Ask the student to read their suspect list out loud before they edit \u2014 if they cannot say which lesson a suspect matches, they are guessing. You can still hand out your own broken program instead and approve it through mentor review.'
     },
     {
       id: 'pre-match',
@@ -1890,6 +1907,114 @@ if (autoTimer.seconds() > 27.0 && !parking) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  // Words as the student sees them counted (whitespace-separated).
+  function wordCount(s) {
+    return String(s || '').trim().split(/\s+/).filter(Boolean).length;
+  }
+  function minWordsOf(check) {
+    return (check && check.minWords) || 30;
+  }
+  function findLessonSection(phaseId, secId) {
+    var sections = window.PHASE_LESSONS && window.PHASE_LESSONS[phaseId];
+    if (!sections) return null;
+    for (var i = 0; i < sections.length; i++) if (sections[i].id === secId) return sections[i];
+    return null;
+  }
+
+  /* ── Code snippets: a section's code is inline (snippet) or the Phase 5 kit program ── */
+  var KIT_PLACEHOLDER = '// The Debug Under Pressure program is not loaded.';
+  function kitSource() {
+    var kit = window.RT_PHASE5_KIT;
+    return kit && typeof kit.source === 'string' ? kit.source : null;
+  }
+  function codeSnippet(code) {
+    if (!code) return '';
+    if (code.kit) return kitSource() || KIT_PLACEHOLDER;
+    return code.snippet || '';
+  }
+
+  /* ── Multiple choice: seeded option order + re-read lock ─────────────────
+     Option order is a Fisher–Yates shuffle driven by mulberry32(fnv1a(phaseId|secId|attempt)),
+     so it is stable across reloads (attempt = stored mc attempts for the section) and changes
+     after every wrong answer. Consecutive attempts never produce the same order. */
+  function fnv1a(str) {
+    var h = 0x811c9dc5;
+    str = String(str);
+    for (var i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h >>> 0;
+  }
+  function mulberry32(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function _shuffledOrder(phaseId, secId, n, attempt) {
+    var rnd = mulberry32(fnv1a(phaseId + '|' + secId + '|' + attempt));
+    var p = [];
+    for (var i = 0; i < n; i++) p.push(i);
+    for (var k = n - 1; k > 0; k--) {
+      var j = Math.floor(rnd() * (k + 1));
+      var t = p[k]; p[k] = p[j]; p[j] = t;
+    }
+    return p;
+  }
+  function mcOrder(phaseId, secId, n, attempt) {
+    n = Math.max(0, n | 0);
+    attempt = Math.max(0, Math.floor(Number(attempt) || 0));
+    var prev = _shuffledOrder(phaseId, secId, n, 0);
+    for (var a = 1; a <= attempt; a++) {
+      var cur = _shuffledOrder(phaseId, secId, n, a);
+      if (n > 1 && cur.join(',') === prev.join(',')) cur = cur.slice(1).concat(cur[0]);
+      prev = cur;
+    }
+    return prev;
+  }
+  function lockMs() {
+    var v = window.RT_MC_LOCK_MS;
+    return typeof v === 'number' && v >= 0 ? v : 20000;
+  }
+  function theoryCooldownMs() {
+    var v = window.RT_THEORY_COOLDOWN_MS;
+    return typeof v === 'number' && v >= 0 ? v : 10000;
+  }
+  function storedMcAttempts(phaseId, secId) {
+    try {
+      var list = window.RTStore.get().curriculum.attempts || [];
+      var n = 0;
+      for (var i = 0; i < list.length; i++) {
+        var a = list[i];
+        if (a && a.kind === 'mc' && a.phaseId === phaseId && a.sectionId === secId) n++;
+      }
+      return n;
+    } catch (e) { return 0; }
+  }
+  function mcOptionsHtml(phaseId, sec, attempt) {
+    var opts = sec.check.options || [];
+    var order = mcOrder(phaseId, sec.id, opts.length, attempt);
+    var html = '';
+    for (var pos = 0; pos < order.length; pos++) {
+      var o = order[pos];
+      html += '<div class="les-opt" id="les-opt-' + sec.id + '-' + o + '" data-opt="' + o + '" data-pos="' + pos + '" onclick="window._answerCheck(\'' + sec.id + '\',' + o + ')">';
+      html += '<div class="les-opt-letter">' + String.fromCharCode(65 + pos) + '</div>';
+      html += '<div class="les-opt-text">' + esc(opts[o].text) + '</div>';
+      html += '</div>';
+    }
+    return html;
+  }
+  function lockNoteHtml(secId, msLeft) {
+    return '<div class="les-lock-note" id="les-locknote-' + secId + '">Re-read the section \u2014 try again in <span id="les-lock-' + secId + '">' + Math.max(0, Math.ceil(msLeft / 1000)) + '</span> s</div>';
+  }
+
+  window.RTLessons = { mcOrder: mcOrder };
+  Object.defineProperty(window.RTLessons, 'LOCK_MS', { get: lockMs, enumerable: true });
+
   /**
    * Render the full interactive lesson for a phase.
    * @param {string} phaseId - e.g. 'phase1'
@@ -1963,16 +2088,18 @@ if (autoTimer.seconds() > 27.0 && !parking) {
 
       // Code block — use innerHTML with highlighted HTML
       if (sec.code) {
-        html += '<div class="les-code-wrap">';
+        html += '<div class="les-code-wrap' + (sec.code.kit ? ' les-code-kit' : '') + '">';
         html += '<button class="les-copy-btn" onclick="window._copyCode(this)" data-sec="' + sec.id + '">Copy</button>';
-        html += '<pre class="les-code">' + highlightJava(sec.code.snippet) + '</pre>';
+        if (sec.code.kit) html += '<button class="les-copy-btn les-kit-load" onclick="window._loadKitIntoEditor()">Load into the deliverable editor</button>';
+        html += '<pre class="les-code">' + highlightJava(codeSnippet(sec.code)) + '</pre>';
         html += '</div>';
       }
 
       // Check block
       if (sec.check) {
         var isWritten = sec.check.type === 'written_answer';
-        html += '<div class="les-check' + (sec.isTheory ? ' les-check-theory' : '') + '" id="les-check-' + sec.id + '">';
+        var mcLockLeft = (!isWritten && !isDone) ? Math.max(0, (_mcLockUntil[sec.id] || 0) - Date.now()) : 0;
+        html += '<div class="les-check' + (sec.isTheory ? ' les-check-theory' : '') + (mcLockLeft > 0 ? ' les-check-locked' : '') + '" id="les-check-' + sec.id + '">';
         if (isDone && !isWritten) {
           // Already answered MC — show collapsed success
           html += '<div class="les-check-done">&#10003; Correct</div>';
@@ -1997,9 +2124,9 @@ if (autoTimer.seconds() > 27.0 && !parking) {
             html += '<div class="les-reflection-label">' + (window.rtIcon ? window.rtIcon('pencil') : '') + '<span>Reflection &mdash; share with your mentor. There is no single right answer; your answer is kept in your progress file and is not scored.</span></div>';
           }
           html += '<div class="les-check-q">' + esc(sec.check.question) + '</div>';
-          html += '<textarea class="les-written-area" id="les-written-' + sec.id + '" placeholder="Type your answer here..." minlength="' + (sec.check.minLength || 50) + '"></textarea>';
+          html += '<textarea class="les-written-area" id="les-written-' + sec.id + '" placeholder="Type your answer here..."></textarea>';
           html += '<div class="les-written-footer">';
-          html += '<span class="les-written-count" id="les-wcount-' + sec.id + '">0 / ' + (sec.check.minLength || 50) + ' characters minimum</span>';
+          html += '<span class="les-written-count" id="les-wcount-' + sec.id + '">0 / ' + minWordsOf(sec.check) + ' words minimum</span>';
           html += '<button class="les-written-submit" id="les-wsubmit-' + sec.id + '" onclick="window._submitWrittenAnswer(\'' + sec.id + '\')" disabled>Submit Answer</button>';
           html += '</div>';
           html += '<div class="les-written-attempts" id="les-wattempts-' + sec.id + '" style="display:none"></div>';
@@ -2009,16 +2136,12 @@ if (autoTimer.seconds() > 27.0 && !parking) {
           // Multiple choice check
           html += '<div class="les-check-icon">' + (window.RT_ICONS ? window.RT_ICONS.help : '') + '</div>';
           html += '<div class="les-check-q">' + esc(sec.check.question) + '</div>';
+          _mcAttempts[sec.id] = Math.max(_mcAttempts[sec.id] || 0, storedMcAttempts(phaseId, sec.id));
           html += '<div class="les-check-opts" id="les-opts-' + sec.id + '">';
-          for (var o = 0; o < sec.check.options.length; o++) {
-            var opt = sec.check.options[o];
-            html += '<div class="les-opt" id="les-opt-' + sec.id + '-' + o + '" onclick="window._answerCheck(\'' + sec.id + '\',' + o + ')">';
-            html += '<div class="les-opt-letter">' + String.fromCharCode(65 + o) + '</div>';
-            html += '<div class="les-opt-text">' + esc(opt.text) + '</div>';
-            html += '</div>';
-          }
+          html += mcOptionsHtml(phaseId, sec, _mcAttempts[sec.id]);
           html += '</div>';
           html += '<div class="les-check-explain" id="les-explain-' + sec.id + '" style="display:none"></div>';
+          if (mcLockLeft > 0) html += lockNoteHtml(sec.id, mcLockLeft);
         }
         html += '</div>';
       } else {
@@ -2059,9 +2182,9 @@ if (autoTimer.seconds() > 27.0 && !parking) {
           // Attach input listener for active (non-done) sections
           if (!sectionDone) {
             ta.addEventListener('input', function () {
-              var len = ta.value.trim().length;
-              if (countEl) countEl.textContent = len + ' / ' + minLen + ' characters minimum';
-              if (submitBtn) submitBtn.disabled = (len < minLen);
+              var words = wordCount(ta.value);
+              if (countEl) countEl.textContent = words + ' / ' + minLen + ' words minimum';
+              if (submitBtn) submitBtn.disabled = (words < minLen) || _theoryCoolingLeft(sid) > 0;
             });
           }
 
@@ -2130,7 +2253,7 @@ if (autoTimer.seconds() > 27.0 && !parking) {
               if (doneBadge) doneBadge.style.display = 'none';
             }
           }
-        })(sections[wi].id, sections[wi].check.minLength || 50, wiDone);
+        })(sections[wi].id, minWordsOf(sections[wi].check), wiDone);
       }
     }
   };
@@ -2160,7 +2283,7 @@ if (autoTimer.seconds() > 27.0 && !parking) {
     if (sections && secId) {
       for (var i = 0; i < sections.length; i++) {
         if (sections[i].id === secId && sections[i].code) {
-          rawCode = sections[i].code.snippet;
+          rawCode = codeSnippet(sections[i].code);
           break;
         }
       }
@@ -2177,6 +2300,18 @@ if (autoTimer.seconds() > 27.0 && !parking) {
     });
   };
 
+  /* ── Phase 5 kit: put the original program into the deliverable editor ── */
+  window._loadKitIntoEditor = function () {
+    var src = kitSource();
+    if (!src) { alert('The Debug Under Pressure program is not loaded.'); return; }
+    var ed = document.getElementById('code-editor-phase5');
+    if (!ed) { alert('The Phase 5 deliverable editor is not on this page yet \u2014 open the Phase 5 deliverable and try again.'); return; }
+    if (ed.value.trim() && ed.value !== src && !confirm('Replace the code in the editor with the original program?')) return;
+    ed.value = src;
+    try { ed.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) { /* old browsers: value is set anyway */ }
+    if (ed.scrollIntoView) ed.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
   /* ── Mentor tip toggle ────────────────────────────────────────────────── */
   window._toggleTip = function (header) {
     var body = header.nextElementSibling;
@@ -2188,20 +2323,20 @@ if (autoTimer.seconds() > 27.0 && !parking) {
   };
 
   /* ── Answer a check question ──────────────────────────────────────────── */
+  // optIdx is the ORIGINAL option index (options are displayed in mcOrder()).
+  var _mcLockUntil = {};
+  var _mcLockTimers = {};
+
   window._answerCheck = function (secId, optIdx) {
     if (lessonState.answeredChecks[secId]) return;
+    if ((_mcLockUntil[secId] || 0) > Date.now()) return;   // re-read lock after a wrong answer
 
     var phaseId = lessonState.phaseId;
-    var sections = window.PHASE_LESSONS[phaseId];
-    if (!sections) return;
-
-    var sec = null;
-    for (var i = 0; i < sections.length; i++) {
-      if (sections[i].id === secId) { sec = sections[i]; break; }
-    }
-    if (!sec || !sec.check) return;
+    var sec = findLessonSection(phaseId, secId);
+    if (!sec || !sec.check || !sec.check.options) return;
 
     var opt = sec.check.options[optIdx];
+    if (!opt) return;
     var optEl = document.getElementById('les-opt-' + secId + '-' + optIdx);
     var explainEl = document.getElementById('les-explain-' + secId);
 
@@ -2211,7 +2346,7 @@ if (autoTimer.seconds() > 27.0 && !parking) {
 
     if (opt.correct) {
       // Correct answer
-      optEl.classList.add('les-correct');
+      if (optEl) optEl.classList.add('les-correct');
       if (explainEl) {
         explainEl.innerHTML = '<div class="les-explain-icon correct">&#10003;</div> ' + esc(opt.explanation);
         explainEl.className = 'les-check-explain correct';
@@ -2223,7 +2358,7 @@ if (autoTimer.seconds() > 27.0 && !parking) {
       var allOpts = document.querySelectorAll('#les-opts-' + secId + ' .les-opt');
       for (var d = 0; d < allOpts.length; d++) {
         allOpts[d].style.pointerEvents = 'none';
-        if (d !== optIdx) allOpts[d].style.opacity = '0.4';
+        if (allOpts[d].getAttribute('data-opt') !== String(optIdx)) allOpts[d].style.opacity = '0.4';
       }
 
       // After a brief delay, complete the section
@@ -2231,25 +2366,113 @@ if (autoTimer.seconds() > 27.0 && !parking) {
         _doCompleteSection(secId);
       }, 800);
     } else {
-      // Wrong answer
-      optEl.classList.add('les-wrong');
+      // Wrong answer: show why, then lock the question so the student re-reads the section.
+      if (optEl) optEl.classList.add('les-wrong');
       if (explainEl) {
         explainEl.innerHTML = '<div class="les-explain-icon wrong">&#10007;</div> ' + esc(opt.explanation);
         explainEl.className = 'les-check-explain wrong';
         explainEl.style.display = 'block';
       }
-      // Disable just this option
-      optEl.style.pointerEvents = 'none';
+      _lockMultipleChoice(secId);
     }
   };
 
+  function _lockMultipleChoice(secId) {
+    var ms = lockMs();
+    _mcLockUntil[secId] = Date.now() + ms;
+    var checkEl = document.getElementById('les-check-' + secId);
+    if (checkEl) {
+      checkEl.classList.add('les-check-locked');
+      var oldNote = document.getElementById('les-locknote-' + secId);
+      if (oldNote && oldNote.parentNode) oldNote.parentNode.removeChild(oldNote);
+      checkEl.insertAdjacentHTML('beforeend', lockNoteHtml(secId, ms));
+    }
+    if (_mcLockTimers[secId]) { clearInterval(_mcLockTimers[secId].tick); clearTimeout(_mcLockTimers[secId].done); }
+    _mcLockTimers[secId] = {
+      tick: setInterval(function () {
+        var span = document.getElementById('les-lock-' + secId);
+        if (span) span.textContent = String(Math.max(0, Math.ceil(((_mcLockUntil[secId] || 0) - Date.now()) / 1000)));
+      }, 1000),
+      done: setTimeout(function () { _unlockMultipleChoice(secId); }, ms)
+    };
+  }
+
+  // Lock expired: clear the note and the explanation, re-render the options in a new order.
+  function _unlockMultipleChoice(secId) {
+    var t = _mcLockTimers[secId];
+    if (t) { clearInterval(t.tick); clearTimeout(t.done); }
+    delete _mcLockTimers[secId];
+    delete _mcLockUntil[secId];
+    var checkEl = document.getElementById('les-check-' + secId);
+    if (checkEl) checkEl.classList.remove('les-check-locked');
+    var note = document.getElementById('les-locknote-' + secId);
+    if (note && note.parentNode) note.parentNode.removeChild(note);
+    if (lessonState.answeredChecks[secId]) return;
+    var sec = findLessonSection(lessonState.phaseId, secId);
+    var optsEl = document.getElementById('les-opts-' + secId);
+    if (sec && sec.check && sec.check.options && optsEl) optsEl.innerHTML = mcOptionsHtml(lessonState.phaseId, sec, _mcAttempts[secId] || 0);
+    var explainEl = document.getElementById('les-explain-' + secId);
+    if (explainEl) {
+      explainEl.innerHTML = '';
+      explainEl.className = 'les-check-explain';
+      explainEl.style.display = 'none';
+    }
+  }
+
   /* ── Written answer submission ────────────────────────────────────────── */
-  // Rate-limit tracker for theory submissions
-  var _theorySubmitCooldown = {};
+  // Cooldown between theory submissions (RT_THEORY_COOLDOWN_MS overrides the 10 s default)
+  var _theoryCooldownUntil = {};
+  var _theoryCooldownTimers = {};
   // Track attempt counts per section (restored from local progress)
   var _theoryAttemptCounts = {};
   // Multiple-choice click counts per section (for the attempts log)
   var _mcAttempts = {};
+
+  function _theoryCoolingLeft(secId) {
+    return Math.max(0, (_theoryCooldownUntil[secId] || 0) - Date.now());
+  }
+
+  function _startTheoryCooldown(secId) {
+    var ms = theoryCooldownMs();
+    if (_theoryCooldownTimers[secId]) clearInterval(_theoryCooldownTimers[secId]);
+    delete _theoryCooldownTimers[secId];
+    if (ms <= 0) { delete _theoryCooldownUntil[secId]; return; }
+    _theoryCooldownUntil[secId] = Date.now() + ms;
+    _theoryCooldownTimers[secId] = setInterval(function () {
+      _paintTheoryCooldown(secId);
+      if (_theoryCoolingLeft(secId) <= 0) {
+        clearInterval(_theoryCooldownTimers[secId]);
+        delete _theoryCooldownTimers[secId];
+        delete _theoryCooldownUntil[secId];
+      }
+    }, 1000);
+  }
+
+  // Show "Wait Ns" on a visible, editable submit button while the cooldown runs.
+  function _paintTheoryCooldown(secId) {
+    var btn = document.getElementById('les-wsubmit-' + secId);
+    var ta = document.getElementById('les-written-' + secId);
+    if (!btn || btn.style.display === 'none' || btn.classList.contains('les-written-submitted') || btn.classList.contains('les-written-loading')) return;
+    var left = _theoryCoolingLeft(secId);
+    if (left > 0) {
+      btn.disabled = true;
+      btn.textContent = 'Wait ' + Math.ceil(left / 1000) + 's';
+    } else if (/^Wait \d+s$/.test(btn.textContent)) {
+      var sec = findLessonSection(lessonState.phaseId, secId);
+      btn.textContent = 'Resubmit Answer';
+      btn.disabled = !ta || ta.readOnly || wordCount(ta.value) < minWordsOf(sec && sec.check);
+    }
+  }
+
+  var THEORY_FLAG_LABELS = { 'copied': 'Own words needed', 'keyword-dump': 'Full sentences needed', 'too-short': 'Too short', 'copy-note': 'Partly copied' };
+  function _theoryFlagLabels(flags) {
+    var out = [];
+    (flags || []).forEach(function (f) {
+      var label = THEORY_FLAG_LABELS[f] || (/^negated:/.test(String(f)) ? 'Says the opposite' : null);
+      if (label && out.indexOf(label) === -1) out.push(label);
+    });
+    return out;
+  }
 
   // Neutral card for answers that are saved but not graded (or kept for a mentor)
   function _ungradedTheoryCard(status, feedback) {
@@ -2264,8 +2487,8 @@ if (autoTimer.seconds() > 27.0 && !parking) {
   }
 
   window._submitWrittenAnswer = function (secId) {
-    // Rate limit: 10s cooldown
-    if (_theorySubmitCooldown[secId]) return;
+    // Cooldown between submissions (10 s by default)
+    if (_theoryCoolingLeft(secId) > 0) { _paintTheoryCooldown(secId); return; }
 
     var phaseId = lessonState.phaseId;
     var sections = window.PHASE_LESSONS[phaseId];
@@ -2283,11 +2506,11 @@ if (autoTimer.seconds() > 27.0 && !parking) {
     if (!textarea) return;
 
     var answer = textarea.value.trim();
-    var minLen = sec.check.minLength || 50;
+    var minWords = minWordsOf(sec.check);
 
-    if (answer.length < minLen) {
+    if (wordCount(answer) < minWords) {
       if (errorEl) {
-        errorEl.textContent = 'Please write at least 2-3 sentences explaining your understanding.';
+        errorEl.textContent = 'Write at least ' + minWords + ' words \u2014 explain it in full sentences.';
         errorEl.style.display = 'block';
       }
       return;
@@ -2305,10 +2528,6 @@ if (autoTimer.seconds() > 27.0 && !parking) {
       submitBtn.classList.add('les-written-loading');
     }
 
-    // Short cooldown against double-clicks
-    _theorySubmitCooldown[secId] = true;
-    setTimeout(function () { delete _theorySubmitCooldown[secId]; }, 2000);
-
     // Grade locally (js/grader.js). Nothing leaves the browser.
     var result = window.gradeTheoryAnswer(phaseId, secId, sec.check.question, answer);
     if (result && result.error) {
@@ -2322,6 +2541,7 @@ if (autoTimer.seconds() > 27.0 && !parking) {
       }
       return;
     }
+    _startTheoryCooldown(secId);
     _renderTheoryFeedback(secId, result, answer, phaseId, textarea, submitBtn);
   };
 
@@ -2357,6 +2577,7 @@ if (autoTimer.seconds() > 27.0 && !parking) {
         submitBtn.textContent = 'Resubmit Answer';
         submitBtn.classList.remove('les-written-loading');
       }
+      _paintTheoryCooldown(secId);
       // A reflection counts as complete once saved; an ungraded answer does not.
       if (isReflection && lessonState.completed.indexOf(secId) === -1) {
         setTimeout(function () { _doCompleteSection(secId); }, 800);
@@ -2366,9 +2587,18 @@ if (autoTimer.seconds() > 27.0 && !parking) {
 
     var passed = result.passed === true;   // the rubric grader decides; score is informational
 
+    // A section that was already passed is not new evidence: its resubmissions are logged
+    // ungraded so they cannot push mastery (read BEFORE this attempt is saved).
+    var phEntry = RTStore.get().curriculum.phases[phaseId];
+    var alreadyPassed = !!(phEntry && phEntry.theoryAnswers && phEntry.theoryAnswers[secId] && phEntry.theoryAnswers[secId].passed);
+
     // Build feedback card HTML
     var html = '<div class="theory-feedback ' + (passed ? 'passed' : 'failed') + '">';
-    html += '<div class="score-badge">' + (passed ? '\u2713 Understanding Confirmed' : '\u26a0 Keep Thinking') + ' &mdash; ' + result.score + '/100</div>';
+    html += '<div class="score-badge">' + (passed ? '\u2713 Understanding Confirmed' : '\u26a0 Keep Thinking') + ' &mdash; ' + esc(String(result.score)) + '/100</div>';
+    var flagLabels = _theoryFlagLabels(result.flags);
+    if (flagLabels.length) {
+      html += '<div class="theory-flag">' + esc(flagLabels.join(' \u00b7 ')) + '</div>';
+    }
     if (result.feedback) {
       html += '<div class="feedback-text">' + esc(result.feedback) + '</div>';
     }
@@ -2409,7 +2639,7 @@ if (autoTimer.seconds() > 27.0 && !parking) {
 
     // Save locally with history, and log the graded attempt for mastery tracking
     _saveTheoryAnswer(secId, answer, result, passed, attemptNum, phaseId);
-    RTStore.logAttempt({ kind: 'theory', phaseId: phaseId, sectionId: secId, graded: true, correct: passed, score: result.score, attempt: attemptNum });
+    RTStore.logAttempt({ kind: 'theory', phaseId: phaseId, sectionId: secId, graded: !alreadyPassed, correct: alreadyPassed ? null : passed, score: alreadyPassed ? null : result.score, attempt: attemptNum });
 
     if (passed) {
       lessonState.answeredChecks[secId] = true;
@@ -2474,21 +2704,14 @@ if (autoTimer.seconds() > 27.0 && !parking) {
         return;
       }
     }
-    delete _theorySubmitCooldown[secId];   // revising is a deliberate action — allow an immediate resubmit
-
     var textarea = document.getElementById('les-written-' + secId);
     var submitBtn = document.getElementById('les-wsubmit-' + secId);
     var feedbackWrap = document.getElementById('les-wfeedback-' + secId);
     var countEl = document.getElementById('les-wcount-' + secId);
 
-    // Find minLength for this section
-    var sections = window.PHASE_LESSONS[lessonState.phaseId];
-    var minLen = 50;
-    if (sections) {
-      for (var i = 0; i < sections.length; i++) {
-        if (sections[i].id === secId && sections[i].check) { minLen = sections[i].check.minLength || 50; break; }
-      }
-    }
+    // Minimum word count for this section
+    var revSec = findLessonSection(lessonState.phaseId, secId);
+    var minLen = minWordsOf(revSec && revSec.check);
 
     if (textarea) {
       textarea.readOnly = false;
@@ -2500,22 +2723,23 @@ if (autoTimer.seconds() > 27.0 && !parking) {
       if (!textarea._hasReviseListener) {
         textarea._hasReviseListener = true;
         textarea.addEventListener('input', function () {
-          var len = textarea.value.trim().length;
-          if (countEl) countEl.textContent = len + ' / ' + minLen + ' characters minimum';
-          if (submitBtn) submitBtn.disabled = (len < minLen);
+          var words = wordCount(textarea.value);
+          if (countEl) countEl.textContent = words + ' / ' + minLen + ' words minimum';
+          if (submitBtn) submitBtn.disabled = (words < minLen) || _theoryCoolingLeft(secId) > 0;
         });
       }
     }
 
-    var len = textarea ? textarea.value.trim().length : 0;
+    var len = textarea ? wordCount(textarea.value) : 0;
     if (submitBtn) {
       submitBtn.style.display = '';
       submitBtn.disabled = (len < minLen);
       submitBtn.textContent = 'Resubmit Answer';
       submitBtn.classList.remove('les-written-submitted', 'les-written-loading');
+      _paintTheoryCooldown(secId);
     }
     if (countEl) {
-      countEl.textContent = len + ' / ' + minLen + ' characters minimum';
+      countEl.textContent = len + ' / ' + minLen + ' words minimum';
     }
     // Keep feedback visible but dim it
     if (feedbackWrap) {

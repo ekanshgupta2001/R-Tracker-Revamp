@@ -1,5 +1,5 @@
 {
-  "_readme": "Hand-labelable regression set for the rubric grader (read by tests/grader.test.js and tests/curriculum.spec.js). Drafted by Claude on 2026-09-01 from the theory questions in js/curriculum/lessons.js; PLEASE SPOT-CHECK the labels. label: correct = should pass; partial = names some required ideas but misses or misstates key ones (should not pass, score in the middle band); incorrect = should fail. note = why it was labeled that way.",
+  "_readme": "Hand-labelable regression set for the rubric grader (read by tests/grader.test.js and tests/curriculum.spec.js). Drafted by Claude on 2026-09-01 from the theory questions in js/curriculum/lessons.js; PLEASE SPOT-CHECK the labels. label: correct = should pass; partial = names some required ideas but misses or misstates key ones (should not pass, score in the middle band); incorrect = should fail. note = why it was labeled that way. Adversarial samples (added 2026-09-23 for rubric-2) are all incorrect and their note starts with the attack: hint-paste, label-paste, question-copy, learn-paste, keyword-dump, negated or phrase-dump; they were generated from js/curriculum/lessons.js so the pasted text is exact.",
   "samples": [
     {
       "sectionId": "theory-sensor-physics",
@@ -324,6 +324,217 @@
       "label": "incorrect",
       "note": "Unrealistic and not a diagnostic process.",
       "answer": "Rewrite the autonomous from scratch in the 4 minutes — there's enough time if you type fast."
+    },
+
+    {
+      "sectionId": "theory-sensor-physics",
+      "label": "incorrect",
+      "note": "hint-paste: the concept hints (shown in the failure feedback) pasted back verbatim.",
+      "answer": "The gym's lights are not the workshop's lights — ambient light adds to what the sensor sees. Reflected light drops with distance (roughly distance squared) and depends on the sensor angle and the surface. The raw value is not a property of the object alone, so one cutoff cannot be right in every room."
+    },
+    {
+      "sectionId": "theory-hsv-physics",
+      "label": "incorrect",
+      "note": "hint-paste: the concept hints (shown in the failure feedback) pasted back verbatim.",
+      "answer": "RGB numbers are raw brightness — more light raises every channel. Hue comes from how the red, green and blue channels compare to each other, not their size. Dimmer light lowers all three channels together, so their ratio — and the Hue — barely moves."
+    },
+    {
+      "sectionId": "theory-noise",
+      "label": "incorrect",
+      "note": "hint-paste: the concept hints (shown in the failure feedback) pasted back verbatim.",
+      "answer": "One glitch would make the robot think something is suddenly close and do the wrong thing. Averaging the last few readings dilutes a single bad value instead of acting on it. Average the reading with the two before it: (15 + 14 + 3) / 3 = 32 / 3 ≈ 10.7."
+    },
+    {
+      "sectionId": "theory-closed-loop-thinking",
+      "label": "incorrect",
+      "note": "hint-paste: the concept hints (shown in the failure feedback) pasted back verbatim.",
+      "answer": "Open-loop sets a power for a time and hopes; nothing checks the result. Closed-loop reads a sensor, compares to the target and adjusts the motors, over and over. The same command gives different results when battery voltage, friction or wheel slip change. The motors move the robot, the sensor measures the result, and that measurement feeds back into the controller."
+    },
+    {
+      "sectionId": "theory-open-loop",
+      "label": "incorrect",
+      "note": "hint-paste: the concept hints (shown in the failure feedback) pasted back verbatim.",
+      "answer": "Motor power is a fraction of battery voltage, and the battery drains during a match. Floor surface, dust, wheel slip, load and motor temperature all change how far the wheels move the robot. Time-based driving has no feedback — no encoder or sensor tells the code how far it really went."
+    },
+    {
+      "sectionId": "theory-pid-physics",
+      "label": "incorrect",
+      "note": "hint-paste: the concept hints (shown in the failure feedback) pasted back verbatim.",
+      "answer": "With a high kP the \"spring\" is stiff: even a small error produces a strong pull. Momentum carries the robot past the target. Pulled back past the target again and again, the robot oscillates instead of settling."
+    },
+    {
+      "sectionId": "theory-odometry",
+      "label": "incorrect",
+      "note": "hint-paste: the concept hints (shown in the failure feedback) pasted back verbatim.",
+      "answer": "The difference between the left and right wheel distances is divided by the track width. Dividing by a bigger number makes every heading change smaller than reality, and the error accumulates. Every Δx/Δy uses cos/sin of the estimated heading — a wrong angle points each step slightly sideways."
+    },
+    {
+      "sectionId": "theory-bezier",
+      "label": "incorrect",
+      "note": "hint-paste: the concept hints (shown in the failure feedback) pasted back verbatim.",
+      "answer": "The curve begins at the start pose and finishes at the end pose. The control point pulls the curve toward it like a magnet, but the path never reaches it. Curves go around things and let the robot keep speed instead of stop-and-turn corners."
+    },
+    {
+      "sectionId": "theory-tuning",
+      "label": "incorrect",
+      "note": "hint-paste: the concept hints (shown in the failure feedback) pasted back verbatim.",
+      "answer": "Near the target the error is tiny, so kP × error is not enough force to move a heavy arm. The integral term builds up while the error persists; a feedforward term supplies the constant holding force against gravity. A stiffer spring may fix the short stop but will overshoot and oscillate."
+    },
+    {
+      "sectionId": "theory-scientific-debugging",
+      "label": "incorrect",
+      "note": "hint-paste: the concept hints (shown in the failure feedback) pasted back verbatim.",
+      "answer": "Could the motor, its cable, or the hub port be the problem? Does the name in the code match the robot configuration on the Driver Hub? Is the gamepad registered as the right driver, and is the button press reaching the code? Swap a port, run the motor from the configuration screen, compare names, watch the gamepad indicator or telemetry."
+    },
+    {
+      "sectionId": "theory-bug-taxonomy",
+      "label": "incorrect",
+      "note": "hint-paste: the concept hints (shown in the failure feedback) pasted back verbatim.",
+      "answer": "Bugs that appear only some of the time are timing bugs; two parts fighting is an integration bug. A bug that is not reproducible every run depends on something that changes — timing, sensor noise, loop speed. Record state transitions and sensor values each loop so you can see what was different when it failed."
+    },
+    {
+      "sectionId": "theory-root-cause",
+      "label": "incorrect",
+      "note": "hint-paste: the concept hints (shown in the failure feedback) pasted back verbatim.",
+      "answer": "The motor still fails for the same underlying reason; the sleep just changes the timing so it shows less. A 200 ms sleep blocks the whole control loop, so every other control feels slow. Look for two places setting the motor power, a loop too slow to catch short presses, or a wiring/config issue. Show the button state and the motor power each loop so you can see what happens on a missed press."
+    },
+    {
+      "sectionId": "theory-sensor-physics",
+      "label": "incorrect",
+      "note": "label-paste: the rubric concept labels pasted as sentences (padded with hints to reach the word minimum).",
+      "answer": "ambient lighting differs between rooms. distance, angle or surface changes the reflected light. a fixed threshold fails because the number depends on conditions, not just colour. The gym's lights are not the workshop's lights — ambient light adds to what the sensor sees. Reflected light drops with distance (roughly distance squared) and depends on the sensor angle and the surface. The raw value is not a property of the object alone, so one cutoff cannot be right in every room."
+    },
+    {
+      "sectionId": "theory-odometry",
+      "label": "incorrect",
+      "note": "label-paste: the rubric concept labels pasted as sentences (padded with hints to reach the word minimum).",
+      "answer": "heading change = (right − left) ÷ track width. the computed heading under-reports turning and drifts from the true heading. each position step is added along the wrong heading, so x/y curve away."
+    },
+    {
+      "sectionId": "theory-tuning",
+      "label": "incorrect",
+      "note": "label-paste: the rubric concept labels pasted as sentences (padded with hints to reach the word minimum).",
+      "answer": "steady-state error: at a small error P is too weak to beat gravity/friction. add the integral (impatience) and/or feedforward (anti-gravity) term. raising kP alone risks overshoot and oscillation. Near the target the error is tiny, so kP × error is not enough force to move a heavy arm. The integral term builds up while the error persists; a feedforward term supplies the constant holding force against gravity. A stiffer spring may fix the short stop but will overshoot and oscillate."
+    },
+    {
+      "sectionId": "theory-root-cause",
+      "label": "incorrect",
+      "note": "label-paste: the rubric concept labels pasted as sentences (padded with hints to reach the word minimum).",
+      "answer": "the sleep masks the symptom without explaining the cause. sleep stalls the loop and makes everything laggy. a plausible root cause: power overwritten elsewhere, missed short presses, loop timing, wiring/config. investigate with telemetry/logging of the button and motor power."
+    },
+    {
+      "sectionId": "theory-hsv-physics",
+      "label": "incorrect",
+      "note": "question-copy: the question text pasted back as the answer.",
+      "answer": "Explain in your own words why Hue is more stable than raw RGB values across different lighting conditions. Include: (1) what RGB values measure (absolute intensity), (2) what Hue is based on (the ratio between channels), and (3) what happens to each when the lighting changes."
+    },
+    {
+      "sectionId": "theory-closed-loop-thinking",
+      "label": "incorrect",
+      "note": "question-copy: the question text pasted back as the answer.",
+      "answer": "Compare open-loop and closed-loop approaches to driving a robot to a specific position. Include: (1) what open-loop relies on (a fixed command, no measurement), (2) what closed-loop does (measure, compare to the target, correct, repeat), (3) why closed-loop is more reliable — name a real source of variation, and (4) what physically flows around the \"loop\" and where."
+    },
+    {
+      "sectionId": "theory-tuning",
+      "label": "incorrect",
+      "note": "question-copy: the question text pasted back as the answer.",
+      "answer": "You're tuning a PID controller for a lift mechanism that holds a heavy arm. With kP = 0.05, the arm gets close to the target but stops about 8 degrees short and stays there. (1) Name this behaviour (the lesson calls it steady-state error) and say why P alone is stuck. (2) Say which term(s) you would add or adjust — the integral (impatience) and/or feedforward (anti-gravity) — and why, using the analogies. (3) Say why simply cranking kP is risky."
+    },
+    {
+      "sectionId": "theory-scientific-debugging",
+      "label": "incorrect",
+      "note": "question-copy: the question text pasted back as the answer.",
+      "answer": "Your robot's arm motor doesn't move when you press the A button. List three meaningfully different hypotheses — for example one about hardware/wiring, one about configuration (Hardware Map names), and one about the gamepad/input — and for each, describe one test you could perform WITHOUT changing code to confirm or eliminate it."
+    },
+    {
+      "sectionId": "theory-noise",
+      "label": "incorrect",
+      "note": "learn-paste: the lesson text (HTML stripped) pasted back as the answer.",
+      "answer": "Every sensor reading = signal (real value) + noise (random variation). Sources of noise in FTC: electronic noise (ADC precision limits cause ±1-3 count fluctuation), mechanical vibration (robot shakes while driving, sensor moves relative to surface), electromagnetic interference (spinning motors generate fields that induce currents in sensor wires). A distance reading of 15.2cm means the wall is probably between 14.5-15.9cm. Next cycle it might read 14.8 or 15.5 even though nothing moved. Reacting to one reading is dangerous — one noisy spike of 8cm triggers your state transition when the wall is actually 14cm away. Filtering combats noise: threshold counting (require N consecutive readings), moving average (average last 5 readings), or exponential smoothing ( filtered = α × new + (1-α) × previous )."
+    },
+    {
+      "sectionId": "theory-open-loop",
+      "label": "incorrect",
+      "note": "learn-paste: the lesson text (HTML stripped) pasted back as the answer.",
+      "answer": "Imagine throwing a basketball at a hoop with your eyes closed . You line up, throw with a specific force, and hope. That’s open-loop control — executing a pre-planned action without checking the result. In FTC, open-loop looks like setPower(0.5); sleep(2000); — run at 50% for 2 seconds and hope it’s the right distance. It fails because: Battery voltage drops during a match (13.5V → 12.0V), so the same power command produces different speeds. Friction varies across the field — dusty tiles vs clean tiles. Weight changes when you pick up game elements, shifting the center of gravity. Open-loop assumes a perfectly predictable world. The world is not predictable."
+    },
+    {
+      "sectionId": "theory-pid-physics",
+      "label": "incorrect",
+      "note": "learn-paste: the lesson text (HTML stripped) pasted back as the answer.",
+      "answer": "P = A Spring. Attach a spring between your robot and the target. Far away → strong pull. Close → gentle pull. force = kP × error . High kP = stiff spring (aggressive correction, might overshoot and oscillate). Low kP = loose spring (slow approach, might never arrive). D = A Shock Absorber. A spring alone oscillates — that’s why cars have shock absorbers. D resists motion proportional to speed of approach. braking = kD × speed_of_approach . It prevents the robot from blowing past the target. I = Impatience. Sometimes P gets you close but friction prevents the last bit of movement. I accumulates error over time, building up extra force until it pushes past friction. Danger: too much accumulation = integral windup = massive overshoot once the robot finally moves. F = Anti-Gravity. If an arm needs 0.15 power just to hold position against gravity, kF provides that baseline so PID only handles corrections. Remove the constant load so the fine-tuning system can focus."
+    },
+    {
+      "sectionId": "theory-bug-taxonomy",
+      "label": "incorrect",
+      "note": "learn-paste: the lesson text (HTML stripped) pasted back as the answer.",
+      "answer": "Not all bugs are the same. The category tells you where to look: Configuration bugs — code is correct but references wrong things. Hardware Map mismatches, wrong motor direction. Cause immediate crashes or obvious wrong behavior. Easiest to find. Logic bugs — code doesn’t crash but does the wrong thing. Wrong state transitions, bad PID constants, wrong comparisons. No error message — code does exactly what you told it, which isn’t what you wanted. Timing bugs — works sometimes, not always. Race conditions, wrong ordering, sensors checked before stabilizing. Hardest because they’re intermittent. Integration bugs — two pieces work alone but break together. Two controllers fighting over one motor, double update() calls. Only appear when the full system is assembled."
+    },
+    {
+      "sectionId": "theory-sensor-physics",
+      "label": "incorrect",
+      "note": "keyword-dump: accepted phrases from the rubric strung together with no sentences or function words.",
+      "answer": "ambient light ambient lighting room lighting gym lighting gym lights lighting changed different lighting lighting ambient fluorescent sunlight brighter room darker room distance farther closer angle distance squared inverse square surface texture reflect wont work unreliable fails breaks different rooms environment conditions"
+    },
+    {
+      "sectionId": "theory-closed-loop-thinking",
+      "label": "incorrect",
+      "note": "keyword-dump: accepted phrases from the rubric strung together with no sentences or function words.",
+      "answer": "without feedback hope hopes assumes fixed time fixed power set time blind without sensors without measuring without checking pre-planned preplanned measure measures measuring sensor sensors compare compares correct corrects correcting adjust adjusts adjusting feedback battery voltage friction slip slipping wheel slip weight variation varies vary noise noisy unpredictable feeds back fed back flows back output feeds controller motor motors robot moves reads again read again repeat information flows"
+    },
+    {
+      "sectionId": "theory-pid-physics",
+      "label": "incorrect",
+      "note": "keyword-dump: accepted phrases from the rubric strung together with no sentences or function words.",
+      "answer": "stiff too strong pulls too hard pull too hard pulled too hard hard pull aggressive accelerates hard too much force yanks yank strong pull too hard overshoot cannot stop momentum oscillat back-and-forth bounce bounces bouncing never settles keeps correcting keeps overshooting"
+    },
+    {
+      "sectionId": "theory-root-cause",
+      "label": "incorrect",
+      "note": "keyword-dump: accepted phrases from the rubric strung together with no sentences or function words.",
+      "answer": "mask masks hides hide hidden symptom still fails still happens same reason underlying actual cause real cause root cause band-aid bandaid slow slower lag laggy stall stalls blocks blocking loop time freezes delay delays unresponsive other controls whole loop loop slower overwrit overrid two places set twice somewhere else another missed misses loop too slow short press debounce wiring config state machine reset conflict fighting telemetry log logging print watch trace search investigate check whether"
+    },
+    {
+      "sectionId": "theory-pid-physics",
+      "label": "incorrect",
+      "note": "negated: a fluent answer that states the opposite of the key ideas.",
+      "answer": "With a high kP the spring is not stiff at all, so the robot does not overshoot the target. It never oscillates either, because the controller stays gentle near the target and the robot simply slows down and settles on the spot every single time we run it."
+    },
+    {
+      "sectionId": "theory-odometry",
+      "label": "incorrect",
+      "note": "negated: a fluent answer that states the opposite of the key ideas.",
+      "answer": "Heading does not come from a division at all; the dead wheels report it directly. So a track width that is 2mm too wide changes nothing: the heading never accumulates error, and without a heading error the reported position cannot drift sideways even after 100 inches of driving."
+    },
+    {
+      "sectionId": "theory-open-loop",
+      "label": "incorrect",
+      "note": "negated: a fluent answer that states the opposite of the key ideas.",
+      "answer": "It is not the battery, not voltage, that changes anything here, since no friction, no slip and no weight change happen on a practice field. A timed drive at half power is fine and repeatable, and the robot can still check its encoders to correct itself later."
+    },
+    {
+      "sectionId": "theory-bezier",
+      "label": "incorrect",
+      "note": "negated: a fluent answer that states the opposite of the key ideas.",
+      "answer": "The path does not begin at the first pose and does not finish at the last one, it only uses them as rough guides for the shape. There is no reason to pick it over a straight line, because it is not smooth, it is not faster, and it cannot avoid anything on the field."
+    },
+    {
+      "sectionId": "theory-sensor-physics",
+      "label": "incorrect",
+      "note": "phrase-dump: every concept's accepted phrases from lessons.js joined with spaces, twice, no punctuation.",
+      "answer": "ambient light ambient lighting room lighting gym lighting gym lights lighting is different lighting changed different lighting lights are different lighting ambient fluorescent sunlight brighter room darker room distance farther closer angle distance squared inverse square surface texture reflect how far can't use a cannot use a won't work wont work doesn't work does not work unreliable not reliable fails breaks depends on varies with changes with different rooms in one room each room every room environment conditions not just the color not just the colour not just on the object ambient light ambient lighting room lighting gym lighting gym lights lighting is different lighting changed different lighting lights are different lighting ambient fluorescent sunlight brighter room darker room distance farther closer angle distance squared inverse square surface texture reflect how far can't use a cannot use a won't work wont work doesn't work does not work unreliable not reliable fails breaks depends on varies with changes with different rooms in one room each room every room environment conditions not just the color not just the colour not just on the object"
+    },
+    {
+      "sectionId": "theory-hsv-physics",
+      "label": "incorrect",
+      "note": "phrase-dump: every concept's accepted phrases from lessons.js joined with spaces, twice, no punctuation.",
+      "answer": "absolute brightness intensity raw light how much light all three channels all channels every channel scale up scale down go up together drop together rise together ratio ratios relationship between relative proportion proportions compared to each other relation between stays the same stays roughly stay the same stays about about the same barely moves stable unchanged roughly the same doesn't change does not change cancels out cancel out same amount together absolute brightness intensity raw light how much light all three channels all channels every channel scale up scale down go up together drop together rise together ratio ratios relationship between relative proportion proportions compared to each other relation between stays the same stays roughly stay the same stays about about the same barely moves stable unchanged roughly the same doesn't change does not change cancels out cancel out same amount together"
+    },
+    {
+      "sectionId": "theory-bug-taxonomy",
+      "label": "incorrect",
+      "note": "phrase-dump: every concept's accepted phrases from lessons.js joined with spaces, twice, no punctuation.",
+      "answer": "timing intermittent race condition race non-deterministic nondeterministic not deterministic integration isn't reproducible not reproducible doesn't happen every not every time only sometimes varies between runs something that varies depends on works sometimes sometimes works most of the time 8 out of 10 8/10 not consistent inconsistent random sometimes fails occasionally log logging telemetry record compare a good run compare reproduce capture isbusy timeout state transition state transitions watch every loop each loop timing intermittent race condition race non-deterministic nondeterministic not deterministic integration isn't reproducible not reproducible doesn't happen every not every time only sometimes varies between runs something that varies depends on works sometimes sometimes works most of the time 8 out of 10 8/10 not consistent inconsistent random sometimes fails occasionally log logging telemetry record compare a good run compare reproduce capture isbusy timeout state transition state transitions watch every loop each loop"
     }
   ]
 }

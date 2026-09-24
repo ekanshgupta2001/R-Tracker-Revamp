@@ -8,13 +8,21 @@
 // banner, cleared again by every export/import). Both are plain booleans that
 // fillDefaults() supplies when missing, so adding one is not a schema bump.
 //
+// Schema versions: 1 = v1 export shape; 2 = per-run driver records (driver.runs);
+// 3 = path-planner headings in Pedro's convention; 4 = curriculum phases carry
+// checkedWith (the code-check grader version that last passed the deliverable).
+//
+// Import rule (every schema version): a phase marked 'verified' must carry its proof —
+// a passing code-check review from a known grader version (phase0: a passing quiz
+// record) — or validateImport() downgrades it to 'in_progress' with a warning.
+//
 // Loaded non-deferred in <head> before js/store.js on every page.
 // Exposes: window.RTSchema
 
 (function () {
   'use strict';
 
-  var SCHEMA_VERSION = 3;
+  var SCHEMA_VERSION = 4;
   var APP_VERSION = '2.1.0';
 
   var PHASE_IDS = [
@@ -51,6 +59,26 @@
   function isScoreOrNull(n) { return n === null || isScore(n); }
   function isFraction(n) { return typeof n === 'number' && isFinite(n) && n >= 0 && n <= 1; }
 
+  // A stored code-check review that proves a verified phase: graded, passed, score >= 75,
+  // from a known structural grader version ("structural-N/rules-M").
+  function isPassingReview(r) {
+    return !!r && isPlainObject(r) && isPlainObject(r.result) &&
+      r.result.status === 'graded' && r.result.passed === true &&
+      isScore(r.result.score) && r.result.score >= 75 &&
+      typeof r.result.graderVersion === 'string' &&
+      /^structural-\d+\/rules-\d+$/.test(r.result.graderVersion);
+  }
+
+  // The newest review whose result passed (reviews are stored newest last), or null.
+  function latestPassingReview(ph) {
+    if (!isPlainObject(ph) || !Array.isArray(ph.reviews)) return null;
+    for (var i = ph.reviews.length - 1; i >= 0; i--) {
+      var r = ph.reviews[i];
+      if (isPlainObject(r) && isPlainObject(r.result) && r.result.passed === true) return r;
+    }
+    return null;
+  }
+
   // ── Empty shapes ──────────────────────────────────────────────────────────
   function createEmptyPhase(phaseId) {
     if (phaseId === 'phase0') {
@@ -80,7 +108,8 @@
       bestScore: 0,
       mentorFlag: false,
       reviews: [],
-      theoryAnswers: {}
+      theoryAnswers: {},
+      checkedWith: null     // graderVersion of the latest passing code check (schema 4)
     };
   }
 
@@ -231,6 +260,21 @@
         });
       });
       return s;
+    },
+    // v4: every curriculum phase records which code-check grader version last passed
+    // its deliverable (checkedWith), so the page can say "checked with an earlier
+    // rubric" after the rules change. Stamped from the newest passing review; null
+    // when there is none. Nothing else changes.
+    4: function (s) {
+      if (!isPlainObject(s.curriculum) || !isPlainObject(s.curriculum.phases)) return s;
+      Object.keys(s.curriculum.phases).forEach(function (pid) {
+        var ph = s.curriculum.phases[pid];
+        if (!isPlainObject(ph) || pid === 'phase0') return;
+        var r = latestPassingReview(ph);
+        var gv = r && r.result.graderVersion;
+        ph.checkedWith = typeof gv === 'string' ? gv : null;
+      });
+      return s;
     }
   };
 
@@ -350,7 +394,45 @@
             if (ph.checklist !== undefined && !Array.isArray(ph.checklist)) err('curriculum.phases.' + pid + '.checklist must be an array.');
             if (ph.reviews !== undefined) {
               if (!Array.isArray(ph.reviews)) err('curriculum.phases.' + pid + '.reviews must be an array.');
-              else if (ph.reviews.length > LIMITS.reviewsPerPhase) { warnings.push(pid + ' reviews trimmed'); ph.reviews = ph.reviews.slice(-LIMITS.reviewsPerPhase); }
+              else {
+                if (ph.reviews.length > LIMITS.reviewsPerPhase) { warnings.push(pid + ' reviews trimmed'); ph.reviews = ph.reviews.slice(-LIMITS.reviewsPerPhase); }
+                var keptReviews = ph.reviews.filter(function (r) {
+                  return isPlainObject(r) && isPlainObject(r.result) &&
+                    RESULT_STATUSES.indexOf(r.result.status) !== -1 &&
+                    (r.result.score === null || r.result.score === undefined || isScore(r.result.score));
+                });
+                if (keptReviews.length !== ph.reviews.length) {
+                  warnings.push(pid + ': ' + (ph.reviews.length - keptReviews.length) + ' invalid code-check review(s) dropped.');
+                  ph.reviews = keptReviews;
+                }
+              }
+            }
+            if (ph.checkedWith !== undefined && ph.checkedWith !== null && typeof ph.checkedWith !== 'string') {
+              warnings.push(pid + ': checkedWith is invalid — cleared.');
+              ph.checkedWith = null;
+            }
+            if (ph.quizAnswers !== undefined) {
+              if (!isPlainObject(ph.quizAnswers)) { warnings.push(pid + ': quizAnswers is invalid — cleared.'); ph.quizAnswers = {}; }
+              else Object.keys(ph.quizAnswers).forEach(function (qk) {
+                var qv = ph.quizAnswers[qk];
+                if (typeof qv === 'boolean' || (isInt(qv) && qv >= 0 && qv <= 3)) return;
+                warnings.push(pid + ': quiz answer "' + qk + '" is invalid — dropped.');
+                delete ph.quizAnswers[qk];
+              });
+            }
+            // A verified phase must carry its proof (every schema version, no legacy exemption).
+            if (ph.status === 'verified') {
+              var proven = pid === 'phase0'
+                ? (ph.passed === true && isScore(ph.score) && ph.score >= 80)
+                : (Array.isArray(ph.reviews) && ph.reviews.some(isPassingReview));
+              if (!proven) {
+                ph.status = 'in_progress';
+                ph.verifiedAt = null;
+                ph.verifiedBy = null;
+                warnings.push(pid + (pid === 'phase0'
+                  ? ': marked verified without a passing quiz — set to in progress.'
+                  : ': marked verified without a passing code check — set to in progress.'));
+              }
             }
             if (ph.theoryAnswers !== undefined) {
               if (!isPlainObject(ph.theoryAnswers)) err('curriculum.phases.' + pid + '.theoryAnswers must be an object.');
@@ -405,6 +487,7 @@
     LIMITS: LIMITS,
     isScore: isScore,
     isStars: isStars,
+    isPassingReview: isPassingReview,
     createEmptyState: createEmptyState,
     createEmptyPhase: createEmptyPhase,
     createEmptyStats: createEmptyStats,

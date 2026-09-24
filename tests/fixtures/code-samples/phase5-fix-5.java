@@ -1,4 +1,4 @@
-// fixture: kit with all five bugs fixed in place, five "// BUG: ... because ..." notes and an observed/hypothesis/verified note; expect all bug checks fixed and the phase5 check to pass (>= 90)
+// fixture: kit source with bug 5 fixed (telemetry.update() at the end of the loop); expect no-telemetry-update fixed, other four broken
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -38,11 +38,9 @@ class Intake {
 // Linear slide, held at its target by a P controller on the encoder
 class Lift {
     enum Mode { AUTO, MANUAL }
-    // BUG: kP was 50, a gain so large that every error saturated the motor at full power, which made the lift oscillate; 0.01 is a safe start
-    static final double LIFT_KP = 0.01;
+    static final double LIFT_KP = 50.0;
     private final DcMotorEx motor;
-    // BUG: mode started as MANUAL and nothing set it to AUTO, so the guard in goTo() made it return silently because it never passed
-    private Mode mode = Mode.AUTO;
+    private Mode mode = Mode.MANUAL;
     private int target = 0;
 
     Lift(HardwareMap hw) {
@@ -81,14 +79,12 @@ class Robot {
     }
 
     // Keeps every subsystem running; call it every loop
-    // BUG: the follower was updated twice per loop, here and in the OpMode, because both called follower.update() so the localizer integrated double
     public void update() {
+        follower.update();
         lift.update();
     }
 }
 
-// Approach: I observed each symptom on telemetry, wrote one hypothesis per suspect line with the lesson it matched,
-// changed one thing at a time and verified each fix before moving to the next one.
 @Autonomous(name = "BuzzAuto")
 public class BuzzAuto extends LinearOpMode {
     enum State { TO_SCORE, SCORE, TO_PARK, DONE }
@@ -131,8 +127,7 @@ public class BuzzAuto extends LinearOpMode {
             switch (state) {
                 case TO_SCORE:
                     // At the basket: raise the lift and start the scoring timer
-                    // BUG: the isBusy() check was inverted, so the transition fired while the path was still running; negated it because busy means still driving
-                    if (!robot.follower.isBusy()) {
+                    if (robot.follower.isBusy()) {
                         state = State.SCORE;
                         robot.lift.goTo(LIFT_HIGH);
                         timer.reset();
@@ -159,7 +154,6 @@ public class BuzzAuto extends LinearOpMode {
             telemetry.addData("Pose", robot.follower.pose());
             telemetry.addData("Lift", robot.lift.position());
             telemetry.addData("Busy", robot.follower.isBusy());
-            // BUG: telemetry values never reached the screen because telemetry.update() was missing from the loop, so the display stayed frozen
             telemetry.update();
         }
     }

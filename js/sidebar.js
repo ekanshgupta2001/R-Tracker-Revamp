@@ -368,6 +368,8 @@
       if (!confirm(msg)) return;
       const r = RTStore.importJSON(text);
       if (!r.ok) { alert('Import failed: ' + r.error); return; }
+      // Validation notes (e.g. a phase marked verified without its proof was set back to in progress).
+      if (r.warnings && r.warnings.length) alert('Imported with notes:\n• ' + r.warnings.slice(0, 5).join('\n• '));
       try { sessionStorage.setItem('rt-nav', '1'); } catch (err) {}   // no beforeunload prompt for our own reload
       location.reload();
     };

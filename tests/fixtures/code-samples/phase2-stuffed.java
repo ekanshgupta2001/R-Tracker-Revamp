@@ -1,0 +1,2 @@
+// fixture: phase2 keyword dump — no classes at all, just the words the old regex rules looked for; expected: parses + opmode-present CRITICAL, fails, score < 40
+class Drivetrain class Robot class Claw private DcMotor left; private Servo claw; enum ClawState { OPEN } public void drive() public void open() public void close() new Drivetrain(hardwareMap) new Claw(hardwareMap) Robot robot = new Robot(hardwareMap); robot.drivetrain.drive(-gamepad1.left_stick_y); robot.claw.open(); extends LinearOpMode

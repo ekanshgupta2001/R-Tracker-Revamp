@@ -17,7 +17,9 @@
   <script src="../js/store.js"></script>
   <script defer src="../js/sidebar.js"></script>
   <script defer src="../js/grader.js"></script>
+  <script defer src="../js/java-structure.js"></script>
   <script defer src="../js/curriculum/code-rules.js"></script>
+  <script defer src="../js/curriculum/phase5-kit.js"></script>
   <script defer src="../js/code-check.js"></script>
   <script defer src="../js/curriculum/lessons.js"></script>
 </head>
@@ -118,51 +120,58 @@
       {
         q: 'What does this code output?',
         code: '<span class="syn-kw">public class</span> <span class="syn-type">Dog</span> {\n  <span class="syn-type">String</span> name;\n  <span class="syn-kw">public</span> <span class="syn-fn">Dog</span>(<span class="syn-type">String</span> n) { name = n; }\n}\n<span class="syn-cm">// In main:</span>\n<span class="syn-type">Dog</span> d = <span class="syn-kw">new</span> <span class="syn-fn">Dog</span>(<span class="syn-str">"Rex"</span>);\nSystem.out.<span class="syn-fn">println</span>(d.name);',
+        topic: 'Constructors and fields',
         opts: ['null', 'Rex', 'Dog', 'Error'],
         correct: 1,
         explain: 'The constructor assigns n to name, so d.name is "Rex".'
       },
       {
         q: 'Which keyword creates a new object instance?',
-        opts: ['new', 'class', 'void', 'static'],
-        correct: 0,
+        topic: 'Creating objects with new',
+        opts: ['class', 'void', 'new', 'static'],
+        correct: 2,
         explain: 'The <code>new</code> keyword allocates memory and calls the constructor.'
       },
       {
         q: 'What is wrong with this code?',
         code: '<span class="syn-kw">for</span> (<span class="syn-kw">int</span> i = <span class="syn-num">0</span>; i <= arr.length; i++) {\n  System.out.<span class="syn-fn">println</span>(arr[i]);\n}',
+        topic: 'Array indexes (off-by-one)',
         opts: [
-          'Should use i < arr.length (off-by-one)',
           'Missing semicolons',
           'arr is not declared',
-          'println needs a cast'
+          'println needs a cast',
+          'Should use i < arr.length (off-by-one)'
         ],
-        correct: 0,
+        correct: 3,
         explain: 'Arrays are 0-indexed, so the last valid index is arr.length - 1. Using <= causes an ArrayIndexOutOfBoundsException.'
       },
       {
         q: 'What does this method return when called with x = 7?',
         code: '<span class="syn-kw">int</span> <span class="syn-fn">check</span>(<span class="syn-kw">int</span> x) {\n  <span class="syn-kw">if</span> (x > <span class="syn-num">10</span>) <span class="syn-kw">return</span> <span class="syn-num">1</span>;\n  <span class="syn-kw">else if</span> (x > <span class="syn-num">5</span>) <span class="syn-kw">return</span> <span class="syn-num">2</span>;\n  <span class="syn-kw">else return</span> <span class="syn-num">3</span>;\n}',
+        topic: 'if / else if flow',
         opts: ['1', '2', '3', 'Error'],
         correct: 1,
         explain: '7 is not > 10, but 7 > 5 is true, so it returns 2.'
       },
       {
         q: 'Which data type stores true/false?',
-        opts: ['boolean', 'int', 'String', 'double'],
-        correct: 0,
+        topic: 'Primitive types',
+        opts: ['int', 'String', 'boolean', 'double'],
+        correct: 2,
         explain: '<code>boolean</code> is Java\'s primitive type for true/false values.'
       },
       {
         q: 'What does this ArrayList code produce?',
         code: 'ArrayList&lt;<span class="syn-type">String</span>&gt; list = <span class="syn-kw">new</span> ArrayList&lt;&gt;();\nlist.<span class="syn-fn">add</span>(<span class="syn-str">"A"</span>);\nlist.<span class="syn-fn">add</span>(<span class="syn-str">"B"</span>);\nlist.<span class="syn-fn">add</span>(<span class="syn-str">"C"</span>);\nlist.<span class="syn-fn">remove</span>(<span class="syn-num">1</span>);\nSystem.out.<span class="syn-fn">println</span>(list);',
-        opts: ['[A, C]', '[B, C]', '[A, B]', '[A, B, C]'],
-        correct: 0,
+        topic: 'ArrayList remove(index)',
+        opts: ['[B, C]', '[A, C]', '[A, B]', '[A, B, C]'],
+        correct: 1,
         explain: 'remove(1) removes the element at index 1 ("B"), leaving [A, C].'
       },
       {
         q: 'Which version correctly fixes this code?',
         code: '<span class="syn-kw">public class</span> <span class="syn-type">Motor</span> {\n  <span class="syn-kw">double</span> power\n  <span class="syn-kw">public void</span> <span class="syn-fn">setPower</span>(<span class="syn-kw">double</span> p) { power = p; }\n}',
+        topic: 'Statement syntax (semicolons)',
         opts: [
           'Add semicolon after "double power"',
           'Change double to int',
@@ -174,17 +183,19 @@
       },
       {
         q: 'What is encapsulation?',
+        topic: 'Encapsulation',
         opts: [
-          'Hiding internal details behind methods',
           'Creating multiple objects from one class',
           'Inheriting from a parent class',
-          'Overloading method parameters'
+          'Overloading method parameters',
+          'Hiding internal details behind methods'
         ],
-        correct: 0,
+        correct: 3,
         explain: 'Encapsulation means bundling data with methods and restricting direct access to internal state.'
       },
       {
         q: 'What does <code>this</code> refer to in a constructor?',
+        topic: 'The this keyword',
         opts: [
           'The current object being created',
           'The parent class',
@@ -197,8 +208,9 @@
       {
         q: 'What does this code print?',
         code: '<span class="syn-kw">int</span> count = <span class="syn-num">0</span>;\n<span class="syn-kw">while</span> (count < <span class="syn-num">3</span>) {\n  count++;\n}\nSystem.out.<span class="syn-fn">println</span>(count);',
-        opts: ['3', '2', '4', '0'],
-        correct: 0,
+        topic: 'while loops',
+        opts: ['4', '0', '3', '2'],
+        correct: 2,
         explain: 'The loop runs while count < 3. After iterations (0->1, 1->2, 2->3), count is 3 when the loop exits.'
       }
     ];
@@ -432,10 +444,10 @@ telemetry.<span class="syn-fn">update</span>();</div>
 
       <div class="curr-activity">
         <div class="curr-activity-header">&#10067; Pressure Test</div>
-        <p>Your mentor will give you a deliberately broken codebase. You have 20 minutes to find and fix all bugs. This simulates a real competition pit scenario.</p>
+        <p>The broken program is in the Phase 5 lesson (<strong>Debug Under Pressure: the program</strong>). Load it into the deliverable editor and give yourself 20 minutes to find and fix its five bugs. This simulates a real competition pit scenario.</p>
       </div>
 
-      <blockquote><strong>Mentor Note:</strong> For the deliverable, prepare a broken codebase (3-5 bugs) and give the student 20 minutes to diagnose and fix under pressure. Evaluate their debugging process, not just whether they found all bugs.</blockquote>
+      <blockquote><strong>Mentor Note:</strong> The code check verifies each of the five fixes and that the submission is still the same program, not a different one. Watch the student's process as well as the result. You may still substitute your own broken codebase; if you do, the student submits it for mentor review instead of the automatic check.</blockquote>
     `;
 
     // Advanced modules use interactive system from lessons.js
@@ -452,69 +464,41 @@ telemetry.<span class="syn-fn">update</span>();</div>
       phase1: {
         title: 'Build a Working TeleOp',
         req: 'Write a TeleOp OpMode with drivetrain control, at least one mechanism, and telemetry output.',
-        checklist: [
-          'Motors configured with correct names from hardwareMap',
-          'Drivetrain responds to gamepad joysticks',
-          'At least one mechanism (servo or additional motor) controlled by buttons',
-          'Telemetry displays at least 3 data points',
-          'Code compiles and runs without crashes'
-        ]
+        checklist: ['Runs on the robot without crashes']
       },
       phase2: {
         title: 'Refactored Subsystem Architecture',
         req: 'Refactor your TeleOp code into proper subsystems with a Robot class.',
-        checklist: [
-          'Drivetrain subsystem class with drive() and stop() methods',
-          'At least one additional subsystem (Intake, Lift, Claw, etc.)',
-          'Robot class that initializes all subsystems',
-          'OpMode uses Robot class — no direct hardware references',
-          'All fields are private with public methods (encapsulation)'
-        ]
+        checklist: ['Tested on the robot: TeleOp drives and the mechanism moves']
       },
       phase3: {
         title: 'Sensor-Driven Autonomous',
         req: 'Build an autonomous that drives to a position and reacts to sensor input.',
         checklist: [
-          'Uses LinearOpMode with waitForStart()',
           'Drives to at least one position',
-          'Reads from at least one sensor (color, distance, IMU)',
-          'Makes a decision based on sensor reading',
-          'Stops all motors when finished'
+          'Reacts to the sensor correctly 3 runs in a row'
         ]
       },
       phase4: {
         title: 'Multi-Waypoint Autonomous Path',
         req: 'Create an autonomous using PID and odometry that completes 5 consecutive consistent runs.',
         checklist: [
-          'PID controller for at least heading correction',
-          'Encoder-based distance tracking OR odometry',
-          'At least 3 waypoints in the path',
           'Consistent completion (5/5 runs with < 2in variance)',
           'Constants.java tuned with AutoTune'
         ]
       },
       phase5: {
         title: 'Debug Under Pressure',
-        req: 'Diagnose and fix a deliberately broken codebase within 20 minutes.',
+        req: 'Fix the five bugs in the Debug Under Pressure program from the Phase 5 lesson within 20 minutes. Load it into the editor below, fix it in place, and add a short comment at each fix saying what was wrong and why. The check verifies each fix and that it is still the same program. (Your mentor may substitute their own broken codebase and review it with you instead.)',
         checklist: [
-          'Found and fixed at least 3 of 5 bugs',
-          'Used systematic debugging (not random guessing)',
-          'Added telemetry to isolate issues',
-          'Documented what each bug was and how you fixed it',
-          'Completed within 20 minutes'
+          'Fixed the program within 20 minutes',
+          'Ran the fixed program on the robot (or explained why each fix works)'
         ]
       },
       advanced_command: {
         title: 'Command-Based Refactor',
         req: 'Take your Phase 4 autonomous and rebuild it as Ivy commands.',
-        checklist: [
-          'Scheduler.reset() in init and Scheduler.execute() once per loop, next to follower.update()',
-          'Every path followed with follow(follower, path) from PedroCommands',
-          'A runIntake(seconds) command built with Command.build() that stops the motor in setEnd()',
-          'Every command declares what it uses with .requiring(...)',
-          'The routine is one sequential(...) composition — no state enum',
-          'Compare both versions: which is easier to read and modify?'
-        ]
+        checklist: ['Ran the command-based auto on the robot']
       },
       advanced_strategy: {
         title: 'Strategy Analysis',
@@ -531,13 +515,8 @@ telemetry.<span class="syn-fn">update</span>();</div>
         title: 'Full Competition Autonomous',
         req: 'Build a complete, competition-grade autonomous routine from scratch — one that could run in an actual FTC match.',
         checklist: [
-          'All hardware wrapped in subsystem classes with private fields and public methods',
-          'Pedro Pathing 3 for all driving with at least 4 distinct poses',
-          'At least one sensor-driven decision with filtering',
-          'Telemetry displaying current state, sensor values, motor powers, loop time',
-          'Timer-based fallback and emergency park if less than 3 seconds remain',
-          'Alliance mirroring — works on both sides from one codebase',
-          'Survives 5 consecutive runs without crashing'
+          'Survives 5 consecutive runs without crashing',
+          'Strategy document and tuning log delivered to the mentor'
         ]
       }
     };
@@ -554,7 +533,48 @@ telemetry.<span class="syn-fn">update</span>();</div>
        HELPERS
        ══════════════════════════════════════════════════════════════════════ */
     function esc(s) {
-      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // The code-check grader version in force now ('structural-N/rules-M'); tolerates the
+    // older checker that has no RTCodeCheck.graderVersion().
+    function currentGraderVersion() {
+      var cc = window.RTCodeCheck;
+      if (!cc) return null;
+      if (typeof cc.graderVersion === 'function') return cc.graderVersion();
+      return cc.VERSION + '/' + (window.CODE_RULES_VERSION || 'rules-?');
+    }
+
+    // Requirements the checker grades for a phase, normalised to { label, weight? }
+    // (older checkers return plain strings).
+    function requirementsFor(phaseId) {
+      var list = (typeof window.getPhaseRequirements === 'function') ? window.getPhaseRequirements(phaseId) : [];
+      if (!Array.isArray(list)) return [];
+      return list.map(function(r) {
+        if (typeof r === 'string') return { label: r };
+        if (r && typeof r === 'object') return { label: r.label || r.requirement || r.id || '', weight: r.weight };
+        return null;
+      }).filter(function(r) { return r && r.label; });
+    }
+
+    // Reference code the student was shown for a phase (lesson snippets and advanced-module
+    // code), passed to the checker so it can flag a pasted lesson.
+    function snippetsFor(phaseId) {
+      var out = [];
+      var lessons = window.PHASE_LESSONS && window.PHASE_LESSONS[phaseId];
+      if (Array.isArray(lessons)) {
+        lessons.forEach(function(sec) {
+          var c = sec && sec.code;
+          if (c && !c.kit && typeof c.snippet === 'string' && c.snippet) out.push(c.snippet);
+        });
+      }
+      var adv = window.ADVANCED_CONTENT && window.ADVANCED_CONTENT[phaseId];
+      if (adv && Array.isArray(adv.sections)) {
+        adv.sections.forEach(function(sec) {
+          if (sec && typeof sec.code === 'string' && sec.code) out.push(sec.code);
+        });
+      }
+      return out;
     }
 
     function getStatus(phaseId) {
@@ -765,27 +785,72 @@ telemetry.<span class="syn-fn">update</span>();</div>
     /* ══════════════════════════════════════════════════════════════════════════
        QUIZ RENDERING
        ══════════════════════════════════════════════════════════════════════ */
+    // Per-attempt order: questions and each question's options are shuffled with a seeded
+    // PRNG, seed = attempt number, so a reload keeps the order and a retry changes it.
+    // The DOM carries original indices (data-q / data-opt); answers are stored as original
+    // option indices.
+    function fnv1a(str) {
+      var h = 0x811c9dc5;
+      for (var i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 0x01000193) >>> 0;
+      }
+      return h >>> 0;
+    }
+
+    function mulberry32(a) {
+      return function() {
+        a = (a + 0x6D2B79F5) | 0;
+        var t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function shuffledRange(n, rnd) {
+      var out = [];
+      for (var i = 0; i < n; i++) out.push(i);
+      for (var j = n - 1; j > 0; j--) {
+        var k = Math.floor(rnd() * (j + 1));
+        var tmp = out[j]; out[j] = out[k]; out[k] = tmp;
+      }
+      return out;
+    }
+
+    function quizPermutation(seed) {
+      var rnd = mulberry32(fnv1a('phase0-quiz|' + seed));
+      var questions = shuffledRange(QUIZ.length, rnd);
+      var options = QUIZ.map(function(q) { return shuffledRange(q.opts.length, rnd); });
+      return { questions: questions, options: options };
+    }
+    window.rtQuizOrder = quizPermutation;
+
+    var quizRetryTimer = null;
+
     function renderQuiz(data) {
       quizAnswers = {};
       quizDone = false;
+      if (quizRetryTimer) { clearInterval(quizRetryTimer); quizRetryTimer = null; }
 
+      var order = quizPermutation((data.attempts || 0) + 1);
       var html = '<div class="quiz-container" id="quiz-container">';
       html += '<div class="quiz-title">Java Diagnostic Quiz</div>';
-      html += '<div class="quiz-subtitle">Score 80% or higher to unlock Phase 1. ' + (data.attempts ? '(Attempt ' + (data.attempts + 1) + ')' : '') + '</div>';
+      html += '<div class="quiz-subtitle">Score 80% or higher to unlock Phase 1. Answers are revealed once you pass. ' + (data.attempts ? '(Attempt ' + (data.attempts + 1) + ')' : '') + '</div>';
 
-      QUIZ.forEach(function(q, i) {
-        html += '<div class="quiz-question" id="quiz-q-' + i + '">';
-        html += '<div class="quiz-q-num">Question ' + (i + 1) + ' of ' + QUIZ.length + '</div>';
+      order.questions.forEach(function(qi, pos) {
+        var q = QUIZ[qi];
+        html += '<div class="quiz-question" id="quiz-q-' + qi + '" data-q="' + qi + '">';
+        html += '<div class="quiz-q-num">Question ' + (pos + 1) + ' of ' + QUIZ.length + '</div>';
         html += '<div class="quiz-q-text">' + q.q + '</div>';
         if (q.code) {
           html += '<div class="quiz-q-code">' + q.code + '</div>';
         }
-        html += '<div class="quiz-options" id="quiz-opts-' + i + '">';
-        q.opts.forEach(function(opt, j) {
-          html += '<button class="quiz-opt" onclick="answerQuiz(' + i + ',' + j + ')">' + opt + '</button>';
+        html += '<div class="quiz-options" id="quiz-opts-' + qi + '">';
+        order.options[qi].forEach(function(oj) {
+          html += '<button class="quiz-opt" data-q="' + qi + '" data-opt="' + oj + '" onclick="answerQuiz(' + qi + ',' + oj + ')">' + q.opts[oj] + '</button>';
         });
         html += '</div>';
-        html += '<div class="quiz-explanation" id="quiz-exp-' + i + '"></div>';
+        html += '<div class="quiz-explanation" id="quiz-exp-' + qi + '"></div>';
         html += '</div>';
       });
 
@@ -794,23 +859,21 @@ telemetry.<span class="syn-fn">update</span>();</div>
       return html;
     }
 
-    window.answerQuiz = function(qIdx, optIdx) {
-      if (quizAnswers[qIdx] !== undefined) return; // already answered
-      quizAnswers[qIdx] = optIdx;
-
-      var q = QUIZ[qIdx];
-      var opts = document.querySelectorAll('#quiz-opts-' + qIdx + ' .quiz-opt');
-      var expEl = document.getElementById('quiz-exp-' + qIdx);
-
-      opts.forEach(function(btn, j) {
+    // Mark the chosen option of one question (original indices). Reveals nothing.
+    function markQuizSelected(qIdx, optIdx) {
+      document.querySelectorAll('.quiz-opt[data-q="' + qIdx + '"]').forEach(function(btn) {
         btn.classList.add('quiz-answered');
-        if (j === q.correct) btn.classList.add('quiz-correct');
-        if (j === optIdx && j !== q.correct) btn.classList.add('quiz-wrong');
+        if (parseInt(btn.getAttribute('data-opt'), 10) === optIdx) btn.classList.add('quiz-selected');
       });
+    }
 
-      var isCorrect = optIdx === q.correct;
-      expEl.className = 'quiz-explanation show ' + (isCorrect ? 'correct' : 'wrong');
-      expEl.innerHTML = (isCorrect ? '&#10003; Correct! ' : '&#10007; Incorrect. ') + q.explain;
+    window.answerQuiz = function(qIdx, optIdx) {
+      if (quizDone) return;
+      if (!QUIZ[qIdx] || quizAnswers[qIdx] !== undefined) return; // already answered
+      quizAnswers[qIdx] = optIdx;
+      markQuizSelected(qIdx, optIdx);
+
+      var isCorrect = optIdx === QUIZ[qIdx].correct;
 
       // Save progress after each answer
       saveQuizProgress();
@@ -822,30 +885,81 @@ telemetry.<span class="syn-fn">update</span>();</div>
 
       // Check if all questions answered
       if (Object.keys(quizAnswers).length === QUIZ.length) {
-        setTimeout(showQuizResults, 500);
+        quizDone = true;
+        setTimeout(function() { showQuizResults(); }, 300);
       }
     };
 
     function saveQuizProgress() {
       var answers = {};
       Object.keys(quizAnswers).forEach(function(k) {
-        answers['q' + k] = quizAnswers[k] === QUIZ[k].correct;
+        answers['q' + k] = quizAnswers[k];   // original option index (0–3)
       });
       var wasVerified = currData.phase0 && currData.phase0.status === 'verified';
       savePhaseData('phase0', { quizAnswers: answers, status: wasVerified ? 'verified' : 'in_progress' });
     }
 
-    function showQuizResults() {
+    // After a pass: show ✓/✗ on every question and its explanation.
+    function revealQuizAnswers() {
+      QUIZ.forEach(function(q, qi) {
+        var chosen = quizAnswers[qi];
+        document.querySelectorAll('.quiz-opt[data-q="' + qi + '"]').forEach(function(btn) {
+          var oj = parseInt(btn.getAttribute('data-opt'), 10);
+          btn.classList.add('quiz-answered');
+          if (oj === q.correct) btn.classList.add('quiz-correct');
+          if (oj === chosen && chosen !== q.correct) btn.classList.add('quiz-wrong');
+        });
+        var expEl = document.getElementById('quiz-exp-' + qi);
+        if (expEl) {
+          var ok = chosen === q.correct;
+          expEl.className = 'quiz-explanation show ' + (ok ? 'correct' : 'wrong');
+          expEl.innerHTML = (ok ? '&#10003; Correct! ' : '&#10007; Incorrect. ') + q.explain;
+        }
+      });
+    }
+
+    // Retry is locked for RT_QUIZ_RETRY_WAIT_MS (default 60 s) after the failed attempt.
+    function startQuizRetryCountdown(lastAttempt) {
+      if (quizRetryTimer) { clearInterval(quizRetryTimer); quizRetryTimer = null; }
+      var waitMs = window.RT_QUIZ_RETRY_WAIT_MS || 60000;
+      function tick() {
+        var btn = document.getElementById('quiz-retry-btn');
+        var note = document.getElementById('quiz-retry-wait');
+        if (!btn) { clearInterval(quizRetryTimer); quizRetryTimer = null; return; }
+        var left = (lastAttempt || 0) + waitMs - Date.now();
+        if (left <= 0) {
+          btn.disabled = false;
+          if (note) note.textContent = 'Ready when you are.';
+          clearInterval(quizRetryTimer); quizRetryTimer = null;
+          return;
+        }
+        btn.disabled = true;
+        if (note) note.textContent = 'Re-read the material — retry in ' + Math.ceil(left / 1000) + ' s';
+      }
+      tick();
+      var btn0 = document.getElementById('quiz-retry-btn');
+      if (btn0 && btn0.disabled) quizRetryTimer = setInterval(tick, 200);
+    }
+
+    // opts.fromRestore: redraw a finished attempt after a reload — no counting, saving or logging.
+    function showQuizResults(opts) {
+      var fromRestore = !!(opts && opts.fromRestore);
+      quizDone = true;
       var correct = 0;
+      var missed = [];
       QUIZ.forEach(function(q, i) {
         if (quizAnswers[i] === q.correct) correct++;
+        else missed.push(q.topic || ('Question ' + (i + 1)));
       });
 
       var pct = Math.round((correct / QUIZ.length) * 100);
       var passed = pct >= 80;
-      var attempts = (currData.phase0 && currData.phase0.attempts) ? currData.phase0.attempts + 1 : 1;
+      var p0 = currData.phase0 || {};
+      var attempts = fromRestore ? (p0.attempts || 0) : (p0.attempts || 0) + 1;
+      var lastAttempt = fromRestore ? (p0.lastAttempt || 0) : Date.now();
 
       var el = document.getElementById('quiz-results');
+      if (!el) return;
       var html = '';
       html += '<div class="quiz-score ' + (passed ? 'pass' : 'fail') + '">' + correct + '/' + QUIZ.length + '</div>';
       html += '<div class="quiz-score-label">' + pct + '%</div>';
@@ -855,44 +969,46 @@ telemetry.<span class="syn-fn">update</span>();</div>
         html += '<button class="quiz-retry-btn" onclick="selectPhase(\'phase1\')">Start Phase 1 &rarr;</button>';
       } else {
         html += '<div class="quiz-result-msg fail">You need 80% to pass. Review the material and try again.</div>';
-        html += '<button class="quiz-retry-btn" onclick="retryQuiz()">Retry Quiz</button>';
+        html += '<div class="quiz-result-msg quiz-missed">Missed: ' + missed.map(esc).join(', ') + '</div>';
+        html += '<button class="quiz-retry-btn" id="quiz-retry-btn" onclick="retryQuiz()" disabled>Retry Quiz</button>';
+        html += '<div class="quiz-retry-wait" id="quiz-retry-wait"></div>';
       }
 
       el.innerHTML = html;
       el.classList.add('show');
+      if (passed) revealQuizAnswers();
+      else startQuizRetryCountdown(lastAttempt);
+
+      if (fromRestore) return;
 
       // Scroll results into view
       setTimeout(function() { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
 
       // Save to local progress
-      var wasVerified = currData.phase0 && currData.phase0.status === 'verified';
+      var wasVerified = p0.status === 'verified';
       var saveData = {
-        status: (passed || wasVerified) ? 'verified' : (currData.phase0 && currData.phase0.status === 'in_progress' ? 'in_progress' : 'not_started'),
+        status: (passed || wasVerified) ? 'verified' : (p0.status === 'in_progress' ? 'in_progress' : 'not_started'),
         score: pct,
-        passed: passed || !!(currData.phase0 && currData.phase0.passed),
+        passed: passed || !!p0.passed,
         attempts: attempts,
-        lastAttempt: Date.now()
+        lastAttempt: lastAttempt
       };
       if (passed && !wasVerified) {
         saveData.verifiedAt = Date.now();
         saveData.verifiedBy = 'auto';
       }
 
-      currData.phase0 = Object.assign(currData.phase0 || {}, saveData);
       console.log('[Curriculum] Quiz results: score:', pct + '%', 'passed:', passed, 'attempts:', attempts);
       savePhaseData('phase0', saveData).then(function() {
         if (passed) {
           // Unlock Phase 1
           var phase1Data = currData.phase1 || {};
           if (!phase1Data.status || phase1Data.status === 'locked') {
-            phase1Data.status = 'not_started';
-            currData.phase1 = phase1Data;
             console.log('[Curriculum] Phase 0 verified, unlocking phase 1');
             savePhaseData('phase1', { status: 'not_started' });
           }
 
           // Re-render header to show completed badge
-          var phase = PHASES[0];
           var headerEl = document.querySelector('.curr-phase-header');
           if (headerEl) {
             var hHtml = '<div class="curr-phase-num">Phase 0</div>';
@@ -915,51 +1031,42 @@ telemetry.<span class="syn-fn">update</span>();</div>
     window.retryQuiz = function() {
       var container = document.getElementById('quiz-container');
       if (!container) return;
+      var btn = document.getElementById('quiz-retry-btn');
+      if (btn && btn.disabled) return;   // still inside the re-read wait
       quizAnswers = {};
       quizDone = false;
       // Clear saved answers (attempt count and best result are kept)
       savePhaseData('phase0', { quizAnswers: {} });
-      // Re-render just the quiz
+      // Re-render just the quiz; the incremented attempt count gives a fresh order
       container.outerHTML = renderQuiz(currData.phase0 || {});
     };
 
     function restoreQuizProgress(savedAnswers) {
-      // Replay previously answered questions to restore visual state
+      // Re-mark previously chosen options (nothing is revealed, nothing is saved or logged)
       Object.keys(savedAnswers).forEach(function(key) {
-        var qIdx = parseInt(key.replace('q', ''));
-        if (isNaN(qIdx) || qIdx >= QUIZ.length) return;
+        var qIdx = parseInt(key.replace('q', ''), 10);
+        if (isNaN(qIdx) || qIdx < 0 || qIdx >= QUIZ.length) return;
         var q = QUIZ[qIdx];
-        var wasCorrect = savedAnswers[key];
-
-        // Find the correct option index and the user's chosen option
-        var correctIdx = q.correct;
-        // We only know if it was correct or not; simulate the answer
-        var chosenIdx = wasCorrect ? correctIdx : -1;
-        if (!wasCorrect) {
-          // Find a wrong option (we don't know which one they picked, so mark the first wrong one)
-          for (var j = 0; j < q.opts.length; j++) {
-            if (j !== correctIdx) { chosenIdx = j; break; }
+        var v = savedAnswers[key];
+        var chosenIdx;
+        if (typeof v === 'number' && Math.floor(v) === v && v >= 0 && v < q.opts.length) {
+          chosenIdx = v;
+        } else if (v === true) {
+          chosenIdx = q.correct;              // legacy boolean record: we only know it was right
+        } else if (v === false) {
+          for (var j = 0; j < q.opts.length; j++) {  // legacy: which wrong option is unknown; use the first
+            if (j !== q.correct) { chosenIdx = j; break; }
           }
+        } else {
+          return;
         }
-
-        // Apply visual state without triggering save again
         quizAnswers[qIdx] = chosenIdx;
-        var opts = document.querySelectorAll('#quiz-opts-' + qIdx + ' .quiz-opt');
-        var expEl = document.getElementById('quiz-exp-' + qIdx);
-
-        opts.forEach(function(btn, j) {
-          btn.classList.add('quiz-answered');
-          if (j === correctIdx) btn.classList.add('quiz-correct');
-          if (j === chosenIdx && chosenIdx !== correctIdx) btn.classList.add('quiz-wrong');
-        });
-
-        expEl.className = 'quiz-explanation show ' + (wasCorrect ? 'correct' : 'wrong');
-        expEl.innerHTML = (wasCorrect ? '&#10003; Correct! ' : '&#10007; Incorrect. ') + q.explain;
+        markQuizSelected(qIdx, chosenIdx);
       });
 
-      // If all questions were answered, show results
+      // If all questions were answered, redraw the result of that attempt
       if (Object.keys(quizAnswers).length === QUIZ.length) {
-        setTimeout(showQuizResults, 300);
+        showQuizResults({ fromRestore: true });
       }
     }
 
@@ -990,8 +1097,32 @@ telemetry.<span class="syn-fn">update</span>();</div>
         html += '</div>';
       }
 
+      // A pass recorded under older checker rules stays verified; offer a re-check.
+      if (status === 'verified') {
+        var curVersion = currentGraderVersion();
+        if (curVersion && data.checkedWith !== curVersion) {
+          var was = data.checkedWith ? '<code>' + esc(data.checkedWith) + '</code>' : 'an earlier version';
+          html += '<div class="rubric-version-note">Checked with an earlier rubric (' + was + ') — press Save &amp; Check Code to re-check under the current rules. Your completion is safe.</div>';
+        }
+      }
+
       html += '<div class="curr-deliv-title">Phase Deliverable</div>';
       html += '<div class="curr-deliv-req">' + esc(def.req) + '</div>';
+
+      // What the code check verifies, straight from the rules (label + weight)
+      var reqs = requirementsFor(phaseId);
+      if (reqs.length) {
+        html += '<div class="rt-label curr-deliv-subtitle">Checked automatically</div>';
+        html += '<ul class="curr-checklist curr-auto-checklist">';
+        reqs.forEach(function(r) {
+          html += '<li class="curr-check-item curr-auto-item"><span>' + esc(r.label) + '</span>';
+          if (typeof r.weight === 'number') html += ' <span class="curr-auto-weight">(' + esc(r.weight) + ' pts)</span>';
+          html += '</li>';
+        });
+        html += '</ul>';
+        html += '<div class="rt-label curr-deliv-subtitle">Mentor checklist</div>';
+      }
+
       html += '<ul class="curr-checklist">';
       def.checklist.forEach(function(item, i) {
         var checked = checklist[i] ? ' checked' : '';
@@ -1164,7 +1295,7 @@ telemetry.<span class="syn-fn">update</span>();</div>
       savePhaseData(phaseId, { submittedCode: code });
 
       try {
-        var review = window.checkCode(phaseId, code);
+        var review = window.checkCode(phaseId, code, { references: snippetsFor(phaseId), kit: window.RT_PHASE5_KIT });
         if (!review) throw new Error('No result returned');
         if (review.error) {
           alert(review.message);
@@ -1172,35 +1303,58 @@ telemetry.<span class="syn-fn">update</span>();</div>
         }
         var graded = review.status === 'graded';
 
-        // Append to this phase's check history (newest last, capped)
+        // Append to this phase's check history (newest last, capped). The newest passing
+        // review is never evicted: it is the proof a verified phase carries in its export.
         var reviews = (data.reviews || []).slice();
         reviews.push({ ts: Date.now(), code: code, result: review });
         var cap = RTSchema.LIMITS.reviewsPerPhase;
-        if (reviews.length > cap) reviews = reviews.slice(reviews.length - cap);
+        var keepIdx = -1;
+        for (var ri = reviews.length - 1; ri >= 0; ri--) {
+          if (reviews[ri] && reviews[ri].result && reviews[ri].result.passed === true) { keepIdx = ri; break; }
+        }
+        while (reviews.length > cap) {
+          var dropIdx = keepIdx === 0 ? 1 : 0;   // drop the oldest entry that is not the kept pass
+          reviews.splice(dropIdx, 1);
+          if (keepIdx > dropIdx) keepIdx--;
+        }
 
         var wasAlreadyVerified = data.status === 'verified';
         var prevBest = data.bestScore || 0;
         var newBest = graded ? Math.max(prevBest, review.score) : prevBest;
+        var gradedPass = graded && review.passed === true && review.score >= 75;
 
         data.lastStatus = review.status;
         data.lastScore = graded ? review.score : null;
         data.bestScore = newBest;
         data.reviews = reviews;
+        var patch = { lastStatus: review.status, lastScore: data.lastScore, bestScore: newBest, reviews: reviews };
+        if (gradedPass) {
+          // Record which rules this pass was checked with (also when already verified)
+          data.checkedWith = review.graderVersion || null;
+          patch.checkedWith = data.checkedWith;
+        }
         currData[phaseId] = data;
-        savePhaseData(phaseId, { lastStatus: review.status, lastScore: data.lastScore, bestScore: newBest, reviews: reviews });
+        savePhaseData(phaseId, patch);
 
+        // A re-check of an already verified phase is logged but does not feed mastery.
+        var logGraded = graded && !wasAlreadyVerified;
         RTStore.logAttempt({
-          kind: 'code', phaseId: phaseId, sectionId: 'deliverable', graded: graded,
-          correct: graded ? review.passed === true : null,
-          score: graded ? review.score : null,
+          kind: 'code', phaseId: phaseId, sectionId: 'deliverable', graded: logGraded,
+          correct: logGraded ? review.passed === true : null,
+          score: logGraded ? review.score : null,
           attempt: reviews.length
         });
 
         // Auto-verify only on a real graded pass (never for ungraded/reflection results)
         var autoVerified = false;
-        if (!wasAlreadyVerified && graded && review.passed && review.score >= 75) {
+        if (!wasAlreadyVerified && gradedPass) {
           autoVerified = true;
           verifyAndUnlockNext(phaseId, 'auto', {});
+        }
+        // A re-check under the current rules clears the "earlier rubric" note
+        if (wasAlreadyVerified && gradedPass) {
+          var oldNote = document.querySelector('#curr-content .rubric-version-note');
+          if (oldNote && data.checkedWith === currentGraderVersion()) oldNote.remove();
         }
 
         if (resultEl) resultEl.innerHTML = renderAIReviewCard(review, phaseId, autoVerified, newBest, wasAlreadyVerified ? prevBest : undefined);
@@ -1291,7 +1445,7 @@ telemetry.<span class="syn-fn">update</span>();</div>
 
       // Summary (the checker's own text already opens with the structural-check disclaimer)
       html += '<div class="ai-summary">' + esc(review.summary) + '</div>';
-      html += '<div class="ai-threshold-note">This check looks for required patterns in your code. It does not compile or run it, and it cannot tell whether the robot behaves correctly — test on the robot and ask your mentor.</div>';
+      html += '<div class="ai-threshold-note">This check reads your code\'s structure (classes, methods, loops, calls and where values flow). It does not compile or run it and cannot tell whether the robot behaves correctly — test on the robot and ask your mentor.</div>';
 
       // Strengths
       if (review.strengths && review.strengths.length > 0) {
@@ -1299,6 +1453,25 @@ telemetry.<span class="syn-fn">update</span>();</div>
         html += '<div class="ai-section-title"><span class="ai-icon-check">&#10003;</span> Strengths</div>';
         review.strengths.forEach(function(s) {
           html += '<div class="ai-strength-item">' + esc(s) + '</div>';
+        });
+        html += '</div>';
+      }
+
+      // Structure check: failed integrity gates (results from older checkers have none)
+      var failedGates = (Array.isArray(review.gates) ? review.gates : []).filter(function(g) { return g && g.passed === false; });
+      if (failedGates.length > 0) {
+        html += '<div class="ai-section ai-gates">';
+        html += '<div class="ai-section-title"><span class="ai-icon-warn">&#9888;</span> Structure check</div>';
+        failedGates.forEach(function(g) {
+          var sevClass = 'ai-sev-' + String(g.severity || 'WARNING').toLowerCase().replace(/[^a-z]/g, '');
+          html += '<div class="ai-issue ' + sevClass + '">';
+          html += '<span class="ai-sev-badge">' + esc(g.severity || 'WARNING') + '</span>';
+          html += '<div class="ai-issue-desc"><strong>' + esc(g.label) + '</strong>' + (g.explanation ? ' — ' + esc(g.explanation) : '') + '</div>';
+          var gev = Array.isArray(g.evidence) && g.evidence[0];
+          if (gev && typeof gev === 'object') {
+            html += '<div class="ai-issue-code">line ' + esc(gev.line) + ': ' + esc(gev.text) + '</div>';
+          }
+          html += '</div>';
         });
         html += '</div>';
       }
@@ -1328,8 +1501,23 @@ telemetry.<span class="syn-fn">update</span>();</div>
         html += '<div class="ai-section ai-reqs">';
         html += '<div class="ai-section-title">Requirements</div>';
         review.requirements_met.forEach(function(r) {
-          var icon = r.met ? '<span class="ai-req-pass">&#10003;</span>' : '<span class="ai-req-fail">&#10007;</span>';
-          html += '<div class="ai-req-item">' + icon + '<div><div class="ai-req-text">' + esc(r.requirement) + '</div><div class="ai-req-exp">' + esc(r.explanation) + '</div></div></div>';
+          // Older results have no credit: met counts as full, unmet as none.
+          var credit = typeof r.credit === 'number' ? r.credit : (r.met ? 1 : 0);
+          var icon, partial = '';
+          if (credit >= 0.999) {
+            icon = '<span class="ai-req-pass">&#10003;</span>';
+          } else if (credit > 0) {
+            icon = '<span class="ai-req-partial">&#9680;</span>';
+            partial = ' <span class="ai-req-partial">Partly (' + Math.round(credit * 100) + '%)</span>';
+          } else {
+            icon = '<span class="ai-req-fail">&#10007;</span>';
+          }
+          html += '<div class="ai-req-item">' + icon + '<div><div class="ai-req-text">' + esc(r.requirement) + partial + '</div><div class="ai-req-exp">' + esc(r.explanation) + '</div>';
+          var ev = Array.isArray(r.evidence) && r.evidence[0];
+          if (ev && typeof ev === 'object') {
+            html += '<div class="ai-req-evidence">line ' + esc(ev.line) + ': ' + esc(ev.text) + '</div>';
+          }
+          html += '</div></div>';
         });
         html += '</div>';
       }

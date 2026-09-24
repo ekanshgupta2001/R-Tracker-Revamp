@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readState, unlockPhase } from './helpers/state.js';
+import { readState, unlockPhase, passingReview } from './helpers/state.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sample = f => fs.readFileSync(path.join(ROOT, 'tests/fixtures/code-samples', f), 'utf8');
@@ -80,4 +80,47 @@ test('the strategy module is a mentor-review submission, not a pattern check', a
   const r = await page.evaluate(() => window.checkCode('advanced_strategy', 'Expected value: 0.8 x 20 = 16 points'));
   expect(r.status).toBe('reflection');
   expect(r.passed).toBeNull();
+});
+
+test('a stuffed one-liner fails the structure check and the phase stays in progress', async ({ page }) => {
+  await openPhase1(page);
+  const stuffed = 'class X extends OpMode{void f(){hardwareMap.get(DcMotor.class,a);a.setPower(0);a.setPower(0);y=gamepad1.a;telemetry.addData(1,1);telemetry.addData(1,1);telemetry.update();}}';
+  await page.fill('#code-editor-phase1', stuffed);
+  await page.click('#ai-review-btn-phase1');
+  const card = page.locator('#ai-result-phase1');
+  await expect(card).toContainText('NEEDS WORK');
+  await expect(card.locator('.ai-gates')).toBeVisible();
+  await expect(card.locator('.ai-gates')).toContainText('Structure check');
+  const s = await readState(page);
+  expect(s.curriculum.phases.phase1.status).toBe('in_progress');
+  expect(s.curriculum.phases.phase1.checkedWith).toBeNull();
+});
+
+test('a pass under earlier rules shows the re-check note; a re-check clears it and keeps the phase verified', async ({ page }) => {
+  await page.goto('/pages/curriculum.html', { waitUntil: 'load' });
+  await page.waitForSelector('.tl-node');
+  await unlockPhase(page, 'phase1');
+  const old = passingReview(Date.now() - 86400000, 'structural-1/rules-2');
+  await page.evaluate(rv => {
+    window.RTStore.update(s => {
+      s.curriculum.phases.phase1 = Object.assign(window.RTSchema.createEmptyPhase('phase1'), { status: 'verified', verifiedAt: Date.now(), verifiedBy: 'auto', bestScore: 82, reviews: [rv], checkedWith: 'structural-1/rules-2' });
+    });
+    window.loadCurriculumData();
+  }, old);
+  await page.click('.tl-node[data-phase="phase1"]');
+  const note = page.locator('.rubric-version-note');
+  await expect(note).toBeVisible();
+  await expect(note).toContainText('rules-2');
+
+  await page.fill('#code-editor-phase1', sample('phase1-good.java'));
+  await page.click('#ai-review-btn-phase1');           // opens the resubmit confirmation
+  await page.click('.resubmit-confirm');
+  await expect(page.locator('#ai-result-phase1')).toContainText('PASSED');
+  await expect(note).toHaveCount(0);
+  const current = await page.evaluate(() => window.RTCodeCheck.graderVersion());
+  const s = await readState(page);
+  expect(s.curriculum.phases.phase1.status).toBe('verified');
+  expect(s.curriculum.phases.phase1.checkedWith).toBe(current);
+  const att = s.curriculum.attempts.filter(a => a.kind === 'code').pop();
+  expect(att.graded).toBe(false);                     // a re-check of a verified phase does not feed mastery
 });

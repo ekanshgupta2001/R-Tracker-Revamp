@@ -2,7 +2,7 @@
 // identical state, the memory backend keeps nothing, and imported strings are untrusted.
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
-import { loadSchema, makeSampleState, seedState, readState, answerQuizCorrectly, openSidebar } from './helpers/state.js';
+import { loadSchema, makeSampleState, makeYearState, seedState, readState, answerQuizCorrectly, openSidebar } from './helpers/state.js';
 
 test.beforeEach(async ({ page }) => {
   page.on('dialog', d => d.accept());
@@ -62,7 +62,7 @@ test('export → clear → import restores identical state; banner tracks unsave
   const text = fs.readFileSync(await dl.path(), 'utf8');
   const exported = JSON.parse(text);
   expect(exported.meta.app).toBe('r-tracker');
-  expect(exported.schemaVersion).toBe(3);
+  expect(exported.schemaVersion).toBe(4);
   await expect(page.locator('#rt-dirty-banner')).toBeHidden();
   await expect(page.locator('#sb-progress-status')).toHaveText(/Exported/);
 
@@ -204,10 +204,10 @@ test('imported strings render escaped and unsupported files are rejected', async
   expect(bad.ok).toBe(false);
 });
 
-// Schema 1 → 3: a v1 export (no per-run records, style numbers sampled at any speed)
+// Schema 1 → 4: a v1 export (no per-run records, style numbers sampled at any speed)
 // imports cleanly, keeps every level aggregate, session and coach report, gains an
 // empty driver.runs, and drops the old style numbers to "no reading" (null).
-test('older progress files migrate to schema 3 without losing anything', async ({ page }) => {
+test('older progress files migrate to schema 4 without losing anything', async ({ page }) => {
   await page.goto('/', { waitUntil: 'load' });
   await page.waitForSelector('#sidebar');
   const v1 = makeSampleState();
@@ -217,7 +217,7 @@ test('older progress files migrate to schema 3 without losing anything', async (
   const r = await page.evaluate(s => RTStore.importJSON(JSON.stringify(s)), v1);
   expect(r.ok, r.error).toBe(true);
   const s = await readState(page);
-  expect(s.schemaVersion).toBe(3);
+  expect(s.schemaVersion).toBe(4);
   expect(s.driver.runs).toEqual([]);
   expect(s.driver.levels['1'].bestStars).toBe(3);
   expect(s.driver.levels['2'].attempts).toBe(2);
@@ -253,4 +253,39 @@ test('older progress files migrate to schema 3 without losing anything', async (
   const r3 = await page.evaluate(s => RTStore.importJSON(JSON.stringify(s)), badRun);
   expect(r3.ok).toBe(false);
   expect(r3.error).toMatch(/runs/);
+});
+
+// A phase marked verified must carry its proof (a passing code check); a hand-edited file
+// is imported with that phase set back to in progress and a note saying so.
+test('importing a hand-edited "verified" phase sets it back to in progress', async ({ page }) => {
+  const dialogs = [];
+  page.on('dialog', d => dialogs.push(d.message()));
+  await page.goto('/', { waitUntil: 'load' });
+  await openSidebar(page);
+
+  const S = loadSchema();
+  const edited = makeSampleState();
+  edited.curriculum.phases.phase1 = Object.assign(S.createEmptyPhase('phase1'), { status: 'verified', verifiedAt: Date.now(), verifiedBy: 'auto', bestScore: 100 });
+  await page.setInputFiles('#sb-import-file', { name: 'edited.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(edited)) });
+  await page.waitForFunction(() => window.RTStore && RTStore.get().paths.length === 1, null, { timeout: 10000 });
+  await page.waitForSelector('#sidebar');
+  const s = await readState(page);
+  expect(s.curriculum.phases.phase1.status).toBe('in_progress');
+  expect(s.curriculum.phases.phase1.verifiedAt).toBeNull();
+  expect(s.curriculum.phases.phase0.status).toBe('verified');
+  expect(dialogs.some(m => /Imported with notes/.test(m) && /phase1: marked verified without a passing code check/.test(m))).toBe(true);
+});
+
+test('importing a year of real progress keeps verified phases that carry a passing check', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'load' });
+  await openSidebar(page);
+  const year = makeYearState();
+  await page.setInputFiles('#sb-import-file', { name: 'year.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(year)) });
+  await page.waitForFunction(() => window.RTStore && RTStore.get().paths.length === 1 && RTStore.get().driver.sessions.length > 100, null, { timeout: 10000 });
+  await page.waitForSelector('#sidebar');
+  const s = await readState(page);
+  expect(s.schemaVersion).toBe(4);
+  for (const pid of ['phase0', 'phase1', 'phase2']) expect(s.curriculum.phases[pid].status, pid).toBe('verified');
+  expect(s.curriculum.phases.phase1.checkedWith).toBe('structural-2/rules-3');
+  expect(s.curriculum.phases.phase3.status).toBe('in_progress');
 });

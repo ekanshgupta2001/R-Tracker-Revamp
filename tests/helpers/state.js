@@ -14,6 +14,13 @@ export function loadSchema() {
   return sandbox.window.RTSchema;
 }
 
+// A passing code-check review: import validation keeps a phase 'verified' only when it
+// carries one (schema.js isPassingReview).
+export const PASSING_GRADER_VERSION = 'structural-2/rules-3';
+export function passingReview(ts, graderVersion = PASSING_GRADER_VERSION) {
+  return { ts, code: '// verified sample', result: { status: 'graded', grader: 'structural', graderVersion, passed: true, score: 82, summary: '', strengths: [], issues: [], requirements_met: [], next_steps: [], structural: true } };
+}
+
 export function makeSampleState() {
   const S = loadSchema();
   const s = S.createEmptyState();
@@ -79,7 +86,8 @@ export function makeYearState() {
     }
   }
   // Curriculum: phases 0–2 verified, 3 in progress with theory graded, MC attempts logged everywhere
-  const verified = (id, extra) => Object.assign(S.createEmptyPhase(id), { status: 'verified', verifiedAt: now - 100 * DAY, verifiedBy: 'auto', passed: true, bestScore: 82 }, extra || {});
+  const verified = (id, extra) => Object.assign(S.createEmptyPhase(id), { status: 'verified', verifiedAt: now - 100 * DAY, verifiedBy: 'auto', passed: true, bestScore: 82 },
+    id === 'phase0' ? {} : { reviews: [passingReview(now - 100 * DAY)], checkedWith: PASSING_GRADER_VERSION }, extra || {});
   s.curriculum.phases.phase0 = verified('phase0', { score: 90, attempts: 1, quizAnswers: {} });
   s.curriculum.phases.phase1 = verified('phase1');
   s.curriculum.phases.phase2 = verified('phase2');
@@ -123,11 +131,12 @@ export async function openSidebar(page) {
 }
 
 // Click the correct option for every Phase 0 quiz question (curriculum page must be showing phase0).
+// Questions and options are shuffled per attempt; the DOM carries original indices in data-q/data-opt.
 export async function answerQuizCorrectly(page) {
-  const n = await page.evaluate(() => window.QUIZ.length);
-  for (let i = 0; i < n; i++) {
-    const correct = await page.evaluate(i => window.QUIZ[i].correct, i);
-    await page.locator(`#quiz-opts-${i} .quiz-opt`).nth(correct).click();
+  const qs = await page.locator('.quiz-question[data-q]').evaluateAll(els => els.map(e => e.getAttribute('data-q')));
+  for (const q of qs) {
+    const correct = await page.evaluate(q => window.QUIZ[q].correct, Number(q));
+    await page.locator(`.quiz-opt[data-q="${q}"][data-opt="${correct}"]`).click();
     await page.waitForTimeout(40);
   }
   await page.waitForSelector('#quiz-results.show', { timeout: 5000 });
