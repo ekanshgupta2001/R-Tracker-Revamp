@@ -30,7 +30,7 @@ vm.createContext(sandbox);
 // unfinished row here.
 vm.runInContext(`
   const FIELD_FT = 12;
-  let inp = { lx: 0, ly: 0, rx: 0 }, keys = {}, gpIdx = 0, inputBuffer = [], inputTime = 0;
+  let inp = { lx: 0, ly: 0, rx: 0 }, keys = {}, gpIdx = 0, inputBuffer = [], inputTime = 0, touchInp = { lx: 0, ly: 0, rx: 0, left: false, right: false };
 `, sandbox);
 for (const f of ['js/teleop/robot.js', 'js/teleop/drive.js', 'js/teleop/levels.js', 'js/level-table.js']) {
   vm.runInContext(read(f).replace(/window\.RT_LEVEL_TABLE\s*=/, 'globalThis.RT_LEVEL_TABLE ='), sandbox, { filename: f });

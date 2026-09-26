@@ -116,7 +116,7 @@ function drawLevelOverlay() {
   const def = LEVELS.find(l => l.id === lvl.id);
   if (!def) return;
   const path = def.path;
-  const s = cvs.width / FIELD_FT;
+  const s = cvsSize / FIELD_FT;
   const corridorPx = LVL_ACC_TOL * s;
 
   function ftx(fx) { return (fx + FIELD_FT / 2) * s; }

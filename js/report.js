@@ -295,6 +295,11 @@
       + '<div class="rlg-tip-row"><span>Rating:</span><span class="clr-gold">' + esc(rating || 'Not completed') + '</span></div>'
       + '<div class="rlg-tip-row"><span>Attempts:</span><span>' + esc(attempts || '0') + '</span></div>';
     cell.appendChild(tip);
+    // keep it on screen: shift it back inside the viewport at the grid's edges
+    var r = tip.getBoundingClientRect(), vw = document.documentElement.clientWidth, shift = 0;
+    if (r.right > vw - 8) shift = vw - 8 - r.right;
+    if (r.left + shift < 8) shift = 8 - r.left;
+    if (shift) tip.style.left = 'calc(50% + ' + Math.round(shift) + 'px)';
     document.addEventListener('click', function dismiss() { tip.remove(); document.removeEventListener('click', dismiss); }, { once: true });
   }
 
@@ -361,10 +366,12 @@
   window.RTReport = { render: render, sections: sections, toggleLevelDetail: toggleLevelDetail, lastRenderMs: 0 };
 
   var rerenderTimer = null;
-  window.addEventListener('resize', function () {
+  function rerenderSoon() {
     clearTimeout(rerenderTimer);
     rerenderTimer = setTimeout(function () { if (window.RTStore) render(); }, 200);
-  });
+  }
+  window.addEventListener('resize', rerenderSoon);
+  window.addEventListener('rt-layoutchange', rerenderSoon);   // sidebar opened / closed
   // The canvases are painted with the theme's chart tokens; repaint them when it flips.
   window.addEventListener('rt-themechange', function () { if (window.RTStore) render(); });
 })();

@@ -5,12 +5,12 @@
    the three tool cards are the page's blurred sheets (blur budget: five, plus the
    first-run panel). Everything nested inside them is a flat fill. */
 
-/* The sky (#rt-atmosphere) and the pageIn keyframes live in css/global.css. */
+/* The sky (#rt-atmosphere) and the page transition live in css/global.css. */
 
 /* ── Main wrap ───────────────────────────────────────────────────────────── */
 .main-wrap {
   margin-left: var(--sidebar-width);
-  height: 100vh; overflow-y: auto; overflow-x: hidden;
+  height: 100vh; height: 100dvh; overflow-y: auto; overflow-x: hidden;
   display: flex; flex-direction: column;
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative; z-index: 1;
@@ -24,10 +24,7 @@
   max-width: calc(74 * var(--u)); width: 100%; margin: 0 auto;
   padding: calc(1.46 * var(--u)) calc(1.342 * var(--u)) calc(1.918 * var(--u));
   display: flex; flex-direction: column; min-height: 100%; box-sizing: border-box;
-  /* fade only: the shared pageIn slide would overflow a page that exactly fills the window */
-  animation: homeIn 0.3s ease-out both;
 }
-@keyframes homeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* ── Top bar ─────────────────────────────────────────────────────────────── */
 .home-top { display: flex; align-items: center; justify-content: space-between; gap: calc(0.767 * var(--u)); margin-bottom: calc(2.03 * var(--u)); }

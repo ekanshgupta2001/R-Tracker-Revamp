@@ -145,7 +145,7 @@ R-Tracker/
 │   │   ├── lessons.js          # Lesson content (Phases 1-5, Advanced, Capstone) + renderer
 │   │   ├── code-rules.js       # rules-3: per-phase gates / weighted criteria / forbidden rules (functions over the parse model)
 │   │   └── phase5-kit.js       # RT_PHASE5_KIT — the "Debug Under Pressure" program with 5 seeded, checkable bugs
-│   ├── teleop/                 # field, robot, drive, timer, input, metrics, levels, coach, view3d, ui
+│   ├── teleop/                 # field, robot, drive, timer, input, touch (on-screen sticks), metrics, levels, coach, view3d, ui
 │   ├── pathplanner/            # canvas, waypoints, animation, codegen, ui
 │   ├── strategy.js
 │   └── utils/validators.js     # sanitizeHTML/sanitizeCode, isScore/isStars, validatePhasePatch
@@ -158,7 +158,7 @@ R-Tracker/
 ├── tests/
 │   ├── serve.js                # zero-dependency static server used by playwright.config.js
 │   ├── helpers/state.js        # seed/read state, quiz helpers
-│   ├── *.spec.js               # Playwright: smoke, network-audit, persistence, report, curriculum, teleop-rating
+│   ├── *.spec.js               # Playwright: smoke, network-audit, persistence, report, curriculum, teleop-rating, responsive
 │   ├── *.test.js               # node --test: grader / code-check / driver-rating fixtures
 │   └── fixtures/               # theory-samples.json, driver-runs.json, code-samples/
 ├── playwright.config.js
@@ -228,6 +228,25 @@ R-Tracker/
   Everything repeated inside them (list rows, level cards, quiz options, code lines) is a flat
   `--glass-inset` / `--glass-tool` fill. Nothing between `<body>` and a canvas gets `backdrop-filter` or
   `overflow: hidden` (the TeleOp 3D view walks those ancestors).
+- **Every screen size.** One set of breakpoints: **900 px** (the sidebar switches from pushing the page
+  to overlaying it with a backdrop, and every page stacks: TeleOp, Path Planner, Strategy and the
+  Curriculum put their side column under the main view) and **600 px** (phone details: icon-only
+  topbar actions, no topbar "← Home" — the hamburger is the way home, tighter padding, tables scroll
+  sideways); landscape phones (`max-height: 500px` and landscape) keep TeleOp, Path Planner and Strategy
+  side by side. Locked-height pages use `100dvh` (with a `100vh` line before it) so mobile toolbars never
+  hide the bottom. Canvases size themselves in CSS pixels and draw at `devicePixelRatio` (≤ 2): TeleOp
+  `cvsSize` (`field.js`), Path Planner `cvsSz` (`canvas.js`), Strategy `W`, charts `prepare()`. The
+  sidebar fires `rt-layoutchange` on `window` after it opens or closes (the window did not resize);
+  canvas pages re-measure on it. `tests/responsive.spec.js` checks every page at 360×740, 390×844,
+  844×390, 768×1024, 1024×768 and 1280×720.
+- **Page transition: the sky stays, the content glides.** No overlay. Each page's content wrapper
+  (`.main-wrap`, `.curr-wrap`, TeleOp's `#app`) is `view-transition-name: rt-page`; with cross-document
+  View Transitions (`@view-transition { navigation: auto }`, Chrome/Edge 126+, Safari 18.2+) the root
+  (sky, sidebar, topbar) swaps instantly and only the content animates — the leaving wrapper is renamed
+  `rt-page-out` at `pageswap` (`js/sidebar.js`) and fades out lifting 6 px (180 ms), the new one rises
+  10 px with a 4 px blur clearing (340 ms). Without View Transitions `js/sidebar.js` plays the same
+  keyframes (`rtLeave` / `rtArrive`) through `html.rt-leaving` (160 ms before it navigates) and
+  `html.rt-arriving` (added by each page's `<head>` boot script). Reduced motion: neither; instant.
 - **Theme.** `light` on `<html>` is light glass and is the default a student lands on; removing the class
   gives dark glass. The boot script in every page's `<head>` adds it unless `localStorage['rt-theme']`
   is `'dark'`. Every stylesheet spells the dark variant `html:not(.light)`, and the page stylesheets
@@ -322,8 +341,14 @@ R-Tracker/
 - 2D canvas: 144x144 inch FTC field (BIOBUZZ 2026–27). The HIVE frame and the four FLOWERS are
   solid in both modes (`COLLISION_ZONES` in `js/teleop/robot.js`); hitting one at speed counts as a
   collision like a wall. 3D view: Three.js, replaces the 2D canvas in-place (same parent container).
-  Input: Gamepad API + keyboard (WASD + arrows), listeners on `document`. 12 levels across 4 tiers
-  with star ratings, all routed in the ring around the frame (a unit test checks the clearances).
+  Input: Gamepad API + keyboard (WASD + arrows), listeners on `document`, and on touch screens two
+  on-screen sticks (`js/teleop/touch.js`: left = drive/strafe, right = turn; shown by `html.rt-touch`,
+  hidden while a gamepad is connected) that write `touchInp`, which `updateBot()` reads between the
+  gamepad and the keyboard through the same deadzone and latency buffer — so touch runs are rated like
+  any other. ≤ 900 px portrait the page stacks: field, sticks, control bar (one scrolling row), then the
+  Free Drive / Levels column as a sheet that scrolls (the field leaves it `SHEET_MIN` px); elsewhere the
+  sticks float beside the field and `resize()` narrows the field so they never cover it. 12 levels across
+  4 tiers with star ratings, all routed in the ring around the frame (a unit test checks the clearances).
 - **Physics (`js/teleop/drive.js`) models a real 435 RPM mecanum drivetrain.** Defaults: 6.5 ft/s,
   strafe at 80% of forward, 380 °/s spin (190 °/s while driving flat out, because the wheel-power
   normalisation shares the motors), 20 ft/s² traction cap, 20 ft/s² BRAKE-mode braking, 0.2 s
@@ -370,8 +395,8 @@ R-Tracker/
   downgrade), `quiz.spec.js`, and the MC-lock / hint-paste cases in `curriculum.spec.js`. To run
   Playwright specs concurrently with `npm test`, use a scratch config that re-exports
   `playwright.config.js` with another port, an absolute `webServer.command` and `cwd`.
-- Tests navigate with `page.goto`, never by clicking sidebar links (the page-transition script delays
-  navigation). Wait on app globals with `waitForFunction`, never on `networkidle`.
+- Tests navigate with `page.goto`, never by clicking sidebar links (the page transition can delay
+  navigation; `tests/responsive.spec.js` is the one place that clicks links, to test the transition). Wait on app globals with `waitForFunction`, never on `networkidle`.
 
 ## Working style
 - Small, reviewable diffs. One phase per branch/commit set, tagged on completion (`v2-phase-N`).
@@ -383,8 +408,10 @@ R-Tracker/
 - Do not "improve" features outside the current phase's scope. Log ideas in `PLAN.md` under *Deferred*.
 
 ## Common gotchas
-- The page-transition script intercepts all `<a>` clicks — new navigation must use `<a href>` tags; it
-  skips links with a `download` attribute or a `blob:` href (used by Export).
+- The page transition (`js/sidebar.js`) watches every `<a>` click — new navigation must use `<a href>`
+  tags. It sets sessionStorage `rt-nav` (so `store.js`'s `beforeunload` does not prompt) and, only in
+  browsers without View Transitions, delays navigation 160 ms; it skips modified clicks, other origins,
+  `target` links, same-page hashes, links with a `download` attribute and `blob:` hrefs (used by Export).
 - `store.js` and `schema.js` are loaded non-deferred in `<head>` so every later script can call
   `RTStore.get()` synchronously. Keep that order.
 - The 3D view uses `overflow: visible` on canvas ancestors — don't add `overflow: hidden` to parents.

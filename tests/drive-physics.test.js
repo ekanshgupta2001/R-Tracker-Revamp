@@ -19,7 +19,7 @@ function makeSim(fieldFt = 1e6) {
   vm.createContext(sb);
   // what field.js / robot.js / levels.js / input.js declare (they bind the DOM at load)
   vm.runInContext(`const FIELD_FT = ${fieldFt}; const COLLISION_ZONES = []; let appMode = 'levels';
-    let inp = { lx: 0, ly: 0, rx: 0 }, keys = {}, gpIdx = 0, inputBuffer = [], inputTime = 0;`, sb);
+    let inp = { lx: 0, ly: 0, rx: 0 }, keys = {}, gpIdx = 0, inputBuffer = [], inputTime = 0, touchInp = { lx: 0, ly: 0, rx: 0, left: false, right: false };`, sb);
   vm.runInContext(read('js/teleop/drive.js'), sb, { filename: 'js/teleop/drive.js' });
   vm.runInContext(read('js/level-table.js').replace(/window\.RT_LEVEL_TABLE\s*=/, 'globalThis.RT_LEVEL_TABLE ='), sb, { filename: 'js/level-table.js' });
   const step = vm.runInContext(`(function (dt) { updateBot(dt); return { x: bot.x, y: bot.y, hdg: bot.hdg, vx: bot.actualVx, vy: bot.actualVy, omega: bot.actualOmega, vFwd: bot.vFwd, vStr: bot.vStr, speed: Math.hypot(bot.actualVx, bot.actualVy), mtr: Object.assign({}, mtr) }; })`, sb);

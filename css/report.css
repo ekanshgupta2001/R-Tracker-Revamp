@@ -11,7 +11,6 @@
   padding-top: 48px;
   min-height: 100vh;
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: pageIn 0.35s ease-out both;
 }
 
 .sidebar-collapsed .main-wrap { margin-left: 0; }
@@ -160,6 +159,8 @@
   gap: 12px;
   animation: fadeSlideIn 0.4s ease-out both;
 }
+
+@keyframes rlgTipIn { from { opacity: 0; } }
 
 @keyframes fadeSlideIn {
   from { opacity: 0; transform: translateX(-10px); }
@@ -465,9 +466,10 @@
   border-radius: var(--radius-sm);
   padding: 10px 14px;
   z-index: 50;
-  min-width: 170px;
+  min-width: min(170px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
   box-shadow: var(--glass-shadow);
-  animation: fadeSlideIn 0.15s ease;
+  animation: rlgTipIn 0.15s ease;
   white-space: nowrap;
   color: var(--text);
 }
@@ -560,7 +562,7 @@
 .rpt-stats-grid-4 { grid-template-columns: repeat(4, 1fr); }
 .rpt-chart-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); font-weight: 600; margin: 12px 0 6px; }
 .rpt-chart-wrap { width: 100%; }
-.rpt-chart-wrap canvas { display: block; width: 100%; }
+.rpt-chart-wrap canvas { display: block; width: 100%; max-width: 100%; }
 .sk-layout { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
 .sk-radar-wrap { flex: 0 0 240px; display: flex; justify-content: center; }
 .sk-layout .sk-list { flex: 1 1 260px; }
@@ -584,8 +586,10 @@
 .sk-row-sub .sk-label { font-size: 11.5px; color: var(--text-muted); }
 
 /* ── Responsive ────────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .main-wrap { margin-left: 0; }
+}
+@media (max-width: 768px) {
   .report-content { padding: 16px 12px 32px; }
   .rpt-stats-grid { grid-template-columns: repeat(2, 1fr); }
   .rpt-levels-grid { grid-template-columns: repeat(4, 1fr); }
@@ -598,4 +602,7 @@
 @media (max-width: 480px) {
   .rpt-levels-grid { grid-template-columns: repeat(3, 1fr); }
   .rpt-stats-grid { grid-template-columns: 1fr 1fr; }
+  .rpt-card { padding: 14px; }
+  .rpt-mastery summary .sk-label, .sk-label { width: 104px; }
+  .sk-radar-wrap { flex-basis: 100%; }
 }

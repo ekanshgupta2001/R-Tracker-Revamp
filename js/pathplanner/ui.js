@@ -316,6 +316,7 @@ function deleteSavedPath(id, event) {
 
 // ── Resize ────────────────────────────────────────────────────────────────
 window.addEventListener('resize', () => { resizeCanvas(); drawAll(); });
+window.addEventListener('rt-layoutchange', () => { resizeCanvas(); drawAll(); });   // sidebar opened / closed
 
 // ── Init ──────────────────────────────────────────────────────────────────
 initSidebar();

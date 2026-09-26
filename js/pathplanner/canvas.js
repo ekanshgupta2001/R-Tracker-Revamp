@@ -17,26 +17,32 @@ const cvs = document.getElementById('fieldCanvas');
 const ctx = cvs.getContext('2d');
 const FIELD_IN = 144;
 
+// cvsSz is the field's size in CSS pixels and every draw call works in it; the
+// backing store is cvsSz × devicePixelRatio (≤ 2) so the field is sharp on phones.
+let cvsSz = 200;
 function resizeCanvas() {
   const fp = document.getElementById('fieldPanel');
   // clientWidth/Height include the panel's padding; leave a 16px glass frame on
   // every side and a 44px band under the field for the overlay buttons.
   const W = fp.clientWidth - 32;
   const H = fp.clientHeight - 32 - 44;
-  const sz = Math.max(200, Math.min(W, H));
-  cvs.width = cvs.height = sz;
+  cvsSz = Math.max(160, Math.floor(Math.min(W, H)));
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cvs.width = cvs.height = Math.round(cvsSz * dpr);
+  cvs.style.width = cvs.style.height = cvsSz + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
-function px(v) { return v * cvs.width / FIELD_IN; }
+function px(v) { return v * cvsSz / FIELD_IN; }
 function ftcToCvs(ppX, ppY) { return { x: px(ppX), y: px(FIELD_IN - ppY) }; }
-function cvsToFtc(cx, cy)   { return { x: cx / cvs.width * FIELD_IN, y: (cvs.height - cy) / cvs.height * FIELD_IN }; }
+function cvsToFtc(cx, cy)   { return { x: cx / cvsSz * FIELD_IN, y: (cvsSz - cy) / cvsSz * FIELD_IN }; }
 
 function drawAll() {
-  ctx.clearRect(0, 0, cvs.width, cvs.height);
+  ctx.clearRect(0, 0, cvsSz, cvsSz);
   if (fieldImg.complete && fieldImg.naturalWidth > 0) {
-    ctx.drawImage(fieldImg, 0, 0, cvs.width, cvs.height);
+    ctx.drawImage(fieldImg, 0, 0, cvsSz, cvsSz);
   } else {
-    ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, 0, cvs.width, cvs.height);
+    ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, 0, cvsSz, cvsSz);
   }
   if (showGrid) drawGrid();
   if (waypoints.length > 1) drawPath();
@@ -48,16 +54,16 @@ function drawGrid() {
   const step = px(12);
   ctx.save();
   ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 0.5;
-  for (let x = 0; x <= cvs.width; x += step) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, cvs.height); ctx.stroke();
+  for (let x = 0; x <= cvsSz; x += step) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, cvsSz); ctx.stroke();
   }
-  for (let y = 0; y <= cvs.height; y += step) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cvs.width, y); ctx.stroke();
+  for (let y = 0; y <= cvsSz; y += step) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cvsSz, y); ctx.stroke();
   }
   ctx.strokeStyle = 'rgba(255,255,255,0.16)'; ctx.lineWidth = 1;
   const midX = px(72), midY = px(72);
-  ctx.beginPath(); ctx.moveTo(midX, 0); ctx.lineTo(midX, cvs.height); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(cvs.width, midY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(midX, 0); ctx.lineTo(midX, cvsSz); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(cvsSz, midY); ctx.stroke();
   ctx.restore();
 }
 

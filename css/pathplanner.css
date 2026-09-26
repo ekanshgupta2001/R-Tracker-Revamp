@@ -7,6 +7,7 @@
 
 body {
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   display: flex;
 }
@@ -17,9 +18,9 @@ body {
   margin-top: 48px;
   width: calc(100% - var(--sidebar-width));
   height: calc(100vh - 48px);
+  height: calc(100dvh - 48px);
   display: flex;
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: pageIn 0.35s ease-out both;
 }
 
 .sidebar-collapsed .main-wrap { margin-left: 0; width: 100%; }
@@ -42,6 +43,7 @@ body {
 
 #fieldCanvas {
   display: block; cursor: crosshair;
+  touch-action: none;       /* a finger drags waypoints instead of scrolling (waypoints.js) */
   border-radius: 10px;
   border: 1px solid var(--glass-border-strong);
   box-shadow: 0 12px 36px rgba(5, 15, 35, 0.28);
@@ -349,9 +351,17 @@ input[type=range] {
 .no-select-msg { text-align: center; color: var(--text-muted); font-size: 12px; padding: 14px; line-height: 1.6; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
+/* ≤ 900 px: the field on top, as wide as the screen allows (canvas.js leaves a
+   16 px frame and the 44 px button band), the control sheet scrolls under it. */
 @media (max-width: 900px) {
   .topbar     { left: 0; }
   .main-wrap  { margin-left: 0; width: 100%; flex-direction: column; }
-  .field-panel { flex: 0 0 50vh; border-right: none; border-bottom: 1px solid var(--glass-border); }
-  .ctrl-panel  { flex: 1 1 auto; }
+  .field-panel { flex: 0 0 min(calc(100vw + 44px), 62dvh); border-right: none; border-bottom: 1px solid var(--glass-border); }
+  .ctrl-panel  { flex: 1 1 auto; min-height: 0; padding-bottom: env(safe-area-inset-bottom); }
+}
+/* Landscape phones: side by side again, so the field keeps the full height. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .main-wrap   { flex-direction: row; }
+  .field-panel { flex: 1 1 auto; padding: 8px 8px 52px; border-bottom: none; border-right: 1px solid var(--glass-border); }
+  .ctrl-panel  { flex: 0 0 min(320px, 45vw); }
 }

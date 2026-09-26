@@ -4,8 +4,10 @@
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
 .sidebar {
   position: fixed; top: 0; left: 0;
-  width: var(--sidebar-width); height: 100vh;
+  width: var(--sidebar-width); height: 100vh; height: 100dvh;
   display: flex; flex-direction: column; z-index: 100;
+  overflow-y: auto; overscroll-behavior: contain;   /* short / landscape screens reach the footer */
+  padding-bottom: env(safe-area-inset-bottom);
   background: var(--glass-nav);
   -webkit-backdrop-filter: blur(24px) saturate(140%);
   backdrop-filter: blur(24px) saturate(140%);
@@ -110,7 +112,7 @@ html:not(.light) .nav-item.active { background: rgba(255, 255, 255, 0.08); box-s
   background: rgba(10, 24, 48, 0.35); opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
 }
 .sidebar-backdrop.visible { opacity: 1; pointer-events: auto; }
-@media (max-width: 820px) { .sidebar-backdrop { display: block; } }
+@media (max-width: 900px) { .sidebar-backdrop { display: block; } }
 
 /* ── Top Bar (About, Path Planner, Report…) ─────────────────────────────── */
 .topbar {
@@ -132,13 +134,23 @@ html:not(.light) .nav-item.active { background: rgba(255, 255, 255, 0.08); box-s
 .topbar-left a:hover { color: var(--text); }
 .topbar-right { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: 0.2px; }
 
-@media (max-width: 820px) {
+/* ≤ 900 px the sidebar overlays the page (with the backdrop) instead of pushing
+   it; the page layouts switch to their stacked forms at the same width. */
+@media (max-width: 900px) {
   .sidebar { transform: translateX(calc(-1 * var(--sidebar-width))); }
   .sidebar.open { transform: translateX(0); }
   .hamburger { left: 16px !important; }
   .sidebar-open .hamburger { left: calc(var(--sidebar-width) + 14px) !important; }
   .topbar { left: 0 !important; }
   .main-wrap { margin-left: 0 !important; }
+}
+
+/* Phones: the hamburger is the way home, so the topbar drops its "← Home" link
+   and keeps the title and the page's actions. */
+@media (max-width: 600px) {
+  .topbar { padding: 0 12px 0 68px; gap: 8px; }
+  .topbar-left .home-btn, .topbar-left .topbar-sep { display: none; }
+  .topbar-title { overflow: hidden; text-overflow: ellipsis; }
 }
 
 /* ── Progress: Export / Import ───────────────────────────────────────────── */

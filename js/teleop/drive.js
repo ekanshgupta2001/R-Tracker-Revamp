@@ -73,6 +73,8 @@ function updateBot(dt) {
     const gp = navigator.getGamepads()[gpIdx];
     if (gp) { lx = dz(gp.axes[0]); ly = dz(gp.axes[1]); rx = dz(gp.axes[2]); }
   }
+  if (touchInp.left)  { lx = dz(touchInp.lx); ly = dz(touchInp.ly); }   // on-screen sticks (touch.js)
+  if (touchInp.right) { rx = dz(touchInp.rx); }
   let kx = 0, ky = 0, krx = 0;
   if (keys['KeyA']) kx -= 1;
   if (keys['KeyD']) kx += 1;

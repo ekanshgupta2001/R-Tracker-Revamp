@@ -190,7 +190,17 @@
   };
 
   // ── Sidebar Toggle ─────────────────────────────────────────────────────────
+  // ≤ NARROW px the sidebar overlays the page with a backdrop (css/sidebar.css);
+  // wider, it pushes the page. Either way the space the page has changes, so
+  // rt-layoutchange fires on window once the slide has finished — canvas pages
+  // re-measure on it (the window itself did not resize).
+  const NARROW = 900;
   let sidebarOpen = false;
+  let layoutTimer = null;
+  function layoutChanged() {
+    clearTimeout(layoutTimer);
+    layoutTimer = setTimeout(() => window.dispatchEvent(new Event('rt-layoutchange')), 440);
+  }
 
   window.toggleSidebar = function () {
     sidebarOpen = !sidebarOpen;
@@ -199,15 +209,16 @@
     const hamIcon = document.querySelector('.ham-icon');
     if (!sidebar) return;
     sidebar.classList.toggle('collapsed', !sidebarOpen);
-    sidebar.classList.toggle('open', sidebarOpen && window.innerWidth <= 820);
+    sidebar.classList.toggle('open', sidebarOpen && window.innerWidth <= NARROW);
     document.body.classList.toggle('sidebar-open', sidebarOpen);
     document.body.classList.toggle('sidebar-collapsed', !sidebarOpen);
     if (hamIcon) {
       hamIcon.classList.add('swap');
       setTimeout(() => { hamIcon.innerHTML = sidebarOpen ? ICONS.close : ICONS.menu; hamIcon.classList.remove('swap'); }, 140);
     }
-    if (backdrop) backdrop.classList.toggle('visible', sidebarOpen && window.innerWidth <= 820);
-    if (sidebarOpen) animateNavItems();   // stagger in on open; on close the items ride the panel out
+    if (backdrop) backdrop.classList.toggle('visible', sidebarOpen && window.innerWidth <= NARROW);
+    if (sidebarOpen) animateNavItems();
+    layoutChanged();   // stagger in on open; on close the items ride the panel out
   };
 
   function animateNavItems() {
@@ -218,13 +229,63 @@
     });
   }
 
+  // Crossing NARROW (a tablet rotating, a window resized) moves an open sidebar
+  // between its overlay and push forms in both directions.
+  let wasNarrow = window.innerWidth <= NARROW;
   window.addEventListener('resize', () => {
-    if (window.innerWidth > 820) {
-      const sidebar = document.getElementById('sidebar');
-      const backdrop = document.getElementById('sidebarBackdrop');
-      if (sidebar) sidebar.classList.remove('open');
-      if (backdrop) backdrop.classList.remove('visible');
-    }
+    const narrow = window.innerWidth <= NARROW;
+    if (narrow === wasNarrow) return;
+    wasNarrow = narrow;
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if (sidebar) sidebar.classList.toggle('open', sidebarOpen && narrow);
+    if (backdrop) backdrop.classList.toggle('visible', sidebarOpen && narrow);
+  });
+
+  // ── Page transition ────────────────────────────────────────────────────────
+  // The look lives in css/global.css ("the sky stays, the content glides").
+  // Browsers with cross-document View Transitions animate it themselves, so an
+  // in-app link just navigates; elsewhere the content wrapper plays rtLeave
+  // (html.rt-leaving) for 160 ms before navigating, and the next page's <head>
+  // boot script adds html.rt-arriving. Either way an in-app link sets
+  // sessionStorage 'rt-nav', which tells store.js's beforeunload not to prompt;
+  // the arriving page clears it. Under reduced motion nothing waits.
+  const docEl = document.documentElement;
+  const nativeVT = !!window.CSSViewTransitionRule;
+  try { sessionStorage.removeItem('rt-nav'); } catch (err) {}
+  if (docEl.classList.contains('rt-arriving')) setTimeout(() => docEl.classList.remove('rt-arriving'), 400);
+
+  document.addEventListener('click', function (e) {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const link = e.target.closest && e.target.closest('a[href]');
+    if (!link) return;
+    const href = link.getAttribute('href');
+    if (!href || href.charAt(0) === '#' || /^(javascript|mailto|tel|blob):/i.test(href)) return;
+    if (link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
+    const url = new URL(link.href, location.href);
+    if (url.origin !== location.origin) return;
+    if (url.pathname === location.pathname && url.search === location.search && url.hash) return;   // same page, new hash
+    try { sessionStorage.setItem('rt-nav', '1'); } catch (err) {}
+    if (nativeVT || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;   // the browser navigates now
+    e.preventDefault();
+    docEl.classList.add('rt-leaving');
+    setTimeout(() => { window.location.href = link.href; }, 160);
+  });
+  // Native transition: the leaving page's wrapper is renamed rt-page-out just
+  // before the browser snapshots it, so the outgoing and incoming content are
+  // two groups that each keep their own box (the topbar pages start 48 px lower
+  // than Home and TeleOp) instead of one group that jumps between them.
+  window.addEventListener('pageswap', function (e) {
+    if (!e.viewTransition) return;
+    const wrap = document.querySelector('.main-wrap, .curr-wrap, body > #app');
+    if (wrap) wrap.style.viewTransitionName = 'rt-page-out';
+  });
+  // Back/forward from the bfcache restores the page as we left it: undo the leave.
+  window.addEventListener('pageshow', function (e) {
+    if (!e.persisted) return;
+    docEl.classList.remove('rt-leaving', 'rt-arriving');
+    const wrap = document.querySelector('.main-wrap, .curr-wrap, body > #app');
+    if (wrap) wrap.style.viewTransitionName = '';
   });
 
   window.escSidebar = function (s) {

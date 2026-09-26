@@ -142,14 +142,17 @@ function updateCP(si, ci, axis, val) {
 // ── Canvas Interaction ────────────────────────────────────────────────────
 function getCanvasPos(e) {
   const rect = cvs.getBoundingClientRect();
-  const scaleX = cvs.width / rect.width, scaleY = cvs.height / rect.height;
+  const scaleX = cvsSz / rect.width, scaleY = cvsSz / rect.height;
   const clientX = e.touches ? e.touches[0].clientX : e.clientX;
   const clientY = e.touches ? e.touches[0].clientY : e.clientY;
   return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
 }
 
-cvs.addEventListener('mousedown', e => {
+// Pointer events (mouse, pen and touch alike), captured so a drag that leaves
+// the canvas keeps following the finger; css sets touch-action: none on it.
+cvs.addEventListener('pointerdown', e => {
   if (e.button === 2) return;
+  if (cvs.setPointerCapture) cvs.setPointerCapture(e.pointerId);
   const cp = getCanvasPos(e);
   mouseDownPos = { x: cp.x, y: cp.y };
   wasDragging  = false;
@@ -172,7 +175,7 @@ cvs.addEventListener('mousedown', e => {
   }
 });
 
-cvs.addEventListener('mousemove', e => {
+cvs.addEventListener('pointermove', e => {
   if (dragType === null) return;
   const cp = getCanvasPos(e);
   if (Math.hypot(cp.x - mouseDownPos.x, cp.y - mouseDownPos.y) > 3) wasDragging = true;
@@ -193,7 +196,8 @@ cvs.addEventListener('mousemove', e => {
   }
 });
 
-cvs.addEventListener('mouseup', e => {
+cvs.addEventListener('pointercancel', () => { dragType = null; dragIdx = -1; dragSegIdx = -1; dragCpIdx = -1; cvs.classList.remove('dragging'); });
+cvs.addEventListener('pointerup', e => {
   const wasDrag  = wasDragging;
   dragType = null; dragIdx = -1; dragSegIdx = -1; dragCpIdx = -1;
   cvs.classList.remove('dragging');

@@ -101,8 +101,7 @@
     var c2d = document.getElementById('c');
     var w, h;
     if (c2d && c2d.width > 0) {
-      w = c2d.width;
-      h = c2d.height || c2d.width;
+      w = h = (typeof cvsSize === 'number') ? cvsSize : c2d.width;   // CSS px (field.js)
     } else {
       // 2D canvas may be hidden — use parent container
       var fieldWrap = document.getElementById('field-wrap');
@@ -417,8 +416,8 @@
       console.log('[3D] Switched to 2D view');
     } else {
       // Capture 2D canvas size BEFORE hiding it
-      var w = c2d.width;
-      var h = c2d.height || c2d.width;
+      var w = (typeof cvsSize === 'number') ? cvsSize : c2d.width;   // CSS px (field.js)
+      var h = w;
 
       // Hide 2D canvas and parent border, show 3D canvas in its exact place
       c2d.style.display = 'none';

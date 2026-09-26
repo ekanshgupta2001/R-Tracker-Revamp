@@ -18,7 +18,7 @@ let debugCollisions = false;
 
 function drawDebugCollisions() {
   if (!debugCollisions) return;
-  const s = cvs.width / FIELD_FT;
+  const s = cvsSize / FIELD_FT;
   for (const z of COLLISION_ZONES) {
     const cx = (z.x + FIELD_FT / 2) * s;
     const cy = (-z.y + FIELD_FT / 2) * s;
@@ -34,7 +34,7 @@ function drawDebugCollisions() {
 
 function drawRobot() {
   const pos = fieldToCvs(bot.x, bot.y);
-  const s = cvs.width / FIELD_FT;
+  const s = cvsSize / FIELD_FT;
   const r = (cfg.robotSz / 24) * s;
 
   ctx.save();

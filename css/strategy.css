@@ -7,6 +7,7 @@
 
 body {
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   display: flex;
 }
@@ -34,9 +35,9 @@ body {
   margin-top: 48px;
   width: calc(100% - var(--sidebar-width));
   height: calc(100vh - 48px);
+  height: calc(100dvh - 48px);
   display: flex;
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: pageIn 0.35s ease-out both;
 }
 
 .sidebar-collapsed .main-wrap { margin-left: 0; width: 100%; }
@@ -461,8 +462,8 @@ body {
 @media (max-width: 900px) {
   .topbar { left: 0; }
   .main-wrap { margin-left: 0; width: 100%; flex-direction: column; }
-  .field-panel { flex: 1 1 auto; min-height: 50vh; }
-  .notes-panel { flex: 0 0 200px; border-left: none; border-top: 1px solid var(--glass-border); }
+  .field-panel { flex: 1 1 auto; min-height: 50dvh; }
+  .notes-panel { flex: 0 0 clamp(150px, 26dvh, 280px); border-left: none; border-top: 1px solid var(--glass-border); padding-bottom: env(safe-area-inset-bottom); }
   .notes-panel.collapsed { flex-basis: 0; }
   .strat-toolbar { top: 8px; padding: 4px 6px; gap: 2px; }
   .tool-btn { width: 28px; height: 28px; font-size: 14px; }
@@ -470,9 +471,19 @@ body {
   .minimap-wrap { width: 100px; height: 100px; bottom: 8px; right: 8px; }
 }
 
+/* Phones: the topbar actions stay, as icon buttons (labels become aria-labels). */
 @media (max-width: 600px) {
-  .topbar-actions { display: none; }
+  .topbar-actions { gap: 4px; }
+  .topbar-btn { padding: 7px 8px; }
+  .topbar-btn .tb-lbl { display: none; }
+  .topbar-btn .rt-icon { font-size: 15px; }
   .strat-toolbar { max-width: calc(100% - 16px); }
   .minimap-wrap { display: none; }
-  .notes-panel { flex: 0 0 160px; }
+}
+/* Landscape phones: field and notes side by side so the field keeps the height. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .main-wrap { flex-direction: row; }
+  .field-panel { min-height: 0; }
+  .notes-panel { flex: 0 0 min(260px, 38vw); border-top: none; border-left: 1px solid var(--glass-border); }
+  .minimap-wrap { display: none; }
 }

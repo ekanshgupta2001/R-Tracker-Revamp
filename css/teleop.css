@@ -12,6 +12,7 @@
 body {
   display: flex;
   height: 100vh;
+  height: 100dvh;           /* mobile browser toolbars never hide the bottom rows */
   overflow: hidden;
 }
 
@@ -22,7 +23,6 @@ body {
   height: 100%;
   gap: 12px;
   padding: 12px;
-  animation: pageIn 0.35s ease-out both;
 }
 
 #field-container {
@@ -37,7 +37,6 @@ body {
 
 canvas {
   display: block;
-  image-rendering: pixelated;
   border: none;
 }
 
@@ -142,6 +141,7 @@ canvas {
 
 .tctrls {
   display: flex;
+  flex-wrap: wrap;
   gap: 5px;
   margin-top: 8px;
   justify-content: center;
@@ -349,7 +349,7 @@ input[type=range] {
 
 /* Sits on the dark overlay in both themes, so these are fixed light colours. */
 #countdown-text {
-  font-size: 88px;
+  font-size: clamp(56px, 16vw, 88px);
   font-weight: 800;
   color: #fff;
   text-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
@@ -371,6 +371,7 @@ input[type=range] {
   top: 8px; left: 8px; right: 8px;
   display: none;
   pointer-events: none;
+  line-height: 1.4;         /* #field-wrap is line-height 0 */
 }
 
 .hud-row { display: flex; justify-content: space-between; align-items: flex-start; }
@@ -402,8 +403,8 @@ input[type=range] {
   border: 1px solid var(--glass-border-strong);
   border-top-width: 3px;
   border-radius: var(--radius);
-  padding: 22px 30px;
-  min-width: 260px;
+  padding: clamp(14px, 4vw, 22px) clamp(16px, 5vw, 30px);
+  min-width: min(260px, 88%);
   text-align: center;
   display: none;
   pointer-events: all;
@@ -889,18 +890,122 @@ input[type=range] {
 
 #stl-remove-btn:hover { background: var(--bad-soft); }
 
-/* ── Mobile Warning ───────────────────────────────────────────────────────── */
-.mobile-warning {
-  display: none;
-  padding: 14px 16px;
-  margin: 8px;
-  background: var(--warn-soft);
-  border: 1px solid var(--warn);
-  color: var(--text);
-  text-align: center;
-  font-size: 13px;
-  border-radius: 10px;
+/* ── Touch thumbsticks (js/teleop/touch.js) ──────────────────────────────
+   Shown on touch devices (html.rt-touch), hidden while a gamepad is connected.
+   Flat fills, no blur: they sit over or beside the field every frame. Stacked
+   (portrait) they are a row under the field; everywhere else they float at
+   the two sides of the field column, and field.js narrows the field so they
+   never cover it. */
+#touch-pad { display: none; }
+html.rt-touch:not(.rt-gamepad) #touch-pad {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  transform: translateY(-50%);
+  padding: 0 4px;
+  pointer-events: none;
+  z-index: 5;
 }
-@media (max-width: 768px) {
-  .mobile-warning { display: block; }
+.stick {
+  position: relative;
+  width: 112px; height: 112px;
+  border-radius: 50%;
+  background: var(--glass-tool);
+  border: 1px solid var(--glass-border-strong);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow-sm);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: auto;
+  display: flex; align-items: center; justify-content: center;
+}
+.stick.stick-x { width: 140px; height: 64px; border-radius: 32px; }
+.stick-knob {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--gold-soft);
+  border: 2px solid var(--gold);
+  transition: transform 0.12s ease-out;
+  pointer-events: none;
+}
+.stick.held .stick-knob { transition: none; background: var(--gold); }
+.stick-lbl {
+  position: absolute; bottom: -18px; left: 0; right: 0;
+  text-align: center;
+  font-size: 10px; font-weight: 650; letter-spacing: 0.8px; text-transform: uppercase;
+  color: var(--text-on-sky); text-shadow: var(--on-sky-shadow);
+  pointer-events: none;
+}
+#field-container { position: relative; }
+
+/* Keyboard shortcuts mean nothing without a keyboard */
+@media (hover: none) {
+  .kbd-hint, .ms-hint, .kbd-panel { display: none; }
+}
+
+/* ── Stacked layout (tablets in portrait, phones) ─────────────────────────
+   The field on top, the touch sticks (when shown) and the control bar under
+   it, then the Free Drive / Levels column becomes a sheet that fills the rest
+   of the height and scrolls on its own (field.js leaves it SHEET_MIN px).
+   The sheet is a sibling of the field, never an ancestor, so its blur is fine. */
+@media (max-width: 900px) and (orientation: portrait) {
+  #app {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+  }
+  #field-container { flex: none; justify-content: flex-start; gap: 8px; }
+  #sidebar-teleop, #levels-sidebar {
+    width: auto;
+    flex: 1 1 0;
+    min-height: 0;
+    padding: 8px;
+  }
+  /* the sticks become a row between the field and the control bar */
+  html.rt-touch:not(.rt-gamepad) #touch-pad {
+    position: static;
+    transform: none;
+    padding: 0 4px 16px;
+  }
+  #ctrl-bar {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 6px 8px;
+  }
+  #ctrl-bar::-webkit-scrollbar { display: none; }
+  #ctrl-bar > * { flex-shrink: 0; }
+  #mini-stats { display: none; }
+  #mode-tabs { align-self: center; }
+}
+
+/* Landscape phones: the field keeps the full height on the left, the column
+   narrows, the mini stats give their row to the field. */
+@media (max-height: 500px) and (orientation: landscape) {
+  #app { gap: 8px; padding: 8px 8px 8px calc(8px + env(safe-area-inset-left)); }
+  #field-container { gap: 6px; }
+  #sidebar-teleop, #levels-sidebar { width: 240px; padding: 8px; }
+  #mini-stats { display: none; }
+  #ctrl-bar {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 4px 6px;
+  }
+  #ctrl-bar::-webkit-scrollbar { display: none; }
+  #ctrl-bar > * { flex-shrink: 0; }
+  .stick { width: 96px; height: 96px; }
+  .stick.stick-x { width: 120px; height: 56px; }
+}
+@media (max-width: 400px) and (orientation: portrait) {
+  .stick { width: 96px; height: 96px; }
+  .stick.stick-x { width: 124px; height: 56px; }
+  .stick-knob { width: 42px; height: 42px; }
 }

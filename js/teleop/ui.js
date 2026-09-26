@@ -62,10 +62,12 @@ function loop(ts) {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
-window.addEventListener('resize', function () {
+function relayout() {
   resize();
   if (typeof resize3DView === 'function') resize3DView();
-});
+}
+window.addEventListener('resize', relayout);
+window.addEventListener('rt-layoutchange', relayout);   // sidebar opened / closed
 resize();
 cfgUpdate();
 renderLevelsSidebar();

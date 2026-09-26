@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
-  <!-- v2 theme: `light` = light glass and is the default; no class = dark glass. rt-theme is the only localStorage key in the app (UI preference). -->
-  <script>document.documentElement.classList.add('light');try{if(localStorage.getItem('rt-theme')==='dark')document.documentElement.classList.remove('light')}catch(e){}</script>
+  <!-- v2 theme: `light` = light glass and is the default; no class = dark glass. rt-theme is the only localStorage key in the app (UI preference).
+       rt-arriving: the page transition fallback (js/sidebar.js) when the browser has no cross-document View Transitions. -->
+  <script>document.documentElement.classList.add('light');try{if(localStorage.getItem('rt-theme')==='dark')document.documentElement.classList.remove('light')}catch(e){}try{if(sessionStorage.getItem('rt-nav')==='1'&&!window.CSSViewTransitionRule&&matchMedia('(prefers-reduced-motion: no-preference)').matches)document.documentElement.classList.add('rt-arriving')}catch(e){}</script>
   <meta name="description" content="Progress Report — R-Tracker driver stats, practice consistency, curriculum mastery.">
   <title>Progress Report — R-Tracker</title>
   <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
@@ -25,7 +26,6 @@
 
 <body>
 <a href="#main-content" class="skip-to-content">Skip to main content</a>
-<div id="rt-overlay" aria-hidden="true"><div id="rt-overlay-logo"><span class="ol-r">R-</span><span class="ol-t">Tracker</span></div></div>
 <div id="rt-atmosphere" aria-hidden="true" data-drift="off"><i class="atm atm-day"></i><i class="atm atm-night"></i><i class="atm atm-stars-a"></i><i class="atm atm-stars-b"></i><i class="atm atm-dusk"></i><i class="atm atm-sun"></i><i class="atm atm-moon"></i><i class="atm atm-land-day"></i><i class="atm atm-land-night"></i><i class="atm atm-mist"></i><i class="atm atm-vignette"></i></div>
   <header class="topbar">
     <div class="topbar-left"><a href="../index.html">← Home</a></div>
@@ -104,39 +104,5 @@
       if (window.RTReport) window.RTReport.render();
     });
   </script>
-<script>
-(function() {
-  var overlay = document.getElementById('rt-overlay');
-  if (!overlay) return;
-  if (sessionStorage.getItem('rt-nav') === '1') {
-    sessionStorage.removeItem('rt-nav');
-    overlay.classList.add('visible');
-    setTimeout(function() {
-      overlay.classList.remove('visible');
-      document.body.classList.add('rt-entering');
-    }, 200);
-    setTimeout(function() { document.body.classList.remove('rt-entering'); }, 400);
-  }
-  document.addEventListener('click', function(e) {
-    var link = e.target.closest('a[href]');
-    if (!link) return;
-    var href = link.getAttribute('href');
-    if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
-    if (link.hasAttribute('download') || href.startsWith('blob:')) return;
-    if (href.startsWith('http') && href.indexOf(location.host) === -1) return;
-    if (link.target === '_blank') return;
-    e.preventDefault();
-    sessionStorage.setItem('rt-nav', '1');
-    overlay.classList.add('visible');
-    setTimeout(function() { window.location.href = href; }, 150);
-  });
-  window.addEventListener('pageshow', function(e) {
-    if (e.persisted) {
-      overlay.classList.remove('visible');
-      document.body.classList.remove('rt-entering');
-    }
-  });
-})();
-</script>
 </body>
 </html>

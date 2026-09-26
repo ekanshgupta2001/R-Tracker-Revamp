@@ -74,7 +74,6 @@
   --sidebar-width: 260px;
   --radius: 14px;
   --radius-sm: 9px;
-  --overlay-bg: #0a1830;
   --scrollbar-thumb: rgba(22, 35, 58, 0.25);
 
   /* status — text-safe on light glass (pure #22c55e fails AA there) + soft fills */
@@ -226,7 +225,7 @@ html.rt-theming.rt-sunrise *, html.rt-theming.rt-sunrise *::before, html.rt-them
 }
 
 /* ── Atmosphere (the sky behind every page) ──────────────────────────────── */
-/* Each page carries the same static markup right after #rt-overlay:
+/* Each page carries the same static markup right at the top of <body>:
      <div id="rt-atmosphere" aria-hidden="true"> + eleven <i class="atm atm-…">
    It is fixed at z-index -1: above the body background (the propagated `--bg`,
    which shows only until the rasters arrive) and below every in-flow element,
@@ -361,7 +360,7 @@ html.rt-sunrise #rt-atmosphere :is(.atm-night, .atm-land-day, .atm-land-night, .
 html.rt-sunrise #rt-atmosphere .atm-day { transition: none !important; }
 html.rt-sunrise #rt-atmosphere .atm-sun { transition: transform 0.8s cubic-bezier(0.2, 0.6, 0.3, 1) 0.7s, opacity 0.4s ease 0.7s !important; }
 
-/* Content entry: every page's main wrapper fades up as it lands. */
+/* 404's card fades up as it lands (the app pages use the page transition below). */
 @keyframes pageIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 /* ── Glass primitives (rt-glass family from design.md §17) ───────────────── */
@@ -509,23 +508,31 @@ html:not(.light) .rt-pill-gold { color: var(--gold); }
 .rt-icon { display: inline-flex; width: 1em; height: 1em; vertical-align: -0.15em; flex: none; }
 .rt-icon svg { width: 100%; height: 100%; display: block; }
 
-/* ── Page Transition Overlay ─────────────────────────────────────────────── */
-#rt-overlay {
-  position: fixed; inset: 0; background: var(--overlay-bg); z-index: 99999;
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0; pointer-events: none; transition: opacity 0.1s ease;
+/* ── Page transition: the sky stays, the content glides ─────────────────────
+   Every page paints the same sky, sidebar and hamburger, so between pages they
+   simply stay put; only the page's content wrapper (rt-page: .main-wrap, the
+   curriculum's .curr-wrap, TeleOp's #app — one per page) fades out lifting a
+   few pixels and the next page's content rises in.
+   Browsers with cross-document View Transitions (Chrome/Edge 126+, Safari
+   18.2+) do it natively: the root snapshot (sky, sidebar, topbar) swaps with no
+   animation; the leaving wrapper is renamed rt-page-out at pageswap
+   (js/sidebar.js), so the old and new content are separate groups that keep
+   their own boxes, one fading out, the other rising in. Elsewhere js/sidebar.js plays
+   the same two keyframes on the live wrapper (html.rt-leaving before it
+   navigates, html.rt-arriving — set by each page's <head> boot script — as the
+   next page lands). Reduced motion: neither runs; navigation is instant. */
+:is(.main-wrap, .curr-wrap, body > #app) { view-transition-name: rt-page; }
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
 }
-#rt-overlay.visible { opacity: 1; pointer-events: auto; }
-#rt-overlay-logo {
-  font-size: 44px; font-weight: 800; letter-spacing: -1px; white-space: nowrap; color: #f7f9fc;
-  opacity: 0; transform: scale(0.94);
-  transition: opacity 0.15s ease 0.05s, transform 0.15s ease 0.05s;
-}
-#rt-overlay.visible #rt-overlay-logo { opacity: 1; transform: scale(1); }
-.ol-r { color: #c9526f; }
-.ol-t { color: #f7f9fc; }
-body.rt-entering { animation: rtFadeIn 0.15s ease-out; }
-@keyframes rtFadeIn { from { opacity: 0; } to { opacity: 1; } }
+::view-transition-group(root), ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+::view-transition-group(rt-page), ::view-transition-group(rt-page-out) { animation: none; }
+::view-transition-old(rt-page-out) { animation: rtLeave 0.18s cubic-bezier(0.4, 0, 1, 1) both; }
+::view-transition-new(rt-page) { animation: rtArrive 0.34s cubic-bezier(0.2, 0.7, 0.2, 1) 0.08s both; }
+html.rt-leaving :is(.main-wrap, .curr-wrap, body > #app) { animation: rtLeave 0.16s cubic-bezier(0.4, 0, 1, 1) forwards; pointer-events: none; }
+html.rt-arriving :is(.main-wrap, .curr-wrap, body > #app) { animation: rtArrive 0.34s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes rtLeave  { to   { opacity: 0; transform: translateY(-6px); filter: blur(4px); } }
+@keyframes rtArrive { from { opacity: 0; transform: translateY(10px); filter: blur(4px); } }
 
 /* ── Scrollbars ──────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -534,8 +541,6 @@ body.rt-entering { animation: rtFadeIn 0.15s ease-out; }
 
 /* ── Reduced Motion ──────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  #rt-overlay { display: none !important; }
-  body.rt-entering { animation: none; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

@@ -343,9 +343,11 @@
 
     var panel = document.getElementById('fieldPanel');
     var pr = panel.getBoundingClientRect();
-    overlay.style.left = (clientX - pr.left) + 'px';
-    overlay.style.top = (clientY - pr.top) + 'px';
     overlay.classList.add('visible');
+    // keep the box inside the field panel near the right / bottom edge
+    var ow = overlay.offsetWidth || 160, oh = overlay.offsetHeight || 40;
+    overlay.style.left = Math.max(8, Math.min(clientX - pr.left, pr.width - ow - 8)) + 'px';
+    overlay.style.top = Math.max(8, Math.min(clientY - pr.top, pr.height - oh - 8)) + 'px';
     input.value = '';
     input.focus();
 
@@ -631,11 +633,20 @@
   function resize() {
     var panel = document.getElementById('fieldPanel');
     if (!panel || !cvs) return;
-    // clientWidth/Height include the panel's 16px glass frame on each side.
-    var sz = Math.min(panel.clientWidth - 32, panel.clientHeight - 32);
-    W = Math.max(sz, 200);
-    cvs.width = W;
-    cvs.height = W;
+    // clientWidth/Height include the panel's 16px glass frame on each side. The
+    // floating toolbar sits over the panel's top edge: the field is sized and
+    // pushed down so the toolbar never covers it.
+    var tb = document.querySelector('.strat-toolbar');
+    var tbH = tb && tb.offsetHeight ? tb.offsetTop + tb.offsetHeight - 8 : 0;
+    var sz = Math.min(panel.clientWidth - 32, panel.clientHeight - 32 - tbH);
+    cvs.style.marginTop = tbH + 'px';
+    // W is the field in CSS px (every draw call works in it); the backing store
+    // is W × devicePixelRatio (≤ 2) so annotations stay sharp on phones.
+    W = Math.max(Math.floor(sz), 160);
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cvs.width = cvs.height = Math.round(W * dpr);
+    cvs.style.width = cvs.style.height = W + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     render();
     renderMinimap();
   }
@@ -667,6 +678,7 @@
 
     document.addEventListener('keydown', onKeyDown);
     window.addEventListener('resize', resize);
+    window.addEventListener('rt-layoutchange', resize);   // sidebar opened / closed
 
     resize();
     updateUndoButtons();

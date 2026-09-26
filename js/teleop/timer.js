@@ -40,5 +40,5 @@ function renderTimer() {
   pel.textContent = lbl; pel.className = cls;
 
   const td = document.getElementById('timer-display');
-  td.style.color = rem < 15000 ? '#ff4455' : rem < 45000 ? '#ffdd44' : '#dde';
+  td.style.color = rem < 15000 ? 'var(--bad)' : rem < 45000 ? 'var(--warn)' : '';   // tokens: readable in both themes
 }
