@@ -21,8 +21,34 @@ Network note for the audit: `three.min.js` contains `XMLHttpRequest` (inside `Fi
 
 License: MIT — Copyright 2010-2021 Three.js Authors (header retained in `three.min.js`).
 
+## gsap/ — GSAP 3.15.0 (GreenSock Standard "No Charge" License)
+
+Loaded on the home page only (`index.html`, `defer`), by `js/home-motion.js`: the entrance
+choreography, the SplitText headline reveal and the pointer parallax of the sky layers.
+
+| File | Source | SHA-256 |
+|---|---|---|
+| `gsap.min.js` | https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js | `92bb9a96476f983d212a2bc4f54c889039c1696dd4461d40a736860938570fbb` |
+| `SplitText.min.js` | https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/SplitText.min.js | `419f7027a5f086a12cb7988736d8fdd3a6ed2200229661de25b6628ca7ced344` |
+
+Verify with `shasum -a 256 -c vendor/gsap/SHA256SUMS` (run from `vendor/gsap/`).
+
+Network note for the audit (checked by hand on 2026-09-26): neither file contains `fetch(`,
+`XMLHttpRequest`, `WebSocket`, `sendBeacon`, `import(`, `eval(`, `new Function`, workers or any
+storage/cookie access. The only URLs are the licence comment (`https://gsap.com…`) and the SVG /
+XHTML namespace strings.
+
+License: the GSAP Standard License (https://gsap.com/standard-license) — free for commercial and
+non-commercial use, all plugins included, since Webflow's 2025 change; the licence header is
+retained in both files.
+
 ## Fonts
 
-The Inter variable font lives in `assets/fonts/` (`InterVariable.woff2`, from
-https://github.com/rsms/inter, SIL Open Font License 1.1 — see `assets/fonts/OFL.txt`) and is
-declared in `css/fonts.css`.
+Two variable fonts live in `assets/fonts/`, declared in `css/fonts.css`:
+
+- **Geist** (the site's typeface) — `Geist-Variable.woff2` from
+  https://cdn.jsdelivr.net/npm/geist@1.7.2/dist/fonts/geist-sans/Geist-Variable.woff2
+  (SHA-256 `a369fcf5628ea2aa4e1b9e2ec6a5b3624e365bda588e1f0f2f12b564f728fbb8`), © 2023 Vercel with
+  basement.studio, SIL Open Font License 1.1 — see `assets/fonts/Geist-OFL.txt`.
+- **Inter** (fallback) — `InterVariable.woff2`, from https://github.com/rsms/inter, SIL Open Font
+  License 1.1 — see `assets/fonts/OFL.txt`.

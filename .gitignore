@@ -14,3 +14,6 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+
+# Terrain tiles for the sky bake (node tools/fetch-dem.mjs re-downloads them; ≈ 13 MB)
+tools/dem/*.png

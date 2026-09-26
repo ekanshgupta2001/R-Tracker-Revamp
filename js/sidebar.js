@@ -156,13 +156,30 @@
     if (icon) icon.innerHTML = isDark ? ICONS.sun : ICONS.moon;
   }
 
+  // The sky plays a sunset (going dark) or sunrise (going light) — css/global.css
+  // "Atmosphere". Under reduced motion only the plain crossfade runs.
+  const SKY_MS = 1900;
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  // Only the showing theme's sky loads with the page; fetch the other once idle
+  // so the first toggle does not wait on it.
+  function loadBothSkies() { document.documentElement.classList.add('rt-sky-both'); }
+  window.addEventListener('load', function () {
+    if (window.requestIdleCallback) requestIdleCallback(loadBothSkies, { timeout: 3000 });
+    else setTimeout(loadBothSkies, 1500);
+  });
+
   window.toggleTheme = function () {
     isDark = !isDark;
     const html = document.documentElement;
+    const animate = !(reducedMotion && reducedMotion.matches);
+    loadBothSkies();
+    html.classList.remove('rt-sunset', 'rt-sunrise');
     html.classList.add('rt-theming');
+    if (animate) html.classList.add(isDark ? 'rt-sunset' : 'rt-sunrise');
     html.classList.toggle('light', !isDark);
     clearTimeout(themeTimer);
-    themeTimer = setTimeout(() => html.classList.remove('rt-theming'), 520);
+    themeTimer = setTimeout(() => html.classList.remove('rt-theming', 'rt-sunset', 'rt-sunrise'), animate ? SKY_MS : 520);
     try { localStorage.setItem('rt-theme', isDark ? 'dark' : 'light'); } catch (e) {}
     // Canvas-drawn things (report charts, the 3D scene) re-read their tokens on this.
     try { window.dispatchEvent(new CustomEvent('rt-themechange', { detail: { dark: isDark } })); } catch (e) {}

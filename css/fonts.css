@@ -1,4 +1,4 @@
-/* ── Self-hosted Inter (variable) ─────────────────────────────────────────────
+/* ── Self-hosted Geist + Inter (variable) ─────────────────────────────────────────────
    Replaces the Google Fonts <link>. The font file lives in assets/fonts/ and is
    served from this origin only; url() resolves relative to this stylesheet, so
    the same file works from / and /pages/. Licensed under the SIL OFL 1.1
@@ -9,4 +9,14 @@
   font-weight: 100 900;
   font-display: swap;
   src: url('../assets/fonts/InterVariable.woff2') format('woff2');
+}
+
+/* Geist (Vercel, SIL OFL 1.1 — assets/fonts/Geist-OFL.txt): the site's typeface.
+   Inter above stays as the fallback. */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../assets/fonts/Geist-Variable.woff2') format('woff2');
 }

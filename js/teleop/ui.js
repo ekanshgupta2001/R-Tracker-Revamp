@@ -72,3 +72,16 @@ renderLevelsSidebar();
 requestAnimationFrame(loop);
 
 hydrateCompletedLevels();
+
+// Home's "Continue Level N" links here as teleop.html#level-N (a hash, so nothing
+// about it is ever sent to the server): open that level if it is unlocked, then
+// drop the hash so a reload does not restart it.
+(function openLevelFromHash() {
+  var m = /^#level-(\d{1,2})$/.exec(window.location.hash || '');
+  if (!m) return;
+  var id = parseInt(m[1], 10);
+  try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+  if (!LEVELS.some(function (l) { return l.id === id; }) || !isLevelUnlocked(id)) return;
+  switchMode('levels');
+  startCountdown(id);
+})();

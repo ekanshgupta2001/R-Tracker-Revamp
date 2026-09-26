@@ -41,6 +41,9 @@
      because the zenith is deep blue in both themes */
   --text-on-sky-2: #dfe7f3;
   --on-sky-shadow: 0 1px 3px rgba(10, 30, 60, 0.55), 0 2px 14px rgba(10, 30, 60, 0.45);
+  /* text placed on the cloud sea (Home's TOOLS label): white clouds by day */
+  --text-on-cloud: #22314a;
+  --on-cloud-shadow: 0 1px 6px rgba(255, 255, 255, 0.7);
 
   /* glass — Level 1 nav / Level 2 content / Level 3 tool */
   --glass-nav: rgba(222, 234, 247, 0.48);
@@ -129,6 +132,8 @@ html:not(.light) {
   --text-faint: #8e9bb0;
   --gold-text: var(--gold);
   --burgundy-text: #d1607d;
+  --text-on-cloud: #eef2f8;
+  --on-cloud-shadow: 0 1px 3px rgba(4, 8, 24, 0.7), 0 2px 12px rgba(4, 8, 24, 0.5);
 
   --glass-nav: rgba(12, 22, 42, 0.45);
   --glass: rgba(12, 22, 42, 0.58);
@@ -185,7 +190,7 @@ html:not(.light) {
 
 /* ── Body ────────────────────────────────────────────────────────────────── */
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -200,52 +205,161 @@ body {
 a { color: var(--link); }
 a:hover { color: var(--link-hover); }
 
-/* Theme crossfade: sidebar.js adds html.rt-theming for ~0.5s while the theme flips.
-   `filter` is deliberately NOT in the list: the sky used to be a filtered SVG and
-   transitioning a filter re-rasterises it every frame. Every frame of this
-   crossfade also re-blurs every backdrop-filtered surface on the page, which is
-   why page stylesheets keep blur to a handful of top-level sheets/cards and give
-   repeated inner elements flat fills (the "blur budget": a few backdrop-filters
-   per page, never one per list item). */
+/* Theme crossfade: sidebar.js adds html.rt-theming while the theme flips, plus
+   html.rt-sunset / html.rt-sunrise for the sky sequence (skipped under reduced
+   motion). With a direction class the glass waits for the sky: it starts
+   0.45s in and takes 0.5s, so the panels darken as night falls. (Kept short on
+   purpose: every frame of it re-blurs each glass sheet; at 0.7s the curriculum
+   page dropped a third more frames.)
+   `filter` is deliberately NOT in the list: transitioning a filter re-rasterises
+   it every frame. Every frame of this crossfade also re-blurs every
+   backdrop-filtered surface on the page, which is why page stylesheets keep blur
+   to a handful of top-level sheets/cards and give repeated inner elements flat
+   fills (the "blur budget": a few backdrop-filters per page, never one per list
+   item). */
 html.rt-theming *, html.rt-theming *::before, html.rt-theming *::after {
   transition: background-color 0.45s ease, border-color 0.45s ease, color 0.45s ease, box-shadow 0.45s ease, opacity 0.45s ease !important;
 }
+html.rt-theming.rt-sunset *, html.rt-theming.rt-sunset *::before, html.rt-theming.rt-sunset *::after,
+html.rt-theming.rt-sunrise *, html.rt-theming.rt-sunrise *::before, html.rt-theming.rt-sunrise *::after {
+  transition: background-color 0.5s ease 0.45s, border-color 0.5s ease 0.45s, color 0.5s ease 0.45s, box-shadow 0.5s ease 0.45s, opacity 0.5s ease 0.45s !important;
+}
 
 /* ── Atmosphere (the sky behind every page) ──────────────────────────────── */
-/* Each page has `<div id="rt-atmosphere" aria-hidden="true"></div>` right after
-   #rt-overlay. It is fixed and sits at z-index -1: above the body background
-   (the propagated `--bg`, which shows only until the raster arrives) and below
-   every in-flow element, so no page wrapper needs a stacking context of its own. */
-#rt-atmosphere {
-  position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
-  background: var(--sky-zenith);
-}
-/* The sky is a BAKED RASTER, not the inline SVG it was designed as, and it must
-   stay that way. The design drew the cloud sea through twelve feTurbulence /
+/* Each page carries the same static markup right after #rt-overlay:
+     <div id="rt-atmosphere" aria-hidden="true"> + eleven <i class="atm atm-…">
+   It is fixed at z-index -1: above the body background (the propagated `--bg`,
+   which shows only until the rasters arrive) and below every in-flow element,
+   so no page wrapper needs a stacking context of its own.
+
+   The sky is BAKED RASTERS, not the SVG it is drawn as, and it must stay that
+   way. The art (tools/sky-art.mjs) draws clouds and rock through feTurbulence /
    feDisplacementMap filters, and an SVG filter chain is re-run on every repaint
-   that touches it — there is no cached layer for it, so `will-change`,
-   `contain: paint` and layer promotion all fail to avoid the work. Measured on
-   the homepage at 1440x900:
+   that touches it — no cached layer, so `will-change`, `contain: paint` and
+   layer promotion all fail to avoid the work. Measured on the homepage at
+   1440x900 with the original single-layer sky:
 
      drifting filtered groups (as designed)   19.6 fps idle
-     static SVG, nothing moving over it        124  fps idle
      static SVG, theme crossfade over it     60 fps, 14 dropped frames, 42 ms hitches
      baked raster                            120 fps, 0 dropped frames
 
-   assets/summit-sky.webp is that same SVG (assets/summit-sky.svg) rendered at
-   2880x1800; regenerate it with `node tools/bake-sky.mjs` if the art changes.
-   `cover` + `center` reproduces the SVG's preserveAspectRatio="xMidYMid slice". */
-#rt-atmosphere::before {
-  content: ''; position: absolute; inset: 0;
-  background: url('../assets/summit-sky.webp') center / cover no-repeat;
+   `node tools/bake-sky.mjs` regenerates assets/sky/*.webp. Only opacity and
+   transform of these layers ever animate.
+
+   Layers, bottom to top: day sky, night sky, two star tiles, the dusk/dawn
+   band, the sun, the moon (both CSS, below the land so they set behind the
+   peaks), day land, night land (alpine range + cloud sea, transparent above), the
+   drifting mist, the vignette. Sun and moon sit in art-board coordinates:
+   --s is the `cover` scale of the 1440x900 board, so `50% + (x − 720)·s`
+   lands on the same pixel as the baked art. */
+#rt-atmosphere {
+  --s: max(100vw / 1440, 100vh / 900);
+  position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
+  background: var(--sky-zenith);
 }
-/* Dark variant: the scrim's opacity is the only thing that animates, so the
-   crossfade is a compositor operation. */
-#rt-atmosphere::after {
-  content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.45s ease;
-  background: linear-gradient(180deg, rgba(4, 12, 30, 0.60) 0%, rgba(4, 12, 30, 0.40) 45%, rgba(4, 12, 30, 0.56) 100%);
+#rt-atmosphere .atm { position: absolute; inset: 0; display: block; pointer-events: none; }
+.atm-day, .atm-night, .atm-land-day, .atm-land-night { background: center / cover no-repeat; }
+
+/* Only the showing theme's rasters load with the page; sidebar.js adds
+   rt-sky-both once the page is idle so the other theme is decoded before the
+   first toggle. */
+html.light .atm-day, html.rt-sky-both .atm-day { background-image: url('../assets/sky/day-sky.webp'); }
+html.light .atm-land-day, html.rt-sky-both .atm-land-day { background-image: url('../assets/sky/day-land.webp'); }
+html:not(.light) .atm-night, html.rt-sky-both .atm-night { background-image: url('../assets/sky/night-sky.webp'); }
+html:not(.light) .atm-land-night, html.rt-sky-both .atm-land-night { background-image: url('../assets/sky/night-land.webp'); }
+html:not(.light) .atm-stars-a, html.rt-sky-both .atm-stars-a { background-image: url('../assets/sky/stars-a.webp'); }
+html:not(.light) .atm-stars-b, html.rt-sky-both .atm-stars-b { background-image: url('../assets/sky/stars-b.webp'); }
+
+.atm-stars-a, .atm-stars-b {
+  background-repeat: repeat; background-size: 512px 512px;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 34%, transparent 60%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 34%, transparent 60%);
 }
-html:not(.light) #rt-atmosphere::after { opacity: 1; }
+.atm-stars-b { background-position: 173px 91px; }
+
+/* The sun: bloom + haze-veiled disc, centred on board (1375, 115), right of Home's content column. */
+#rt-atmosphere .atm-sun {
+  inset: auto; width: calc(1040 * var(--s)); height: calc(1040 * var(--s));
+  left: calc(50% + 135 * var(--s)); top: calc(50% - 855 * var(--s));
+  background: radial-gradient(circle closest-side,
+    rgba(255, 251, 242, 0.95) 0%, rgba(255, 249, 236, 0.9) 4.6%, rgba(255, 243, 220, 0.55) 8.6%,
+    rgba(255, 238, 210, 0.32) 13%, rgba(255, 230, 191, 0.18) 25%, rgba(255, 230, 191, 0.05) 60%, rgba(255, 230, 191, 0) 100%);
+}
+/* The moon: disc, three faint maria, a cool halo; board (1375, 115). */
+#rt-atmosphere .atm-moon {
+  inset: auto; width: calc(300 * var(--s)); height: calc(300 * var(--s));
+  left: calc(50% + 505 * var(--s)); top: calc(50% - 485 * var(--s));
+  background:
+    radial-gradient(circle at 45% 45%, rgba(150, 160, 190, 0.34) 0, rgba(150, 160, 190, 0) 5.5%),
+    radial-gradient(circle at 54.5% 53%, rgba(150, 160, 190, 0.26) 0, rgba(150, 160, 190, 0) 4%),
+    radial-gradient(circle at 47% 56%, rgba(150, 160, 190, 0.18) 0, rgba(150, 160, 190, 0) 3%),
+    radial-gradient(circle closest-side, #f6f3ea 0, #ece8da 13.6%, rgba(236, 232, 218, 0) 15%),
+    radial-gradient(circle closest-side, rgba(196, 210, 255, 0.34) 0, rgba(196, 210, 255, 0.12) 30%, rgba(196, 210, 255, 0) 100%);
+}
+/* The dusk (::before) and dawn (::after) bands behind the ridge; each plays
+   once per toggle. */
+#rt-atmosphere .atm-dusk { inset: auto; left: 0; right: 0; top: calc(50% - 170 * var(--s)); height: calc(420 * var(--s)); }
+.atm-dusk::before, .atm-dusk::after { content: ''; position: absolute; inset: 0; opacity: 0; }
+.atm-dusk::before { background: linear-gradient(180deg, rgba(255, 170, 100, 0) 0%, rgba(255, 158, 92, 0.6) 42%, rgba(218, 88, 76, 0.5) 60%, rgba(128, 0, 32, 0.38) 78%, rgba(128, 0, 32, 0) 100%); }
+.atm-dusk::after { background: linear-gradient(180deg, rgba(255, 206, 150, 0) 0%, rgba(255, 200, 142, 0.55) 42%, rgba(238, 146, 160, 0.42) 62%, rgba(160, 84, 132, 0.26) 80%, rgba(160, 84, 132, 0) 100%); }
+@keyframes atmBand { 0% { opacity: 0; } 45% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Drifting mist over the cloud sea: the only thing that moves at rest. */
+#rt-atmosphere .atm-mist {
+  inset: auto; left: 0; width: 112%; top: calc(50% - 30 * var(--s)); height: calc(170 * var(--s));
+  background: url('../assets/sky/mist.webp') 0 0 / 100% 100% no-repeat;
+  opacity: 0.6;
+  /* steps: the mist moves one pixel about once a second instead of every frame,
+     so the glass above re-blurs once a second, not 120 times (measured: smooth
+     drift took Home from 122 to 91 fps idle) */
+  animation: atmDrift 90s steps(96) infinite alternate;
+}
+@keyframes atmDrift { from { transform: translateX(0); } to { transform: translateX(-6%); } }
+/* Pages with many blurred surfaces (every one re-blurs when the mist moves)
+   and the TeleOp simulator opt out with data-drift="off": drift runs on Home,
+   About and 404 only. */
+#rt-atmosphere[data-drift="off"] .atm-mist { animation: none; }
+/* Home only (js/home-motion.js adds .rt-parallax and drives --px/--py in
+   −1…1 from the pointer): each layer drifts by its depth. The independent
+   `translate`/`scale` properties compose with the sunset's `transform`. */
+#rt-atmosphere.rt-parallax .atm { scale: 1.03; }
+#rt-atmosphere.rt-parallax .atm-stars-a, #rt-atmosphere.rt-parallax .atm-stars-b { translate: calc(var(--px, 0) * -3px) calc(var(--py, 0) * -2px); }
+#rt-atmosphere.rt-parallax .atm-sun, #rt-atmosphere.rt-parallax .atm-moon { translate: calc(var(--px, 0) * -4px) calc(var(--py, 0) * -3px); }
+#rt-atmosphere.rt-parallax .atm-land-day, #rt-atmosphere.rt-parallax .atm-land-night { translate: calc(var(--px, 0) * -10px) calc(var(--py, 0) * -6px); }
+#rt-atmosphere.rt-parallax .atm-mist { translate: calc(var(--px, 0) * -18px) calc(var(--py, 0) * -8px); }
+#rt-atmosphere .atm-vignette { background: radial-gradient(ellipse at 50% 50%, rgba(8, 20, 44, 0) 55%, rgba(8, 20, 44, 0.36) 100%); }
+
+/* Resting states: day shows the sun; night hides it below the ridge and shows
+   the moon and stars. No transitions here, so a page never animates on load. */
+.atm-night, .atm-land-night, .atm-stars-a, .atm-stars-b, .atm-moon { opacity: 0; }
+#rt-atmosphere .atm-moon { transform: translateY(calc(460 * var(--s))); }
+html:not(.light) .atm-night, html:not(.light) .atm-land-night,
+html:not(.light) .atm-stars-a, html:not(.light) .atm-stars-b { opacity: 1; }
+html:not(.light) #rt-atmosphere .atm-moon { opacity: 1; transform: none; }
+html:not(.light) .atm-day, html:not(.light) .atm-land-day { opacity: 0; }
+/* (the opaque day sky sits under the opaque night sky, so it switches instantly
+   and only the layers above it fade — one full-screen layer fewer per frame) */
+html:not(.light) #rt-atmosphere .atm-sun { opacity: 0; transform: translateY(calc(560 * var(--s))); }
+html:not(.light) #rt-atmosphere .atm-mist { opacity: 0.24; }
+
+/* Sunset (≈1.8 s): the sun sinks behind the peaks, the dusk band swells and
+   fades, night fades in, the moon rises, then the stars. The id in each
+   selector outranks the html.rt-theming blanket rule above. */
+html.rt-sunset #rt-atmosphere .atm-sun { transition: transform 0.75s cubic-bezier(0.5, 0, 0.75, 0.4), opacity 0.5s ease 0.45s !important; }
+html.rt-sunset #rt-atmosphere .atm-dusk::before { animation: atmBand 1.1s ease-in-out 0.1s both; }
+html.rt-sunset #rt-atmosphere :is(.atm-night, .atm-land-day, .atm-land-night, .atm-mist) { transition: opacity 0.8s ease 0.35s !important; }
+html.rt-sunset #rt-atmosphere .atm-day { transition: opacity 0s linear 1.15s !important; }
+html.rt-sunset #rt-atmosphere .atm-moon { transition: transform 0.7s cubic-bezier(0.2, 0.6, 0.3, 1) 0.8s, opacity 0.5s ease 0.8s !important; }
+html.rt-sunset #rt-atmosphere .atm-stars-a { transition: opacity 0.6s ease 1s !important; }
+html.rt-sunset #rt-atmosphere .atm-stars-b { transition: opacity 0.6s ease 1.2s !important; }
+/* Sunrise: the mirror — stars out, the moon sets, the dawn band, day, the sun. */
+html.rt-sunrise #rt-atmosphere .atm-stars-b { transition: opacity 0.4s ease !important; }
+html.rt-sunrise #rt-atmosphere .atm-stars-a { transition: opacity 0.4s ease 0.1s !important; }
+html.rt-sunrise #rt-atmosphere .atm-moon { transition: transform 0.6s cubic-bezier(0.5, 0, 0.75, 0.4), opacity 0.4s ease 0.3s !important; }
+html.rt-sunrise #rt-atmosphere .atm-dusk::after { animation: atmBand 1.1s ease-in-out 0.2s both; }
+html.rt-sunrise #rt-atmosphere :is(.atm-night, .atm-land-day, .atm-land-night, .atm-mist) { transition: opacity 0.8s ease 0.35s !important; }
+html.rt-sunrise #rt-atmosphere .atm-day { transition: none !important; }
+html.rt-sunrise #rt-atmosphere .atm-sun { transition: transform 0.8s cubic-bezier(0.2, 0.6, 0.3, 1) 0.7s, opacity 0.4s ease 0.7s !important; }
 
 /* Content entry: every page's main wrapper fades up as it lands. */
 @keyframes pageIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -428,6 +542,7 @@ body.rt-entering { animation: rtFadeIn 0.15s ease-out; }
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  #rt-atmosphere .atm-mist { animation: none; }
 }
 
 /* ── Skip to Content ─────────────────────────────────────────────────────── */

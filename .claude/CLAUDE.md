@@ -103,6 +103,12 @@ query string and no body.
 - **Scripts:** plain `<script src>` files that expose globals from IIFEs (`window.RTStore`,
   `window.renderLessons`, …). **Not** ES modules — the whole codebase uses classic scripts and `var`.
 - **3D:** Three.js r128 vendored at `vendor/three/`.
+- **Motion (Home only):** GSAP 3.15 + SplitText vendored at `vendor/gsap/` (GreenSock Standard
+  "No Charge" licence; hashes and the no-network check in `vendor/README.md`), driven by
+  `js/home-motion.js`: entrance choreography, word-by-word headline, pointer parallax of the sky
+  layers (`--px/--py` → `translate`), CTA magnetic pull. `html.rt-intro` hides content until the
+  first frame (≤ 2.5 s); `data-intro="done"` marks the end (tests wait on it); reduced motion or no
+  GSAP = static page.
 - **State:** `js/schema.js` (`RTSchema`: shape, versions, migration, import validation) and
   `js/store.js` (`RTStore`: load/get/update/save/clear/export/import; backends: sessionStorage, memory).
 - **Grading:** `js/grader.js` (rubric grader for theory), `js/code-check.js` (structural code checker),
@@ -117,7 +123,7 @@ query string and no body.
 
 ```
 R-Tracker/
-├── index.html                  # Home page (carousel + report bar + first-run panel)
+├── index.html                  # Home: top bar (Import, day/night), greeting, TeleOp hero (next level + real route), curriculum stepper, tools
 ├── pages/
 │   ├── teleop.html             # TeleOp driver practice (2D canvas + Three.js 3D view)
 │   ├── curriculum.html         # Programming curriculum (phases, quiz, deliverables)
@@ -145,8 +151,10 @@ R-Tracker/
 │   └── utils/validators.js     # sanitizeHTML/sanitizeCode, isScore/isStars, validatePhasePatch
 ├── css/                        # global, fonts, sidebar, home, teleop, curriculum, pathplanner, strategy, report, about
 ├── vendor/three/               # three.min.js, STLLoader.js, OrbitControls.js (r128) + README with hashes
-├── assets/                     # biobuzz.webp field image (2026–27), summit-sky.webp (+ .svg source), fonts/, favicon.svg
-├── tools/bake-sky.mjs          # regenerates assets/summit-sky.webp from the .svg (dev only, never at runtime)
+├── assets/                     # biobuzz.webp field image (2026–27), sky/ (baked sky layers), fonts/, favicon.svg
+├── tools/sky-art.mjs           # source of every sky layer: SVG (sky, stars, mist) + renderRange() (ray-marched real terrain, lakes, volumetric clouds; canvas)
+├── tools/fetch-dem.mjs         # DEV-ONLY: downloads the elevation tiles into tools/dem/ (git-ignored PNGs; README there has source + attribution)
+├── tools/bake-sky.mjs          # bakes tools/sky-art.mjs into assets/sky/*.webp (dev only, never at runtime)
 ├── tests/
 │   ├── serve.js                # zero-dependency static server used by playwright.config.js
 │   ├── helpers/state.js        # seed/read state, quiz helpers
@@ -174,10 +182,35 @@ R-Tracker/
 - DOM manipulation via `document.createElement()` and `innerHTML`.
 
 ### CSS
-- **"Summit Atmosphere" (every page).** A golden-hour summit sky — the baked raster
-  `assets/summit-sky.webp`, painted by `#rt-atmosphere` in `css/global.css` at `z-index: -1` (every page
-  has `<div id="rt-atmosphere" aria-hidden="true">` right after `#rt-overlay`) — sits behind liquid-glass
-  surfaces. Gold `#e8b04b` is the action accent (`--gold`: primary buttons, active nav/tabs/tools,
+- **"Summit Atmosphere" (every page).** A summit sky over a real alpine scene: the Bernese Alps
+  (Eiger, Mönch, Jungfrau) seen from above the Niederhorn across Lake Thun — late-afternoon light by
+  day, moonlit by night. Rendered from real elevation data (Terrain Tiles on AWS Open Data,
+  `tools/fetch-dem.mjs` → `tools/dem/`, attribution on the About page) by `renderRange()` in
+  `tools/sky-art.mjs` (the sky itself is `renderSky()`: a graded analytic sky with the sun/moon glow at
+  their CSS positions and soft cirrus): per-pixel ray marching with Earth curvature over zoom-12 + zoom-13 tiles; a
+  gentle droplet-erosion pass whose **drainage map** places glaciers (with crevasses), snow couloirs
+  and wind-scoured ridges; scree fans at slope breaks; a forest belt and meadows; the lakes as real
+  water with traced reflections; **volumetric clouds** (valley fog banks, orographic cumulus on the
+  massif's flanks, mid-distance cumulus, distant towers and a broken altocumulus deck high in the sky;
+  they cast shadows on the terrain; two jittered samples per pixel) instead of a cloud floor;
+  valley height-fog plus aerial perspective; soft shadows, AO, filmic tone, bloom and fine grain;
+  2×2 supersampling. ~2.3 min per land layer in the bake (`--scale`, `--clip`, `--out` make quick
+  previews), never at runtime. Summits sit at ≈ board y 300; sun and moon at board (1375, 115), right of Home's content column — painted by `#rt-atmosphere` in `css/global.css` at `z-index: -1` (every
+  page has `<div id="rt-atmosphere" aria-hidden="true">` with the same eleven `<i class="atm …">` layers
+  right after `#rt-overlay`) — sits behind liquid-glass surfaces. The layers are baked WebP rasters
+  (`assets/sky/`, from `tools/sky-art.mjs` via `node tools/bake-sky.mjs 0.8`, ~1.3 MB total) plus a CSS sun and moon placed in
+  art-board coordinates (`--s` = the `cover` scale); only their `opacity`/`transform` ever animate — never
+  a live SVG filter. Only the showing theme's rasters load; `sidebar.js` adds `rt-sky-both` when the page
+  is idle. `toggleTheme()` adds `rt-sunset` / `rt-sunrise` for ~1.9 s (sun sinks behind the ridge, dusk
+  band, night fades in, moon rises, stars; sunrise mirrors it; the glass follows 0.45 s in over 0.5 s);
+  under reduced motion it only crossfades. The mist drifts (`steps()`, ≈ 1 px/s, so glass re-blurs once
+  a second) on Home, About and 404 only — every other page sets `data-drift="off"` (TeleOp must never
+  compete for frames). Text on the cloud sea uses `--text-on-cloud` / `--on-cloud-shadow`. Home's
+  "Continue Level N" links to `pages/teleop.html#level-N` (a hash, never sent); TeleOp opens that level if
+  it is unlocked and clears the hash (`js/teleop/ui.js`). Home sizes everything from one fluid unit,
+  `--u: clamp(12px, min(1.17vw, 1.86vh), 23px)` on `.home-content` (phones: `clamp(13px, 3.9vw, 16px)`),
+  so the whole page fits the window from 1280×720 up (a test checks it); small text floors at 12 px.
+  The first-run (welcome) card sits beside the greeting in `.home-intro` and stacks under it ≤ 1100 px. Gold `#e8b04b` is the action accent (`--gold`: primary buttons, active nav/tabs/tools,
   progress); burgundy `#800020` stays as the logo mark and as alpenglow in the horizon haze. Tokens live
   in `css/global.css`: surfaces `--glass` / `--glass-nav` / `--glass-tool` (three blurred levels) and
   `--glass-inset` (the flat fill for rows and cards nested inside a blurred surface); `--glass-border`,
@@ -203,7 +236,7 @@ R-Tracker/
   the 3D scene) is read from the tokens with `getComputedStyle` and re-drawn on the `rt-themechange`
   event that `toggleTheme()` dispatches on `window`.
 - Keep the `prefers-reduced-motion` media query support.
-- Font: Inter, self-hosted via `css/fonts.css` (variable woff2 in `assets/fonts/`), with a system fallback.
+- Font: Geist (Vercel, OFL), self-hosted via `css/fonts.css` (variable woff2 in `assets/fonts/`), with Inter then a system fallback.
   TeleOp readouts use `font-variant-numeric: tabular-nums`; only code surfaces use a monospace stack.
 
 ### Storage (`RTStore`)

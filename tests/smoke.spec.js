@@ -37,6 +37,7 @@ test('Every page carries the Summit atmosphere and no legacy marker', async ({ p
   for (const pg of PAGES) {
     await page.goto(pg.path, { waitUntil: 'load' });
     expect(await page.locator('#rt-atmosphere').count(), pg.name + ' has the sky layer').toBe(1);
+    expect(await page.locator('#rt-atmosphere > i.atm').count(), pg.name + ' has the eleven sky layers').toBe(11);
     expect(await page.locator('body.rt-legacy').count(), pg.name + ' has no rt-legacy').toBe(0);
     expect(await page.locator('html.light').count(), pg.name + ' boots light').toBe(1);
   }
@@ -46,6 +47,7 @@ test('Every page carries the Summit atmosphere and no legacy marker', async ({ p
   page.on('response', res => { if (res.status() >= 400) problems.push('HTTP ' + res.status() + ' ' + res.url()); });
   await page.goto('/404.html', { waitUntil: 'load' });
   expect(await page.locator('#rt-atmosphere').count()).toBe(1);
+  expect(await page.locator('#rt-atmosphere > i.atm').count()).toBe(11);
   expect(await page.locator('html.light').count()).toBe(1);
   const homeCsp = await (async () => { await page.goto('/', { waitUntil: 'load' }); return page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content'); })();
   await page.goto('/404.html', { waitUntil: 'load' });
@@ -79,14 +81,46 @@ test('Theme preference is respected on load (the only localStorage key)', async 
   await page.reload({ waitUntil: 'load' });
   expect(await page.locator('html.light').count()).toBe(0);
 
-  // The toggle puts it back and rewrites the preference.
+  // The toggle puts it back and rewrites the preference; the sky plays a sunrise and
+  // every sequence class is gone once it has finished.
   await page.waitForSelector('#sidebar');
   await page.evaluate(() => window.toggleTheme());
   expect(await page.locator('html.light').count()).toBe(1);
+  expect(await page.locator('html.rt-sunrise').count()).toBe(1);
   expect(await page.evaluate(() => localStorage.getItem('rt-theme'))).toBe('light');
+  await page.waitForFunction(() => !/rt-(sunset|sunrise|theming)/.test(document.documentElement.className), null, { timeout: 4000 });
+  await page.evaluate(() => window.toggleTheme());
+  expect(await page.locator('html.rt-sunset').count()).toBe(1);
+  await page.waitForFunction(() => !/rt-(sunset|sunrise|theming)/.test(document.documentElement.className), null, { timeout: 4000 });
+  expect(await page.locator('html.light').count()).toBe(0);
 
   const keys = await page.evaluate(() => Object.keys(localStorage));
   expect(keys).toEqual(['rt-theme']);
+});
+
+// Under reduced motion the theme simply swaps: no sunset/sunrise class, the moon and
+// sun do not travel, and the mist does not drift.
+test('Reduced motion: the theme toggles without the sky sequence', async ({ browser }) => {
+  const context = await browser.newContext({ reducedMotion: 'reduce' });
+  const page = await context.newPage();
+  await page.goto('/', { waitUntil: 'load' });
+  await page.waitForSelector('#sidebar');
+  await page.evaluate(() => window.toggleTheme());
+  expect(await page.locator('html.light').count()).toBe(0);
+  expect(await page.locator('html.rt-sunset, html.rt-sunrise').count()).toBe(0);
+  expect(await page.locator('.atm-mist').evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+  await page.waitForTimeout(700);
+  const moon = await page.locator('.atm-moon').evaluate(el => ({ o: getComputedStyle(el).opacity, t: getComputedStyle(el).transform }));
+  expect(moon).toEqual({ o: '1', t: 'none' });
+  await context.close();
+});
+
+// Drift runs only where few blurred surfaces sit over the sky; TeleOp never animates it.
+test('Mist drifts on Home and is still on TeleOp', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'load' });
+  expect(await page.locator('.atm-mist').evaluate(el => getComputedStyle(el).animationName)).toBe('atmDrift');
+  await page.goto('/pages/teleop.html', { waitUntil: 'load' });
+  expect(await page.locator('.atm-mist').evaluate(el => getComputedStyle(el).animationName)).toBe('none');
 });
 
 test('Curriculum page shows the phase timeline', async ({ page }) => {

@@ -14,6 +14,8 @@
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <!-- v2 theme: `light` = light glass and is the default; no class = dark glass. rt-theme is the only localStorage key in the app (UI preference). -->
   <script>document.documentElement.classList.add('light');try{if(localStorage.getItem('rt-theme')==='dark')document.documentElement.classList.remove('light')}catch(e){}</script>
+  <!-- Home's entrance: hide the content until js/home-motion.js has set its first frame (never longer than 2.5 s) -->
+  <script>(function(){var h=document.documentElement;if(window.matchMedia&&matchMedia('(prefers-reduced-motion: no-preference)').matches){h.classList.add('rt-intro');setTimeout(function(){h.classList.remove('rt-intro')},2500)}else{h.setAttribute('data-intro','done')}})();</script>
   <meta name="description"
     content="R-Tracker — Rundle Robotics personally designed visualizer. Practice TeleOp driving and plan autonomous paths.">
   <title>R-Tracker — Rundle Robotics Visualizer</title>
@@ -30,343 +32,272 @@
 <a href="#main-content" class="skip-to-content">Skip to main content</a>
 <div id="rt-overlay" aria-hidden="true"><div id="rt-overlay-logo"><span class="ol-r">R-</span><span class="ol-t">Tracker</span></div></div>
 
-  <!-- ── Atmosphere background (rt-background): summit sky, haze-veiled sun, cloud sea ── -->
-  <div id="rt-atmosphere" aria-hidden="true">
-    <!-- Baked from that SVG: assets/summit-sky.webp. See css/home.css. -->
-  </div>
+  <!-- ── Atmosphere: layered sky, alpine range, cloud sea (css/global.css) ── -->
+  <div id="rt-atmosphere" aria-hidden="true"><i class="atm atm-day"></i><i class="atm atm-night"></i><i class="atm atm-stars-a"></i><i class="atm atm-stars-b"></i><i class="atm atm-dusk"></i><i class="atm atm-sun"></i><i class="atm atm-moon"></i><i class="atm atm-land-day"></i><i class="atm atm-land-night"></i><i class="atm atm-mist"></i><i class="atm atm-vignette"></i></div>
 
   <!-- ── Main Content ────────────────────────────────────────────────────── -->
   <main class="main-wrap" id="main-content">
     <div class="home-content">
 
-      <!-- Logo -->
-      <header class="home-hero">
-        <h1 class="home-logo" style="margin:0;">
+      <!-- Top bar: logo left; Import + day/night toggle right -->
+      <header class="home-top">
+        <a class="home-brand" href="index.html" aria-label="R-Tracker home">
           <svg class="home-mark" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#800020"/><path d="M4 17.5 8.2 12.4 10.4 14.6 15.2 6.5 16.6 9.4 20 17.5" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>
-          <span><span class="hero-r">R-</span><span class="hero-tracker">Tracker</span></span>
-        </h1>
-        <div class="home-tagline">Rundle Robotics personally designed visualizer</div>
+          <span class="home-brand-text"><span class="home-logo"><span class="hero-r">R-</span><span class="hero-tracker">Tracker</span></span><span class="home-tagline">Rundle Robotics Training Platform</span></span>
+        </a>
+        <div class="home-actions">
+          <button type="button" class="home-btn" onclick="rtImportProgress()" aria-label="Import a progress file"><span class="rt-icon" data-rt-icon="folder"></span><span class="home-btn-label">Import</span></button>
+          <button type="button" class="home-btn home-btn-square" id="home-theme-btn" onclick="toggleTheme()" aria-label="Switch to night">
+            <span class="rt-icon ic-moon" data-rt-icon="moon"></span><span class="rt-icon ic-sun" data-rt-icon="sun"></span>
+          </button>
+        </div>
       </header>
+
+      <!-- Greeting (the hour is read from the clock, never stored), with the first-run card beside it -->
+      <div class="home-intro">
+      <section class="home-greeting">
+        <h1 id="home-greeting-title">Welcome back.</h1>
+        <p>Continue your robotics training.</p>
+      </section>
 
       <!-- First-run panel: progress lives in this tab and in an exported file.
            Shown only while the tab holds no progress, no imported file, and "Start fresh" was never pressed. -->
       <div class="first-run" id="rt-first-run" hidden>
         <div class="first-run-title">Welcome to R-Tracker</div>
-        <div class="first-run-text">Your progress stays in this browser tab and in a file you export from the sidebar. Nothing is sent anywhere. Start fresh, or open a progress file you exported earlier.</div>
+        <div class="first-run-text">Your progress stays in this browser tab and in a file you export from the sidebar. Nothing is sent anywhere.</div>
         <div class="first-run-actions">
-          <input class="first-run-name" id="rt-first-run-name" type="text" maxlength="100" placeholder="Your name (optional — saved only in your file)" autocomplete="off">
+          <input class="first-run-name" id="rt-first-run-name" type="text" maxlength="100" placeholder="Your name (optional)" autocomplete="off">
           <button class="first-run-btn primary" onclick="rtFirstRunStart()">Start fresh</button>
           <button class="first-run-btn" onclick="rtImportProgress()">Open a progress file</button>
         </div>
       </div>
+      </div>
 
-      <!-- Player Carousel -->
-      <div class="carousel-section" id="player-carousel">
-        <div class="home-carousel-container">
-          <button class="carousel-arrow carousel-left" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-          <div class="home-carousel-track" id="player-track">
-            <a href="pages/teleop.html" class="carousel-card">
-              <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/></svg></div>
-              <div class="card-title">TeleOp Practice</div>
-              <div class="card-desc">Practice driving with gamepad or keyboard. Field-centric and robot-centric modes with mecanum and tank drivetrains.</div>
-            </a>
-            <a href="pages/pathplanner.html" class="carousel-card">
-              <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg></div>
-              <div class="card-title">Path Planner</div>
-              <div class="card-desc">Design autonomous paths with Bezier curves and control points. Export Pedro Pathing 3 Java code.</div>
-            </a>
-            <a href="pages/strategy.html" class="carousel-card">
-              <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/></svg></div>
-              <div class="card-title">Strategy Planner</div>
-              <div class="card-desc">Draw on the field to plan match strategy. Annotate with arrows, shapes, and waypoints.</div>
-            </a>
-            <a href="pages/curriculum.html" class="carousel-card">
-              <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
-              <div class="card-title">Curriculum</div>
-              <div class="card-desc">FTC programming learning path — 6 phases from Java basics to competition-ready code.</div>
-            </a>
-            <a href="pages/report.html" class="carousel-card">
-              <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></div>
-              <div class="card-title">Driver Report</div>
-              <div class="card-desc">Coach analysis, driver stats, performance history, and improvement recommendations.</div>
-            </a>
+      <!-- TeleOp hero: the level to drive next, its real route, progress -->
+      <section class="home-hero-card" id="home-hero-teleop" aria-labelledby="hero-level-name">
+        <div class="hero-main">
+          <div class="hero-eyebrow-row">
+            <span class="hero-icon rt-icon" data-rt-icon="teleop"></span>
+            <span class="home-eyebrow">TeleOp Practice</span>
+            <span class="hero-pill" id="hero-level-pill">Level 1 / 12</span>
           </div>
-          <button class="carousel-arrow carousel-right" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+          <h2 class="hero-title" id="hero-level-name">Straight Shot</h2>
+          <p class="hero-desc" id="hero-level-desc">Drive a clean straight line at full speed and stop on the mark.</p>
+          <a class="hero-cta" id="hero-cta" href="pages/teleop.html#level-1"><span id="hero-cta-text">Start Level 1</span><span class="rt-icon" data-rt-icon="arrowRight"></span></a>
         </div>
-        <div class="carousel-dots" id="player-dots"></div>
-      </div>
+        <svg class="hero-field" id="hero-field" viewBox="0 0 120 120" aria-hidden="true">
+          <rect class="pv-frame" x="1" y="1" width="118" height="118" rx="4"/>
+          <path class="pv-grid" d="M21 1v118M40.3 1v118M60 1v118M79.7 1v118M99 1v118M1 21h118M1 40.3h118M1 60h118M1 79.7h118M1 99h118"/>
+          <rect class="pv-hive" x="47" y="47" width="26" height="26" rx="2"/>
+          <polyline class="pv-trail" id="hero-route" points=""/>
+          <g id="hero-checks"></g>
+          <rect class="pv-bot" id="hero-bot" x="-5.5" y="-5.5" width="11" height="11" rx="2"/>
+        </svg>
+        <dl class="hero-stats">
+          <div class="hero-stat">
+            <dt><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V4M9 20v-7M14 20V9M19 20v-4M3 20h18"/></svg>Your progress</dt>
+            <dd><span id="hero-progress">0 / 12</span><span class="hero-bar"><span id="hero-bar-fill"></span></span></dd>
+          </div>
+          <div class="hero-stat">
+            <dt><span class="rt-icon" data-rt-icon="clock"></span>Par time</dt>
+            <dd id="hero-par">≈ 1.8 s</dd>
+          </div>
+          <div class="hero-stat">
+            <dt><span class="rt-icon" data-rt-icon="star"></span>Next skill</dt>
+            <dd id="hero-next-skill">Strafing</dd>
+          </div>
+        </dl>
+      </section>
 
-      <!-- Driver Rating -->
-      <div class="report-stats-bar" id="report-stats-bar">
-        <div class="report-bar-label">Your driver rating</div>
-        <a href="pages/report.html" class="report-bar-row">
-          <div class="rt-stat"><span class="rt-stat-val"><span id="rbar-main-score">--</span><small>/100</small></span><span class="rt-stat-lbl">Score</span></div>
-          <div class="rt-stat"><span class="rt-stat-val" id="rbar-main-grade">--</span><span class="rt-stat-lbl">Grade</span></div>
-          <div class="rt-stat"><span class="rt-stat-val" id="rbar-level">--</span><span class="rt-stat-lbl">Best level</span></div>
-          <div class="rt-stat"><span class="rt-stat-val" id="rbar-time">--</span><span class="rt-stat-lbl">Practice</span></div>
-          <div class="report-bar-link">Open Report Card <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-        </a>
-      </div>
+      <!-- Curriculum stepper -->
+      <section class="home-curriculum" id="home-curriculum" aria-labelledby="home-curr-title">
+        <div class="curr-head">
+          <span class="curr-icon rt-icon" data-rt-icon="curriculum"></span>
+          <div class="curr-head-text">
+            <h2 class="home-eyebrow" id="home-curr-title">Curriculum</h2>
+            <p id="home-curr-current">Phase 0 • Java Readiness</p>
+          </div>
+          <a class="home-btn home-btn-outline" href="pages/curriculum.html">View Curriculum<span class="rt-icon" data-rt-icon="arrowRight"></span></a>
+        </div>
+        <ol class="stepper" id="home-stepper"></ol>
+        <p class="stepper-current-label" id="stepper-current-label"></p>
+      </section>
 
-      <!-- Footer -->
-      <footer class="home-footer-line">
-        Built for FTC teams competing in the 2026–2027 BIOBUZZ season.
-      </footer>
+      <!-- Tools -->
+      <section class="home-tools" aria-labelledby="home-tools-title">
+        <h2 class="home-eyebrow home-tools-title" id="home-tools-title"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Tools</h2>
+        <div class="tool-row">
+          <a href="pages/pathplanner.html" class="tool-card" id="tile-pathplanner">
+            <svg class="tool-art" viewBox="0 0 48 48" aria-hidden="true"><path class="ta-line" d="M10 36C14 20 30 30 38 12"/><circle class="ta-dot" cx="10" cy="36" r="3.5"/><circle class="ta-dot" cx="38" cy="12" r="3.5"/></svg>
+            <span class="tool-text"><span class="tool-title">Path Planner</span><span class="tool-desc">Lay out autonomous paths and export a Pedro Pathing 3 class.</span></span>
+            <span class="tool-go rt-icon" data-rt-icon="arrowRight"></span>
+          </a>
+          <a href="pages/strategy.html" class="tool-card" id="tile-strategy">
+            <svg class="tool-art" viewBox="0 0 48 48" aria-hidden="true"><path class="ta-mark" d="M11 11l8 8M19 11l-8 8M11 29l8 8M19 29l-8 8"/><path class="ta-mark" d="M31 13l6 6M37 13l-6 6"/><path class="ta-arc" d="M40 33a6 6 0 1 1-4-5.6"/></svg>
+            <span class="tool-text"><span class="tool-title">Strategy Planner</span><span class="tool-desc">Draw match plans with shapes, arrows and notes.</span></span>
+            <span class="tool-go rt-icon" data-rt-icon="arrowRight"></span>
+          </a>
+          <a href="pages/report.html" class="tool-card" id="tile-report">
+            <svg class="tool-art" viewBox="0 0 48 48" aria-hidden="true"><path class="ta-bars" d="M12 38V26M20 38V18M28 38V22M36 38V10M8 38h32"/></svg>
+            <span class="tool-text"><span class="tool-title">Report Card</span><span class="tool-desc" id="tile-report-status">Drive a level to get a rating and track your progress.</span></span>
+            <span class="tool-go rt-icon" data-rt-icon="arrowRight"></span>
+          </a>
+        </div>
+      </section>
 
     </div>
   </main>
 
+  <!-- level data only (declarations, no DOM, no side effects), loaded before the inline script -->
+  <script src="js/level-table.js"></script>
+  <script src="js/teleop/levels.js"></script>
   <script>
-    /* ── Report Bar Stats (from local progress) ───────────────────────────── */
-    function scoreToGrade(s) {
-      if (s >= 90) return 'S';
-      if (s >= 80) return 'A';
-      if (s >= 70) return 'B';
-      if (s >= 50) return 'C';
-      if (s >= 30) return 'D';
-      return 'F';
+    /* ── Home (from local progress) ──────────────────────────────────────────
+       Everything read here may come from an imported file, so values are written
+       with textContent, statuses and grades pass a whitelist, and every title is a
+       static string. */
+    var HOME_PHASES = [
+      { id: 'phase0', num: '0', name: 'Java Readiness', short: 'Java' },
+      { id: 'phase1', num: '1', name: 'Make It Move', short: 'Make It Move' },
+      { id: 'phase2', num: '2', name: 'Make It Structured', short: 'Structured' },
+      { id: 'phase3', num: '3', name: 'Make It Smart', short: 'Smart' },
+      { id: 'phase4', num: '4', name: 'Make It Precise', short: 'Precise' },
+      { id: 'phase5', num: '5', name: 'Make It Robust', short: 'Robust' },
+      { id: 'advanced_command', num: 'A1', name: 'Command-Based Programming', short: 'Commands' },
+      { id: 'advanced_strategy', num: 'A2', name: 'Competition Strategy', short: 'Strategy' },
+      { id: 'capstone', num: 'C', name: 'Full Competition Autonomous', short: 'Capstone' }
+    ];
+    var PHASE_STATES = { locked: 1, not_started: 1, in_progress: 1, submitted: 1, verified: 1 };
+    var GRADES = { S: 1, A: 1, B: 1, C: 1, D: 1, F: 1 };
+    var FOCUS_DESC = {
+      straight: 'Drive a clean straight line at full speed and stop on the mark.',
+      strafe: 'Slide sideways without drifting: pure mecanum strafing, no turning.',
+      corners: 'Carry speed through the corners and keep the robot on the line.',
+      reversals: 'Change direction sharply without overshooting the checkpoint.',
+      speed: 'Hold top speed down the long lanes around the HIVE.',
+      precision: 'Thread the tight gaps and stop exactly on every checkpoint.'
+    };
+    var SVGNS = 'http://www.w3.org/2000/svg';
+
+    function setText(id, text) { var el = document.getElementById(id); if (el) el.textContent = text; }
+    function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+    function starsOf(s, id) { var l = s.driver.levels && s.driver.levels[String(id)]; return l ? Number(l.bestStars) || 0 : 0; }
+
+    function renderGreeting(s) {
+      var h = new Date().getHours();
+      var part = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+      var name = (s.profile && typeof s.profile.displayName === 'string') ? s.profile.displayName.trim().slice(0, 40) : '';
+      setText('home-greeting-title', part + (name ? ', ' + name : '') + '.');
     }
 
-    function loadReportBarStats() {
-      var el = function(id) { return document.getElementById(id); };
-      var s = RTStore.get();
-      var d = s.driver.stats || {};
-      var score = Math.round(d.overallRating || 0);
-      var totalMs = d.totalPracticeMs || 0;
-      var mins = Math.floor(totalMs / 60000);
-
-      var levelsDone = 0;
-      Object.keys(s.driver.levels || {}).forEach(function(id) {
-        var ld = s.driver.levels[id];
-        if (ld && ld.bestStars && ld.bestStars >= 1) levelsDone++;
-      });
-
-      var g = scoreToGrade(score);
-      if (el('rbar-main-score')) el('rbar-main-score').textContent = score;
-      if (el('rbar-main-grade')) el('rbar-main-grade').textContent = g;
-      if (el('rbar-level')) el('rbar-level').innerHTML = levelsDone + '<small>/12</small>';
-      if (el('rbar-time')) el('rbar-time').innerHTML = mins >= 60 ? Math.floor(mins / 60) + '<small>h</small>' : mins + '<small>m</small>';
+    // The level to drive next: the first one not yet cleared; once all are
+    // cleared, the first one short of gold.
+    function pickLevel(s) {
+      var ids = (window.RT_LEVEL_TABLE ? RT_LEVEL_TABLE.LEVELS : []).map(function (l) { return l.id; });
+      var cleared = ids.filter(function (id) { return starsOf(s, id) >= 1; }).length;
+      var id = null, mode = 'start';
+      for (var i = 0; i < ids.length; i++) if (starsOf(s, ids[i]) < 1) { id = ids[i]; break; }
+      if (id !== null) mode = cleared ? 'continue' : 'start';
+      else {
+        mode = 'gold';
+        for (i = 0; i < ids.length; i++) if (starsOf(s, ids[i]) < 3) { id = ids[i]; break; }
+        if (id === null) { id = ids[ids.length - 1]; mode = 'replay'; }
+      }
+      return { id: id, cleared: cleared, total: ids.length, mode: mode };
     }
-    window.loadReportBarStats = loadReportBarStats;
 
-    /* ── Circular Carousel ─────────────────────────────────────────────────
-       Every card stays in the layout — the ones off-stage sit at opacity 0
-       rather than display:none, because display:none cancels the incoming
-       card's transition and makes it pop into place. place() is the single
-       owner of each card's transform/opacity/z-index, computed from its
-       distance to the centre slot plus the live drag offset, so dragging is
-       continuous and releasing just animates that same offset back to 0. */
-    function initCarousel(sectionId) {
-      var section = document.getElementById(sectionId);
-      if (!section) return;
-      var track = section.querySelector('.home-carousel-track');
-      var cards = Array.prototype.slice.call(track.querySelectorAll('.carousel-card'));
-      var dotsWrap = section.querySelector('.carousel-dots');
-      var container = section.querySelector('.home-carousel-container');
-      var n = cards.length;
-      if (n === 0) return;
+    function renderHero(s) {
+      if (!window.RT_LEVEL_TABLE) return;
+      var pick = pickLevel(s), def = RT_LEVEL_TABLE.get(pick.id);
+      if (!def) return;
+      setText('hero-level-pill', 'Level ' + pick.id + ' / ' + pick.total);
+      setText('hero-level-name', def.name);
+      setText('hero-level-desc', FOCUS_DESC[def.focus] || '');
+      var cta = document.getElementById('hero-cta');
+      if (cta) cta.setAttribute('href', 'pages/teleop.html#level-' + pick.id);
+      setText('hero-cta-text', { start: 'Start Level ', 'continue': 'Continue Level ', gold: 'Go for gold · Level ', replay: 'Replay Level ' }[pick.mode] + pick.id);
+      setText('hero-progress', pick.cleared + ' / ' + pick.total);
+      var fill = document.getElementById('hero-bar-fill');
+      if (fill) fill.style.width = Math.round(100 * pick.cleared / pick.total) + '%';
+      setText('hero-par', '≈ ' + (def.parTimeMs / 1000).toFixed(1) + ' s');
+      var next = RT_LEVEL_TABLE.get(pick.id + 1);
+      setText('hero-next-skill', pick.mode === 'gold' || pick.mode === 'replay' || !next
+        ? 'Gold on every level' : cap(RT_LEVEL_TABLE.FOCUS_LABELS[next.focus] || ''));
+      drawRoute(pick.id);
+    }
 
-      var GLIDE = 'transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
-      var GLIDE_MS = 500;
-      var SIDE_SCALE = 0.8;     // neighbours render at 80%
-      var SPREAD = 0.78;        // gap between slots, as a fraction of card width
-      var COMMIT = 0.3;         // release past 30% of a slot and it advances
-      var FLICK = 0.5;          // px/ms — a quick flick advances at any distance
-      var current = 0;
-      var step = 390;           // px between slots; measured in measure()
-      var solo = false;         // too narrow for neighbours (phones)
-      var drag = 0;             // live drag offset while a gesture is in flight
-      var glideToken = 0;
-
-      cards.forEach(function(card) {
-        card.setAttribute('draggable', 'false');
-        var imgs = card.querySelectorAll('img');
-        for (var k = 0; k < imgs.length; k++) imgs[k].setAttribute('draggable', 'false');
+    // The real route of the level (js/teleop/levels.js: feet from the centre, +y north).
+    function drawRoute(id) {
+      var lvl = (typeof LEVELS !== 'undefined' ? LEVELS : []).filter(function (l) { return l.id === id; })[0];
+      var route = document.getElementById('hero-route'), checks = document.getElementById('hero-checks'), bot = document.getElementById('hero-bot');
+      if (!lvl || !route || !checks || !bot) return;
+      var pts = lvl.path.map(function (p) { return [60 + p.x * 9.6, 60 - p.y * 9.6]; });
+      route.setAttribute('points', pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' '));
+      checks.textContent = '';
+      pts.slice(1).forEach(function (p) {
+        var c = document.createElementNS(SVGNS, 'circle');
+        c.setAttribute('class', 'pv-check'); c.setAttribute('cx', p[0].toFixed(1)); c.setAttribute('cy', p[1].toFixed(1)); c.setAttribute('r', '3');
+        checks.appendChild(c);
       });
+      bot.setAttribute('transform', 'translate(' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1) + ') rotate(' + (Number(lvl.path[0].h) || 0) + ')');
+    }
 
-      dotsWrap.innerHTML = '';
-      for (var i = 0; i < n; i++) {
-        var dot = document.createElement('button');
-        dot.className = 'carousel-dot';
-        dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
-        dot.onclick = (function(idx) { return function() { goTo(idx); }; })(i);
-        dotsWrap.appendChild(dot);
-      }
-
-      function mod(a, b) { return ((a % b) + b) % b; }
-
-      // Signed distance from the current card, wrapped so the strip is circular.
-      function slotOf(i) {
-        var d = mod(i - current, n);
-        return d > n / 2 ? d - n : d;
-      }
-
-      // The slot gap is the card's own width times SPREAD, clamped so a
-      // neighbour never runs past the container's clipped edge.
-      function measure() {
-        var w = cards[0].offsetWidth || 500;
-        var room = ((container.clientWidth || w) - 120) / 2 - (w * SIDE_SCALE) / 2;
-        step = Math.max(Math.round(Math.min(w * SPREAD, room)), Math.round(w * 0.4));
-        solo = room < w * 0.35;
-      }
-
-      function place(dx) {
-        for (var i = 0; i < n; i++) {
-          var card = cards[i];
-          var x = slotOf(i) * step + dx;
-          var t = Math.min(Math.abs(x) / step, 2);   // 0 centre · 1 neighbour · 2 off-stage
-          var scale = 1 - (1 - SIDE_SCALE) * Math.min(t, 1);
-          var opacity;
-          if (solo) opacity = Math.max(0, 1 - t * 2);
-          else if (t <= 1) opacity = 1 - 0.08 * t;
-          else opacity = 0.92 * (2 - t);
-          card.style.transform = 'translate(-50%, -50%) translateX(' + x.toFixed(1) + 'px) scale(' + scale.toFixed(3) + ')';
-          card.style.opacity = opacity.toFixed(3);
-          card.style.zIndex = String(100 - Math.round(t * 20));
-          card.style.pointerEvents = opacity > 0.4 ? 'auto' : 'none';
-        }
-      }
-
-      // cc-* carry appearance only (glass strength, icon and title size).
-      function syncChrome() {
-        for (var i = 0; i < n; i++) {
-          var d = slotOf(i);
-          cards[i].classList.toggle('cc-center', d === 0);
-          cards[i].classList.toggle('cc-left', d === -1);
-          cards[i].classList.toggle('cc-right', d === 1);
-        }
-        var dots = dotsWrap.children;
-        for (var j = 0; j < dots.length; j++) dots[j].classList.toggle('active', j === current);
-      }
-
-      function setTransition(value) {
-        for (var i = 0; i < n; i++) cards[i].style.transition = value;
-      }
-
-      // Animate whatever offset we are at back to a settled layout. Changing
-      // `transition` and the transforms in the same task is fine: the browser
-      // starts transitions from the after-change style.
-      function glide() {
-        setTransition(GLIDE);
-        place(0);
-        syncChrome();
-        var mine = ++glideToken;
-        setTimeout(function() { if (glideToken === mine) setTransition(''); }, GLIDE_MS + 40);
-      }
-
-      function goTo(idx) {
-        var next = mod(idx, n);
-        if (next === current) return;
-        current = next;
-        drag = 0;
-        glide();
-      }
-      function nextCard() { goTo(current + 1); }
-      function prevCard() { goTo(current - 1); }
-
-      /* ── Drag ─────────────────────────────────────────────────────────────
-         One pointer gesture, captured on the container so a fast drag that
-         leaves the element still tracks. No mid-gesture commit: the cards
-         follow the finger until release, then settle. */
-      var dragging = false, startX = 0, startY = 0, lastX = 0, lastT = 0, velocity = 0;
-      var axisLocked = false, moved = false, pending = 0, rafId = 0;
-
-      function queue(dx) {
-        pending = dx;
-        if (rafId) return;
-        rafId = requestAnimationFrame(function() { rafId = 0; place(pending); });
-      }
-
-      container.addEventListener('pointerdown', function(e) {
-        if (e.button !== undefined && e.button !== 0) return;
-        if (e.target.closest('.carousel-arrow')) return;
-        dragging = true; moved = false; axisLocked = false;
-        startX = lastX = e.clientX; startY = e.clientY;
-        lastT = e.timeStamp; velocity = 0; drag = 0;
-        setTransition('none');
+    function renderStepper(s) {
+      var phases = (s.curriculum && s.curriculum.phases) || {};
+      var list = document.getElementById('home-stepper');
+      var states = HOME_PHASES.map(function (ph) {
+        var st = phases[ph.id] && phases[ph.id].status;
+        return PHASE_STATES[st] ? st : 'locked';
       });
-
-      container.addEventListener('pointermove', function(e) {
-        if (!dragging) return;
-        var dx = e.clientX - startX;
-        var dy = e.clientY - startY;
-        // Let a vertical swipe scroll the page instead of turning the carousel.
-        if (!axisLocked) {
-          if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-          if (Math.abs(dy) > Math.abs(dx)) { dragging = false; setTransition(''); return; }
-          axisLocked = true;
-          container.classList.add('dragging');
-          if (e.pointerId !== undefined && container.setPointerCapture) {
-            try { container.setPointerCapture(e.pointerId); } catch (err) {}
-          }
-        }
-        moved = true;
-        var dt = e.timeStamp - lastT;
-        if (dt > 0) velocity = (e.clientX - lastX) / dt;
-        lastX = e.clientX; lastT = e.timeStamp;
-        drag = dx;
-        queue(dx);
-        e.preventDefault();
-      });
-
-      function endDrag() {
-        if (!dragging) return;
-        dragging = false;
-        container.classList.remove('dragging');
-        if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
-        var dir = 0;
-        if (Math.abs(velocity) > FLICK) dir = velocity < 0 ? 1 : -1;
-        else if (Math.abs(drag) > step * COMMIT) dir = drag < 0 ? 1 : -1;
-        current = mod(current + dir, n);
-        drag = 0;
-        glide();
-      }
-      container.addEventListener('pointerup', endDrag);
-      container.addEventListener('pointercancel', endDrag);
-      // Until the axis lock captures the pointer, a release outside the
-      // container would otherwise leave the gesture stuck open.
-      window.addEventListener('pointerup', endDrag);
-      window.addEventListener('pointercancel', endDrag);
-
-      // A drag that ends on a card must not follow its link.
-      cards.forEach(function(card, i) {
-        card.addEventListener('click', function(e) {
-          if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; return; }
-          if (slotOf(i) !== 0) { e.preventDefault(); e.stopPropagation(); goTo(i); }
+      var done = function (st) { return st === 'verified' || st === 'submitted'; };
+      var current = -1;
+      for (var i = 0; i < 6; i++) if (!done(states[i])) { current = i; break; }
+      if (current < 0) for (i = 6; i < HOME_PHASES.length; i++) if (!done(states[i])) { current = i; break; }
+      if (list) {
+        list.textContent = '';
+        HOME_PHASES.forEach(function (ph, idx) {
+          var li = document.createElement('li');
+          var cls = 'step ' + (done(states[idx]) ? 'step-done' : idx === current ? 'step-current' : 'step-future');
+          if (idx === 6) cls += ' step-gap';
+          if (idx < HOME_PHASES.length - 1 && (done(states[idx]) && (done(states[idx + 1]) || idx + 1 === current))) cls += ' step-link-done';
+          li.className = cls;
+          var dot = document.createElement('span'); dot.className = 'step-dot'; li.appendChild(dot);
+          var num = document.createElement('span'); num.className = 'step-num'; num.textContent = ph.num; li.appendChild(num);
+          var lab = document.createElement('span'); lab.className = 'step-label'; lab.textContent = ph.short; li.appendChild(lab);
+          if (idx === current) { var pill = document.createElement('span'); pill.className = 'step-pill'; pill.textContent = 'Current'; li.appendChild(pill); li.setAttribute('aria-current', 'step'); }
+          list.appendChild(li);
         });
-      });
-
-      section.querySelector('.carousel-left').addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); prevCard(); });
-      section.querySelector('.carousel-right').addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); nextCard(); });
-
-      var hovered = false;
-      container.addEventListener('mouseenter', function() { hovered = true; });
-      container.addEventListener('mouseleave', function() { hovered = false; });
-      document.addEventListener('keydown', function(e) {
-        if (!hovered) return;
-        if (e.key === 'ArrowLeft') { e.preventDefault(); prevCard(); }
-        else if (e.key === 'ArrowRight') { e.preventDefault(); nextCard(); }
-      });
-
-      var resizeTimer = 0;
-      window.addEventListener('resize', function() {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function() {
-          setTransition('none');
-          measure();
-          place(drag);
-          requestAnimationFrame(function() { setTransition(''); });
-        }, 120);
-      });
-
-      measure();
-      setTransition('none');
-      place(0);
-      syncChrome();
-      requestAnimationFrame(function() { setTransition(''); });
+      }
+      var cur = current >= 0 ? HOME_PHASES[current] : null;
+      setText('home-curr-current', cur ? 'Phase ' + cur.num + ' • ' + cur.name : 'Every phase complete');
+      setText('stepper-current-label', cur ? 'Current: Phase ' + cur.num + ' · ' + cur.short : '');
     }
 
-    initCarousel('player-carousel');
+    function renderReportTool(s) {
+      var runs = (Array.isArray(s.driver.runs) ? s.driver.runs : []).filter(function (r) { return r && r.completed === true; });
+      var st = s.driver.stats || {};
+      var grade = GRADES[st.grade] ? st.grade : null;
+      setText('tile-report-status', runs.length && grade
+        ? 'Rating ' + Math.round(Number(st.overallRating) || 0) + ' · grade ' + grade + ' — see what to practise next.'
+        : 'Drive a level to get a rating and track your progress.');
+    }
+
+    function renderHome() {
+      var s = RTStore.get();
+      renderGreeting(s);
+      renderHero(s);
+      renderStepper(s);
+      renderReportTool(s);
+    }
+    window.renderHome = renderHome;
+    window.loadReportBarStats = renderHome;       // older name, kept for callers
+
+    // The day/night button's label follows the theme (the icon swaps in CSS).
+    function syncThemeButton() {
+      var b = document.getElementById('home-theme-btn');
+      if (b) b.setAttribute('aria-label', document.documentElement.classList.contains('light') ? 'Switch to night' : 'Switch to day');
+    }
+    window.addEventListener('rt-themechange', syncThemeButton);
 
     /* ── First-run panel ───────────────────────────────────────────────────── */
     function initFirstRun() {
@@ -386,11 +317,17 @@
       }, { silent: !name });
       var panel = document.getElementById('rt-first-run');
       if (panel) panel.hidden = true;
+      renderGreeting(RTStore.get());
     };
 
-    loadReportBarStats();
+    renderHome();
+    syncThemeButton();
     initFirstRun();
   </script>
+  <!-- motion (GSAP, vendored: vendor/gsap/, see vendor/README.md) -->
+  <script defer src="vendor/gsap/gsap.min.js"></script>
+  <script defer src="vendor/gsap/SplitText.min.js"></script>
+  <script defer src="js/home-motion.js"></script>
 <script>
 (function() {
   var overlay = document.getElementById('rt-overlay');

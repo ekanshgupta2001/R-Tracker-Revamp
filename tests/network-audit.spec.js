@@ -56,7 +56,7 @@ test('full student session makes only same-origin static GETs', async ({ page, c
   // Home
   await visit('/');
   await page.waitForSelector('#sidebar');
-  await expect(page.locator('#rbar-main-score')).toHaveCount(1);
+  await expect(page.locator('#hero-cta')).toHaveCount(1);
 
   // TeleOp: start a level, drive with the keyboard, finish it, open the report
   await visit('/pages/teleop.html');
@@ -117,7 +117,9 @@ test('full student session makes only same-origin static GETs', async ({ page, c
   const countBefore = requests.length;
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#sb-export-btn')]);
   expect(dl.suggestedFilename()).toMatch(/^rtracker-progress-/);
-  expect(requests.length).toBe(countBefore);
+  // (the other theme's sky layers load when the page goes idle and may land here;
+  // they are same-origin static images like every other request checked below)
+  expect(requests.slice(countBefore).filter(r => !/\/assets\/sky\/[a-z-]+\.webp$/.test(r.url))).toEqual([]);
 
   // ── Assertions on the network ──
   expect(violations, 'cross-origin requests').toEqual([]);
