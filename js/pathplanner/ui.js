@@ -84,11 +84,11 @@ function renderWaypointEditor() {
       <div class="form-row">
         <div class="form-group">
           <label class="form-label" for="edX">X (0–${FIELD_IN} in)</label>
-          <input type="number" class="form-input" id="edX" value="${wp.x}" step="0.5" min="0" max="${FIELD_IN}" oninput="editorUpdate()">
+          <input type="number" class="form-input" id="edX" value="${wp.x}" step="0.5" min="0" max="${FIELD_IN}" oninput="editorUpdate()" onchange="syncEditorFields()">
         </div>
         <div class="form-group">
           <label class="form-label" for="edY">Y (0–${FIELD_IN} in)</label>
-          <input type="number" class="form-input" id="edY" value="${wp.y}" step="0.5" min="0" max="${FIELD_IN}" oninput="editorUpdate()">
+          <input type="number" class="form-input" id="edY" value="${wp.y}" step="0.5" min="0" max="${FIELD_IN}" oninput="editorUpdate()" onchange="syncEditorFields()">
         </div>
       </div>
       <div class="form-row">
@@ -96,14 +96,14 @@ function renderWaypointEditor() {
           <label class="form-label" for="edH">Heading (°, 0 = +x, CCW)</label>
           <div class="angle-row">
             <canvas id="anglePicker" width="40" height="40" title="Click or drag to set heading" aria-hidden="true"></canvas>
-            <input type="number" class="form-input" id="edH" value="${wp.heading}" step="1" min="-180" max="180" oninput="editorUpdate()">
+            <input type="number" class="form-input" id="edH" value="${wp.heading}" step="1" min="-180" max="180" oninput="editorUpdate()" onchange="syncEditorFields()">
           </div>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label" for="edW">Wait (ms)</label>
-          <input type="number" class="form-input" id="edW" value="${wp.waitMs}" step="100" min="0" oninput="editorUpdate()">
+          <input type="number" class="form-input" id="edW" value="${wp.waitMs}" step="100" min="0" oninput="editorUpdate()" onchange="syncEditorFields()">
         </div>
         <div class="form-group">
           <label class="form-label" for="edA">Action</label>
@@ -139,12 +139,12 @@ function renderSegmentEditor(si) {
             <div class="form-group">
               <label class="form-label" for="cpX${ci}">X (0–${FIELD_IN})</label>
               <input type="number" class="form-input" id="cpX${ci}" value="${cp.x.toFixed(1)}" step="0.5" min="0" max="${FIELD_IN}"
-                oninput="updateCP(${si}, ${ci}, 'x', this.value)">
+                oninput="updateCP(${si}, ${ci}, 'x', this.value)" onchange="this.value = segments[${si}].cps[${ci}].x">
             </div>
             <div class="form-group">
               <label class="form-label" for="cpY${ci}">Y (0–${FIELD_IN})</label>
               <input type="number" class="form-input" id="cpY${ci}" value="${cp.y.toFixed(1)}" step="0.5" min="0" max="${FIELD_IN}"
-                oninput="updateCP(${si}, ${ci}, 'y', this.value)">
+                oninput="updateCP(${si}, ${ci}, 'y', this.value)" onchange="this.value = segments[${si}].cps[${ci}].y">
             </div>
           </div>
         </div>`).join('')}
@@ -152,13 +152,34 @@ function renderSegmentEditor(si) {
     </div>`;
 }
 
+// Every value is normalised to what the path and the export use: on the field,
+// heading in (-180, 180] like the angle picker, a wait of 0 ms or more. The path
+// follows the typing live; when a field is committed (change: blur or Enter)
+// syncEditorFields() writes the stored values back (typing never triggers it, so
+// the cursor is not disturbed), so a field never shows a number the path is not using.
+function wrapHeading(h) {
+  let d = ((h + 180) % 360 + 360) % 360 - 180;
+  if (d === -180) d = 180;
+  return Math.round(d * 10) / 10;
+}
+
+function syncEditorFields() {
+  if (selectedIdx < 0 || selectedIdx >= waypoints.length) return;
+  const wp = waypoints[selectedIdx];
+  [['edX', wp.x], ['edY', wp.y], ['edH', wp.heading], ['edW', wp.waitMs]].forEach(([id, v]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = v;
+  });
+  drawAnglePicker(wp.heading);
+}
+
 function editorUpdate() {
   if (selectedIdx < 0) return;
   const wp = waypoints[selectedIdx];
-  wp.x       = clampField(parseFloat(document.getElementById('edX').value) || 0);
-  wp.y       = clampField(parseFloat(document.getElementById('edY').value) || 0);
-  wp.heading = parseFloat(document.getElementById('edH').value) || 0;
-  wp.waitMs  = parseInt(document.getElementById('edW').value)   || 0;
+  wp.x       = parseFloat(clampField(parseFloat(document.getElementById('edX').value) || 0).toFixed(2));
+  wp.y       = parseFloat(clampField(parseFloat(document.getElementById('edY').value) || 0).toFixed(2));
+  wp.heading = wrapHeading(parseFloat(document.getElementById('edH').value) || 0);
+  wp.waitMs  = Math.max(0, Math.round(parseFloat(document.getElementById('edW').value) || 0));
   wp.action  = document.getElementById('edA').value;
   drawAnglePicker(wp.heading);
   renderWpList();

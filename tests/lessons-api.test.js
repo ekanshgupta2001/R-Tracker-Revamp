@@ -78,3 +78,16 @@ test('Advanced 1 teaches Ivy: builder, scheduler, compositions, Pedro commands',
   const capstone = moduleText(win.ADVANCED_CONTENT.capstone);
   assert.ok(/Pedro Pathing 3/.test(capstone) && /Scheduler\.execute\(\)/.test(capstone) && /sequential\(\)/.test(capstone));
 });
+
+// A Control Hub is a wireless access point the Driver Station joins; only a phone used as
+// the Robot Controller pairs with Wi-Fi Direct (FIRST's Control System docs).
+test('lessons describe Control Hub networking correctly (access point, not Wi-Fi Direct)', () => {
+  const all = [];
+  for (const pid of Object.keys(win.PHASE_LESSONS)) for (const sec of win.PHASE_LESSONS[pid]) all.push(sectionText(sec));
+  for (const mid of Object.keys(win.ADVANCED_CONTENT)) all.push(moduleText(win.ADVANCED_CONTENT[mid]));
+  for (const text of all.join('\n').split(/(?<=[.;])\s/)) {
+    if (/Wi-?Fi Direct/i.test(text)) assert.match(text, /phone/i, 'Wi-Fi Direct is only for a phone Robot Controller: ' + text);
+  }
+  const intro = sectionText(win.PHASE_LESSONS.phase1[0]);
+  assert.match(intro, /access point/);
+});

@@ -39,6 +39,12 @@
   function skillClass(v) { return v >= 70 ? 'good' : v >= 40 ? 'ok' : 'poor'; }
   function scoreColorClass(v) { return v >= 70 ? 'clr-green' : v >= 40 ? 'clr-orange' : 'clr-red'; }
   // Grade colours are the status/medal tokens from css/global.css (both themes).
+  // Rated means at least one level run counted toward the rating. Older stats have no
+  // ratedLevels field, so a positive rating stands in for it there.
+  function isRated(stats) {
+    if (!stats) return false;
+    return typeof stats.ratedLevels === 'number' ? stats.ratedLevels > 0 : (stats.overallRating || 0) > 0;
+  }
   function gradeColor(g) { var map = { S: 'var(--medal-gold)', A: 'var(--good)', B: 'var(--info)', C: 'var(--warn)', D: 'var(--bad)', F: 'var(--bad)' }; return map[g] || 'var(--text-muted)'; }
   function pct(p) { return Math.round((Number(p) || 0) * 100); }
   function meta() { return window.PHASE_META || []; }
@@ -69,11 +75,14 @@
     var text = window.RTReportText.driverSummary(stats, last, prev);
     var html = '';
     if (stats && stats.lastUpdated) {
-      var g = stats.grade || 'F';
-      var score = stats.overallRating || 0;
+      var rated = isRated(stats);
+      var g = rated ? (stats.grade || 'F') : '';
+      var score = rated ? (stats.overallRating || 0) : null;
       var profileName = last && last.driverProfile ? (last.driverProfile.split(' — ')[0] || 'Driver') : 'Driver';
       html += '<div class="ov-row">';
-      html += '<div class="ov-score-wrap"><span class="ov-score ' + scoreColorClass(score) + '">' + score + '</span><span class="ov-grade" style="color:' + gradeColor(g) + '">' + esc(g) + '</span></div>';
+      html += rated
+        ? '<div class="ov-score-wrap"><span class="ov-score ' + scoreColorClass(score) + '">' + score + '</span><span class="ov-grade" style="color:' + gradeColor(g) + '">' + esc(g) + '</span></div>'
+        : '<div class="ov-score-wrap ov-unrated"><span class="ov-score">—</span><span class="ov-unrated-lbl">Not rated yet</span></div>';
       html += '<div class="ov-info"><div class="ov-badge">' + esc(profileName).toUpperCase() + '</div>';
       if (last && last.percentile) html += '<div class="ov-percentile">' + esc(last.percentile) + '</div>';
       html += '<div class="ov-text">' + esc(text.detail) + '</div>';
@@ -238,11 +247,12 @@
     });
     var avgCode = gradedScores.length ? Math.round(gradedScores.reduce(function (a, b) { return a + b; }, 0) / gradedScores.length) : null;
     if (!d.lastUpdated && levelsDone === 0 && phasesCompleted === 0) { el.innerHTML = '<div class="rpt-empty">No stats yet.</div>'; return; }
+    var rated = isRated(d);
     var score = d.overallRating || 0;
     var stats = [
       { val: fmtTime(d.totalPracticeMs || 0), label: 'Practice Time', cls: 'clr-cyan' },
       { val: levelsDone + '/12', label: 'Levels Done', cls: 'clr-gold' },
-      { val: score, label: 'Driver Rating', cls: scoreColorClass(score) },
+      { val: rated ? score : '—', label: rated ? 'Driver Rating' : 'Not rated yet', cls: rated ? scoreColorClass(score) : '' },
       { val: bestLevel > 0 ? bestLevel : '—', label: 'Best Level', cls: 'clr-gold' },
       { val: phasesCompleted, label: 'Curriculum Phases', cls: 'clr-green' },
       { val: avgCode !== null ? avgCode + '%' : '—', label: 'Avg Code Score', cls: 'clr-purple' }

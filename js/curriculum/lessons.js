@@ -12,7 +12,7 @@
     {
       id: 'ftc-ecosystem',
       title: 'The FTC Ecosystem',
-      learn: 'Before you write a single line of code, you need to understand what you\'re talking to. The <strong>Control Hub</strong> is the robot\'s brain — your code lives there. The <strong>Driver Station</strong> (a phone or tablet with gamepads) sends commands to the Control Hub over Wi-Fi Direct. When you press "Init" then "Start" on the Driver Station, you\'re telling the Control Hub: "Go!"<br><br>Every FTC match has two phases: <strong>Autonomous</strong> (30 seconds, robot runs entirely on pre-written code, no gamepads) and <strong>TeleOp</strong> (2 minutes, drivers control the robot with gamepads). Your code handles both.',
+      learn: 'Before you write a single line of code, you need to understand what you\'re talking to. The <strong>Control Hub</strong> is the robot\'s brain — your code lives there. The <strong>Driver Station</strong> (a phone or tablet with gamepads) connects to the Control Hub\'s own Wi-Fi network (the Control Hub is a wireless access point) and sends commands over it; teams that use an Android phone as the Robot Controller connect the two phones with Wi-Fi Direct instead. When you press "Init" then "Start" on the Driver Station, you\'re telling the Control Hub: "Go!"<br><br>Every FTC match has two phases: <strong>Autonomous</strong> (30 seconds, robot runs entirely on pre-written code, no gamepads) and <strong>TeleOp</strong> (2 minutes, drivers control the robot with gamepads). Your code handles both.',
       check: {
         question: 'During the Autonomous period, how is the robot controlled?',
         type: 'multiple_choice',

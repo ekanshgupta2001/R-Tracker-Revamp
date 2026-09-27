@@ -124,6 +124,9 @@
   font-weight: 800;
 }
 
+.ov-unrated .ov-score { color: var(--text-faint); }
+.ov-unrated-lbl { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+
 .ov-info {
   flex: 1;
 }

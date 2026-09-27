@@ -395,6 +395,8 @@ R-Tracker/
   was driven at; a run is rated only if that matches `RT_LEVEL_TABLE.DEFAULT_PHYSICS` at rating time,
   so runs at moved sliders, or from an older physics model, stay stored but drop out of the rating.
   Par times are `simulated` (see the physics bullet below); replace with measured times when possible.
+  With no rated level (`ratedLevels === 0`) every surface says "Not rated yet" and shows "—", never F or
+  0 / 100 (TeleOp's Driver Report, the Report page, `report-templates.js`).
 - **Style metrics are diagnostics.** Smoothness, stability, strafe, turn precision and recovery are
   sampled only at ≥ 60% of max speed and weighted by speed/max (`js/teleop/metrics.js`). Under 20% of
   moving time at speed they read "insufficient data" (`null` in `driver.stats`). Turn precision is

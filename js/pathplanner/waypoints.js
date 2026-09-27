@@ -135,7 +135,7 @@ function removeCP(si, ci) {
 }
 
 function updateCP(si, ci, axis, val) {
-  segments[si].cps[ci][axis] = parseFloat(val) || 0;
+  segments[si].cps[ci][axis] = parseFloat(clampField(parseFloat(val) || 0).toFixed(2));
   updateCode(); drawAll();
 }
 

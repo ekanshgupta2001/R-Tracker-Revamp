@@ -126,8 +126,8 @@ test('a failed run stores a zero-scoring record and does not rate the level', as
   expect(s.driver.runs[0].completed).toBe(false);
   expect(R.runScore(s.driver.runs[0], TABLE.get(1).parTimeMs)).toBe(0);
   await page.evaluate(() => openDriverReport());
-  await expect(page.locator('#an-overall')).toHaveText('Overall: 0 / 100');
-  await expect(page.locator('#an-grade')).toHaveText('F');
+  await expect(page.locator('#an-overall')).toHaveText('Not rated yet');
+  await expect(page.locator('#an-grade')).toHaveText('—');
   await expect(page.locator('#an-percentile')).toHaveText('Complete a level to get rated');
   await expect(page.locator('#an-levels .an-lvl-row')).toHaveCount(1);
   await expect(page.locator('#an-levels .an-lvl-score')).toHaveText('—');
@@ -150,7 +150,7 @@ test('a run at custom physics is stored but not rated', async ({ page }) => {
   expect(rr.ratedLevels).toBe(0);
   expect(rr.unratedRuns).toBe(1);
   await page.evaluate(() => openDriverReport());
-  await expect(page.locator('#an-overall')).toHaveText('Overall: 0 / 100');
+  await expect(page.locator('#an-overall')).toHaveText('Not rated yet');
   await expect(page.locator('#an-levels')).toContainText('other physics settings');
   expect(errors).toEqual([]);
 });

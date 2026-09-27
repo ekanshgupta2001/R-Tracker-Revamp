@@ -454,3 +454,43 @@ test('closed dialogs are out of the tab order; the TeleOp report traps focus and
   await expect(reportBtn).toBeFocused();
   expect(await page.evaluate(() => appMode)).toBe('freedrive');   // Esc went to the dialog, not the page
 });
+
+test('Path Planner: the editor shows the values the path uses once a field is committed', async ({ page }) => {
+  await page.goto('/pages/pathplanner.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => typeof addWaypoint === 'function');
+  await page.evaluate(() => { addWaypoint(20, 20); addWaypoint(60, 40); selectWp(1); });
+  for (const [id, typed, shown] of [['#edX', '-50', '0'], ['#edY', '999', '141.5'], ['#edW', '-5', '0'], ['#edH', '270', '-90']]) {
+    await page.fill(id, typed);
+    await page.keyboard.press('Tab');
+    await expect(page.locator(id), id).toHaveValue(shown);
+  }
+  expect(await page.evaluate(() => waypoints[1])).toMatchObject({ x: 0, y: 141.5, waitMs: 0, heading: -90 });
+  const code = await page.locator('#codeBlock').textContent();
+  expect(code).toContain('public final Pose point2 = p.of(0.00, 141.50, -90.0);');
+  expect(code).not.toMatch(/waitMs\(-/);
+});
+
+test('Strategy: presenting hides the export reminder, leaving brings it back', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/pages/strategy.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => window.RTStore && typeof togglePresentation === 'function');
+  await page.evaluate(() => RTStore.update(s => { s.meta.dirtySinceExport = true; s.meta.exportReminderDismissed = false; s.paths.push({ id: 'x', name: 'x', waypoints: [], segments: [] }); }));
+  const banner = page.locator('#rt-dirty-banner');
+  await expect(banner).toBeVisible();
+  await page.locator('.topbar-btn[aria-label="Present"]').click();
+  await expect(banner).toBeHidden();
+  await page.waitForTimeout(400);
+  const field = await page.locator('#strategyCanvas').boundingBox();
+  expect(field.y + field.height).toBeLessThanOrEqual(720 + 1);
+  expect(await page.evaluate(() => getComputedStyle(document.body).paddingBottom)).toBe('0px');
+  await page.keyboard.press('Escape');
+  await expect(banner).toBeVisible();
+});
+
+test('TeleOp: the Driver Report says "Not rated yet" before any rated level', async ({ page }) => {
+  await page.goto('/pages/teleop.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => typeof openDriverReport === 'function' && window.rtDialog);
+  await page.evaluate(() => openDriverReport());
+  await expect(page.locator('#an-grade')).toHaveText('—');
+  await expect(page.locator('#an-overall')).toHaveText('Not rated yet');
+});

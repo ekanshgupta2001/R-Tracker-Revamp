@@ -26,7 +26,10 @@
       if (!best || v > best.v) best = { k: k, v: v };
       if (!worst || v < worst.v) worst = { k: k, v: v };
     });
-    var headline = 'Overall driver rating ' + (stats.overallRating || 0) + ' (' + (stats.grade || 'F') + ').';
+    var rated = typeof stats.ratedLevels === 'number' ? stats.ratedLevels > 0 : (stats.overallRating || 0) > 0;
+    var headline = rated
+      ? 'Overall driver rating ' + (stats.overallRating || 0) + ' (' + (stats.grade || 'F') + ').'
+      : 'Not rated yet: complete a level in TeleOp Practice to get a driver rating.';
     var parts = [];
     if (typeof stats.ratedLevels === 'number') parts.push(stats.ratedLevels ? 'Rated on ' + plural(stats.ratedLevels, 'level') + ' against par.' : 'No rated level runs yet.');
     if (best && worst && best.k !== worst.k) parts.push('Strongest skill: ' + SKILL_LABELS[best.k] + ' (' + best.v + '). Weakest: ' + SKILL_LABELS[worst.k] + ' (' + worst.v + ').');

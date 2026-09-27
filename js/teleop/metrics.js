@@ -386,13 +386,15 @@ function openDriverReport() {
   const rating = rr.rating;
   const grade  = rr.grade;
 
+  // No rated level yet is missing data, not a failing grade: no F, no 0 / 100.
+  const rated = rr.ratedLevels > 0;
   const gradeEl = document.getElementById('an-grade');
-  gradeEl.textContent = grade;
-  gradeEl.className = 'an-grade grade-' + grade;
+  gradeEl.textContent = rated ? grade : '—';
+  gradeEl.className = 'an-grade ' + (rated ? 'grade-' + grade : 'grade-none');
   void gradeEl.offsetWidth;
   gradeEl.classList.add('animate');
 
-  document.getElementById('an-overall').textContent = 'Overall: ' + rating + ' / 100';
+  document.getElementById('an-overall').textContent = rated ? 'Overall: ' + rating + ' / 100' : 'Not rated yet';
   document.getElementById('an-percentile').textContent = rr.ratedLevels
     ? percentileFromRating(rating) + ' · ' + rr.ratedLevels + ' level' + (rr.ratedLevels === 1 ? '' : 's') + ' rated over ' + rr.sessionsInWindow + ' session' + (rr.sessionsInWindow === 1 ? '' : 's')
     : 'Complete a level to get rated';

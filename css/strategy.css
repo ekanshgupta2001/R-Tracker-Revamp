@@ -429,7 +429,10 @@ body {
 .presenting .strat-toolbar,
 .presenting .notes-panel,
 .presenting .minimap-wrap,
-.presenting .notes-expand-btn { display: none !important; }
+.presenting .notes-expand-btn,
+.presenting .rt-dirty-banner,
+.presenting .rt-toast { display: none !important; }
+body.presenting { padding-bottom: 0 !important; }   /* the banner's reserved room (--rt-notice-h) goes to the field */
 
 .presenting .main-wrap {
   margin-left: 0 !important;

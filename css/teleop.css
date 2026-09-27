@@ -678,6 +678,7 @@ input[type=range] {
 .grade-C { color: var(--warn); }
 .grade-D { color: var(--bad); }
 .grade-F { color: var(--bad); }
+.grade-none { color: var(--text-faint); }
 
 .an-overall     { font-size: 30px; font-weight: 800; color: var(--text); line-height: 1; letter-spacing: -0.5px; }
 .an-overall-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-top: 4px; }

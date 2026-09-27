@@ -83,3 +83,21 @@ test('light mode renders the charts without errors', async ({ page }) => {
   expect(await page.locator('#skills-radar').count()).toBe(1);
   expect(errors).toEqual([]);
 });
+
+// Driving recorded but no level rated yet is missing data, not a failing grade.
+test('an unrated driver shows "Not rated yet", never F or 0 / 100', async ({ page }) => {
+  await page.goto('/pages/report.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => window.RTReport);
+  await page.evaluate(() => RTStore.update(s => {
+    s.driver.stats.lastUpdated = Date.now();
+    s.driver.stats.totalPracticeMs = 600000;
+    s.driver.stats.ratedLevels = 0;
+    s.driver.stats.overallRating = 0;
+    s.driver.stats.grade = 'F';
+  }));
+  await page.evaluate(() => window.RTReport.render());
+  const overview = page.locator('#overview-content');
+  await expect(overview).toContainText('Not rated yet');
+  await expect(overview.locator('.ov-grade')).toHaveCount(0);
+  await expect(page.locator('#alltime-content')).toContainText('Not rated yet');
+});
