@@ -31,6 +31,7 @@ async function openTeleop(page, errors) {
 async function driveLevel(page, key) {
   await page.click('#tab-levels');
   await page.locator('#lvl-list .lvl-card').first().click();
+  await page.click('#ready-begin');                      // the ready card: goal + controls, then the countdown
   await page.waitForFunction(() => lvl.phase === 'attempt', null, { timeout: 10000 });
   await page.keyboard.down(key);
   await page.waitForFunction(() => lvl.phase === 'result' || lvl.phase === 'fail', null, { timeout: 8000 });
@@ -117,6 +118,7 @@ test('a failed run stores a zero-scoring record and does not rate the level', as
   await openTeleop(page, errors);
   await page.click('#tab-levels');
   await page.locator('#lvl-list .lvl-card').first().click();
+  await page.click('#ready-begin');                      // the ready card: goal + controls, then the countdown
   await page.waitForFunction(() => lvl.phase === 'attempt', null, { timeout: 10000 });
   await page.evaluate(() => finishLevel(false));
   const s = await readState(page);

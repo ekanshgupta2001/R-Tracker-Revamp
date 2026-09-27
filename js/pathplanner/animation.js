@@ -59,6 +59,8 @@ function stopAnim() {
 
 function toggleGrid() {
   showGrid = !showGrid;
-  document.getElementById('btnGrid').classList.toggle('active', showGrid);
+  const g = document.getElementById('btnGrid');
+  g.classList.toggle('active', showGrid);
+  g.setAttribute('aria-pressed', String(showGrid));
   drawAll();
 }

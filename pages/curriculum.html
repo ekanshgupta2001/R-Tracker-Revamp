@@ -1136,7 +1136,7 @@ telemetry.<span class="syn-fn">update</span>();</div>
       // Code editor
       html += '<div class="code-editor-section">';
       html += '<div class="code-editor-label">Your Code</div>';
-      html += '<textarea class="code-editor" id="code-editor-' + phaseId + '" placeholder="Paste your Java code here..." spellcheck="false">' + esc(savedCode) + '</textarea>';
+      html += '<textarea class="code-editor" id="code-editor-' + phaseId + '" aria-label="Your Java code for this deliverable" placeholder="Paste your Java code here..." spellcheck="false">' + esc(savedCode) + '</textarea>';
       html += '</div>';
 
       // Action buttons — show on all unlocked phases including verified
@@ -1161,7 +1161,7 @@ telemetry.<span class="syn-fn">update</span>();</div>
       html += '<div id="ai-result-' + phaseId + '"></div>';
 
       // Notes
-      html += '<textarea class="curr-notes-area" placeholder="Notes for your mentor..." onblur="saveNotes(\'' + phaseId + '\',this.value)">' + esc(notes) + '</textarea>';
+      html += '<textarea class="curr-notes-area" aria-label="Notes for your mentor" placeholder="Notes for your mentor..." onblur="saveNotes(\'' + phaseId + '\',this.value)">' + esc(notes) + '</textarea>';
 
       // Review history
       html += '<div class="review-history" id="review-history-' + phaseId + '">';
@@ -1241,7 +1241,7 @@ telemetry.<span class="syn-fn">update</span>();</div>
       modal.className = 'resubmit-modal-overlay';
       modal.innerHTML =
         '<div class="resubmit-modal-card">' +
-          '<div class="resubmit-modal-title">Resubmit Phase ' + phaseNum + '?</div>' +
+          '<div class="resubmit-modal-title" id="resubmit-modal-title">Resubmit Phase ' + phaseNum + '?</div>' +
           '<div class="resubmit-modal-text">' +
             'You\'ve already completed this phase with a score of <strong>' + prevScore + '/100</strong>. ' +
             'Submitting again will update your score if the new result is higher. ' +
@@ -1254,6 +1254,8 @@ telemetry.<span class="syn-fn">update</span>();</div>
         '</div>';
 
       document.body.appendChild(modal);
+      // Focus, Tab, Esc and handing focus back: the shared dialog helper (js/sidebar.js).
+      window.rtDialog.open(modal, { labelledBy: 'resubmit-modal-title', focus: '.resubmit-cancel', onClose: window.closeResubmitModal });
       // Close on backdrop click
       modal.addEventListener('click', function(e) {
         if (e.target === modal) closeResubmitModal();
@@ -1262,7 +1264,9 @@ telemetry.<span class="syn-fn">update</span>();</div>
 
     window.closeResubmitModal = function() {
       var modal = document.getElementById('resubmit-modal');
-      if (modal) modal.remove();
+      if (!modal) return;
+      window.rtDialog.close(modal);
+      modal.remove();
     };
 
     /* ══════════════════════════════════════════════════════════════════════════

@@ -45,6 +45,18 @@ window.addEventListener('gamepaddisconnected', e => {
 });
 
 document.addEventListener('keydown', e => {
+  // A dialog (the Driver Report) owns the keyboard while it is open (js/sidebar.js).
+  if (window.rtDialog && rtDialog.isOpen()) return;
+  // Typing in a field (the STL name, a slider's value) is not driving.
+  const tag = e.target && e.target.tagName;
+  if (tag === 'INPUT' && e.target.type !== 'range' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  // The ready card: Enter or Space begins the attempt; nothing else fires under it.
+  if (appMode === 'levels' && lvl.phase === 'ready') {
+    if (e.code === 'Escape') { exitToSelect(); return; }
+    const onOtherButton = tag === 'BUTTON' && e.target.id !== 'ready-begin';   // e.g. "Levels" on the card
+    if (!onOtherButton && (e.code === 'Enter' || e.code === 'Space' || e.code === 'NumpadEnter')) { e.preventDefault(); beginAttempt(); return; }
+    if (onOtherButton) return;
+  }
   keys[e.code] = true;
   if (e.code === 'KeyR') resetRobot();
   if (e.code === 'KeyG') debugCollisions = !debugCollisions;

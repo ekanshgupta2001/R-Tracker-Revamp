@@ -257,9 +257,13 @@ function drawLevelOverlay() {
 function getLevelDef() { return LEVELS.find(l => l.id === lvl.id) || null; }
 function isLevelUnlocked(id) { return id === 1 || !!completedLevels[id - 1]; }
 
-function startCountdown(id) {
-  if (!isLevelUnlocked(id)) return;
-  lvl.id = id; lvl.phase = 'countdown';
+// A level starts in two steps. startLevel() (the level list, Next, Home's
+// #level-N link) puts the robot on the start and shows the ready card: the goal
+// and the controls for the input in use; nothing is timed until Begin attempt.
+// startCountdown() (Retry, and Begin) goes straight to 3-2-1.
+function prepareLevel(id) {
+  if (!isLevelUnlocked(id)) return false;
+  lvl.id = id;
   lvl.countdownVal = 3; lvl.elapsed = 0;
   lvl.nextCp = 1; lvl.cpCooldown = 0.4;
   lvl.accInside = 0; lvl.accFrames = 0; lvl.ghostT = 0;
@@ -278,9 +282,65 @@ function startCountdown(id) {
   lvl.physics = { maxSpd: cfg.maxSpd, turnRate: cfg.turnRate, accel: cfg.accel, braking: cfg.braking, inputDelay: cfg.inputDelay };
 
   hideCards();
+  document.getElementById('countdown-overlay').classList.remove('visible');
+  if (_cdTimeout) { clearTimeout(_cdTimeout); _cdTimeout = null; }
+  return true;
+}
+
+function startCountdown(id) {
+  if (!prepareLevel(id)) return;
+  runCountdown();
+}
+
+function runCountdown() {
+  lvl.phase = 'countdown';
   document.getElementById('level-hud').style.display = 'block';
   showCountdown(3);
   renderLevelsSidebar();
+}
+
+function startLevel(id) {
+  if (!prepareLevel(id)) return;
+  lvl.phase = 'ready';
+  document.getElementById('level-hud').style.display = 'none';
+  showReadyCard(getLevelDef());
+  renderLevelsSidebar();
+}
+
+function beginAttempt() {
+  if (appMode !== 'levels' || lvl.phase !== 'ready') return;
+  hideCards();
+  runCountdown();
+}
+
+// The controls line follows the input the student is using: a connected gamepad,
+// the on-screen sticks (html.rt-touch, js/teleop/touch.js), else the keyboard.
+function readyControlsHTML() {
+  const cls = document.documentElement.classList;
+  const rows = cls.contains('rt-gamepad')
+    ? [['Left stick', 'drive and strafe'], ['Right stick', 'turn']]
+    : cls.contains('rt-touch')
+      ? [['Left stick', 'drive and strafe'], ['Right stick', 'turn left / right']]
+      : [['W / S', 'forward / back'], ['A / D', 'strafe left / right'], ['← / →', 'turn left / right'], ['Esc', 'leave the level']];
+  return rows.map(r => `<div class="ready-key"><b>${r[0]}</b><span>${r[1]}</span></div>`).join('');
+}
+
+function showReadyCard(def) {
+  const cps = def.path.length - 1;
+  const gold = Math.round(def.timeLimit * 0.5);
+  document.getElementById('ready-level').textContent = `Level ${def.id} · ${def.tier}`;
+  document.getElementById('ready-title').textContent = def.name;
+  document.getElementById('ready-goal').textContent =
+    `Drive through ${cps} checkpoint${cps === 1 ? '' : 's'} in order within ${def.timeLimit}s. ` +
+    `Stay on the dotted line: three stars need ${gold}s or less and 95% accuracy. The clock starts after the countdown.`;
+  document.getElementById('ready-controls').innerHTML = readyControlsHTML();
+  const card = document.getElementById('ready-card');
+  card.style.display = 'block';
+  requestAnimationFrame(() => {
+    card.classList.add('show');
+    const begin = document.getElementById('ready-begin');
+    if (begin && (!window.rtDialog || !rtDialog.isOpen())) begin.focus({ preventScroll: true });
+  });
 }
 
 let _cdTimeout = null;
@@ -464,7 +524,7 @@ function showFailCard(def, avgAcc) {
 }
 
 function hideCards() {
-  ['result-card','fail-card'].forEach(id => {
+  ['result-card','fail-card','ready-card'].forEach(id => {
     const el = document.getElementById(id);
     el.classList.remove('show');
     el.style.display = 'none';
@@ -483,7 +543,7 @@ function exitToSelect() {
 function nextLevel() {
   const nextId = lvl.id + 1;
   hideCards();
-  if (isLevelUnlocked(nextId)) startCountdown(nextId); else exitToSelect();
+  if (isLevelUnlocked(nextId)) startLevel(nextId); else exitToSelect();
 }
 
 function switchMode(mode) {
@@ -536,15 +596,15 @@ function renderLevelsSidebar() {
       const cls = ['lvl-card', !unlocked ? 'locked' : '', isActive ? 'active-lvl' : ''].filter(Boolean).join(' ');
       const stars = comp ? comp.stars : [false, false, false];
       const starsHtml = stars.map(s => `<span class="lvl-star${s?' lit':''}">&#9733;</span>`).join('');
-      html += `<div class="${cls}" onclick="${unlocked ? `startCountdown(${ld.id})` : ''}">
-        <div class="lvl-num">${ld.id}</div>
-        <div class="lvl-info">
-          <div class="lvl-name">${ld.name}</div>
-          <div class="lvl-meta">${ld.timeLimit}s limit &middot; ${ld.path.length-1} CP</div>
-          ${comp ? `<div class="lvl-stars">${starsHtml}</div>` : ''}
-        </div>
-        ${unlocked ? '' : '<span class="lvl-lock-icon">' + ((window.RT_ICONS && window.RT_ICONS.lock) || '') + '</span>'}
-      </div>`;
+      html += `<button type="button" class="${cls}"${unlocked ? ` onclick="startLevel(${ld.id})"` : ' disabled'} aria-label="Level ${ld.id}: ${ld.name}${comp ? `, ${stars.filter(Boolean).length} of 3 stars` : ''}${unlocked ? '' : ', locked'}">
+        <span class="lvl-num" aria-hidden="true">${ld.id}</span>
+        <span class="lvl-info" aria-hidden="true">
+          <span class="lvl-name">${ld.name}</span>
+          <span class="lvl-meta">${ld.timeLimit}s limit &middot; ${ld.path.length-1} CP</span>
+          ${comp ? `<span class="lvl-stars">${starsHtml}</span>` : ''}
+        </span>
+        ${unlocked ? '' : '<span class="lvl-lock-icon" aria-hidden="true">' + ((window.RT_ICONS && window.RT_ICONS.lock) || '') + '</span>'}
+      </button>`;
     }
   }
   container.innerHTML = html;

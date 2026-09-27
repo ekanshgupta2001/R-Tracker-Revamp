@@ -400,7 +400,9 @@
     tool = t;
     var btns = document.querySelectorAll('.tool-btn');
     for (var i = 0; i < btns.length; i++) {
-      btns[i].classList.toggle('active', btns[i].getAttribute('data-tool') === t);
+      var on = btns[i].getAttribute('data-tool') === t;
+      btns[i].classList.toggle('active', on);
+      btns[i].setAttribute('aria-pressed', String(on));
     }
     cvs.style.cursor = t === 'eraser' ? 'cell' : t === 'text' ? 'text' : 'crosshair';
   };
@@ -409,7 +411,9 @@
     color = c;
     var swatches = document.querySelectorAll('.color-swatch');
     for (var i = 0; i < swatches.length; i++) {
-      swatches[i].classList.toggle('active', swatches[i].getAttribute('data-color') === c);
+      var on = swatches[i].getAttribute('data-color') === c;
+      swatches[i].classList.toggle('active', on);
+      swatches[i].setAttribute('aria-pressed', String(on));
     }
   };
 
@@ -417,7 +421,9 @@
     lineW = w;
     var btns = document.querySelectorAll('.width-btn');
     for (var i = 0; i < btns.length; i++) {
-      btns[i].classList.toggle('active', Number(btns[i].getAttribute('data-width')) === w);
+      var on = Number(btns[i].getAttribute('data-width')) === w;
+      btns[i].classList.toggle('active', on);
+      btns[i].setAttribute('aria-pressed', String(on));
     }
   };
 
@@ -502,18 +508,35 @@
     if (mode === 'save') {
       saveRow.style.display = 'flex';
       loadSection.style.display = 'none';
-      title.textContent = 'Save Strategy';
+      title.textContent = 'Save in this tab';
     } else {
       saveRow.style.display = 'none';
       loadSection.style.display = 'block';
-      title.textContent = 'Load Strategy';
+      title.textContent = 'Load a strategy';
       loadStratList();
     }
-    backdrop.classList.add('open');
+    window.rtDialog.open(backdrop, { labelledBy: 'sm-title', focus: mode === 'save' ? '#sm-name-input' : '.sm-item-open', onClose: window.closeStratModal });
   };
 
   window.closeStratModal = function () {
-    document.getElementById('strat-modal-backdrop').classList.remove('open');
+    window.rtDialog.close(document.getElementById('strat-modal-backdrop'));
+  };
+
+  // ── Unsaved work ───────────────────────────────────────────────────────────
+  // The board and the notes live only on this page until they are saved in the
+  // tab (RTStore.strategies). cleanSig is the board as last saved or loaded;
+  // anything else asks before the student leaves (js/sidebar.js, js/store.js).
+  function boardSig() {
+    var notes = (document.getElementById('strategyNotes') || {}).value || '';
+    return JSON.stringify(annotations) + '\u0000' + notes;
+  }
+  var cleanSig = null;
+  function markClean() { cleanSig = boardSig(); }
+  window.rtUnsaved = function () {
+    if (cleanSig === null || boardSig() === cleanSig) return '';
+    var notes = (document.getElementById('strategyNotes') || {}).value || '';
+    if (!annotations.length && !notes.trim()) return '';
+    return 'Your strategy board has changes that are not saved yet.';
   };
 
   // Strategies are kept in local progress (RTStore.strategies); nothing leaves the browser.
@@ -552,10 +575,14 @@
       }
     });
 
-    msg.textContent = 'Saved to your progress.';
+    markClean();
+    msg.textContent = 'Saved in this tab. Export to a file to keep it after the tab closes.';
     msg.className = 'sm-msg';
     nameInput.value = '';
-    setTimeout(closeStratModal, 800);
+    setTimeout(function () {
+      closeStratModal();
+      if (window.rtNudgeExport) window.rtNudgeExport('"' + name + '" is saved in this tab. Export to a file to keep it after the tab closes.', { force: true });
+    }, 900);
   };
 
   function loadStratList() {
@@ -571,13 +598,17 @@
       item.className = 'sm-item';
       var when = d.updatedAt ? new Date(d.updatedAt).toLocaleDateString() : '';
       item.innerHTML =
-        '<div><div class="sm-item-name">' + escH(d.name) + '</div>' +
-        '<div class="sm-item-meta">' + escH(when) + '</div></div>' +
-        '<button class="sm-item-del" data-id="' + escH(d.id) + '" title="Delete">&#10005;</button>';
+        '<button type="button" class="sm-item-open"><span class="sm-item-name">' + escH(d.name) + '</span>' +
+        '<span class="sm-item-meta">' + escH(when) + '</span></button>' +
+        '<button type="button" class="sm-item-del" data-id="' + escH(d.id) + '" title="Delete" aria-label="Delete ' + escH(d.name) + '">&#10005;</button>';
 
-      item.addEventListener('click', function (e) {
-        if (e.target.closest('.sm-item-del')) return;
+      item.querySelector('.sm-item-open').addEventListener('click', function () {
+        if (window.rtUnsaved() && !confirm('Your board has changes that are not saved yet. Load "' + d.name + '" anyway?')) return;
         loadStrategy(d);
+      });
+
+      item.addEventListener('click', function (e) {     // the row's padding opens it too
+        if (e.target === item) item.querySelector('.sm-item-open').click();
       });
 
       item.querySelector('.sm-item-del').addEventListener('click', function (e) {
@@ -601,7 +632,7 @@
     updateUndoButtons();
 
     var notes = document.getElementById('strategyNotes');
-    if (notes && data.notes) notes.value = data.notes;
+    if (notes) notes.value = data.notes || '';
 
     var maxWp = 0;
     for (var i = 0; i < annotations.length; i++) {
@@ -614,6 +645,7 @@
 
     render();
     renderMinimap();
+    markClean();
     closeStratModal();
   }
 
@@ -682,6 +714,7 @@
 
     resize();
     updateUndoButtons();
+    markClean();
   }
 
   if (document.readyState === 'loading') {

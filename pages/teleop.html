@@ -64,6 +64,17 @@
             <button class="btn" onclick="exitToSelect()"><span class="rt-icon" data-rt-icon="menu"></span>Levels</button>
           </div>
         </div>
+        <!-- Shown before a level's first attempt: the goal and the controls; the clock waits for Begin. -->
+        <div id="ready-card" role="group" aria-labelledby="ready-title">
+          <div class="rc-level" id="ready-level">Level 1</div>
+          <div class="rc-title" id="ready-title">Straight Shot</div>
+          <p class="ready-goal" id="ready-goal"></p>
+          <div class="ready-controls" id="ready-controls"></div>
+          <div class="rc-btns">
+            <button class="btn" onclick="exitToSelect()"><span class="rt-icon" data-rt-icon="menu"></span>Levels</button>
+            <button class="btn active" id="ready-begin" onclick="beginAttempt()"><span class="rt-icon" data-rt-icon="play"></span>Begin attempt</button>
+          </div>
+        </div>
       </div>
     </div>
     <aside id="ctrl-col">
@@ -163,32 +174,32 @@
         <div class="ptitle">Configuration</div>
         <div class="hlp cfg-note">Defaults model a 435 RPM mecanum drivetrain on foam tiles. Levels are rated at these defaults.</div>
         <div class="srow">
-          <div class="slrow"><span>Max Speed</span><span class="sval" id="s-ms-v">6.5 ft/s</span></div>
-          <input type="range" id="s-ms" min="3" max="10" step="0.5" value="6.5" oninput="cfgUpdate()">
+          <div class="slrow"><span id="s-ms-l">Max Speed</span><span class="sval" id="s-ms-v">6.5 ft/s</span></div>
+          <input type="range" id="s-ms" aria-labelledby="s-ms-l" min="3" max="10" step="0.5" value="6.5" oninput="cfgUpdate()">
         </div>
         <div class="srow">
-          <div class="slrow"><span>Turn Rate</span><span class="sval" id="s-tr-v">380 °/s</span></div>
-          <input type="range" id="s-tr" min="90" max="450" step="10" value="380" oninput="cfgUpdate()">
+          <div class="slrow"><span id="s-tr-l">Turn Rate</span><span class="sval" id="s-tr-v">380 °/s</span></div>
+          <input type="range" id="s-tr" aria-labelledby="s-tr-l" min="90" max="450" step="10" value="380" oninput="cfgUpdate()">
         </div>
         <div class="srow">
-          <div class="slrow"><span>Robot Size</span><span class="sval" id="s-rs-v">18 in</span></div>
-          <input type="range" id="s-rs" min="12" max="24" step="1" value="18" oninput="cfgUpdate()">
+          <div class="slrow"><span id="s-rs-l">Robot Size</span><span class="sval" id="s-rs-v">18 in</span></div>
+          <input type="range" id="s-rs" aria-labelledby="s-rs-l" min="12" max="24" step="1" value="18" oninput="cfgUpdate()">
         </div>
         <div class="srow">
-          <div class="slrow"><span>Deadzone</span><span class="sval" id="s-dz-v">0.10</span></div>
-          <input type="range" id="s-dz" min="0.00" max="0.40" step="0.01" value="0.10" oninput="cfgUpdate()">
+          <div class="slrow"><span id="s-dz-l">Deadzone</span><span class="sval" id="s-dz-v">0.10</span></div>
+          <input type="range" id="s-dz" aria-labelledby="s-dz-l" min="0.00" max="0.40" step="0.01" value="0.10" oninput="cfgUpdate()">
         </div>
         <div class="srow">
-          <div class="slrow"><span>Traction (accel)</span><span class="sval" id="s-ac-v">20 ft/s²</span></div>
-          <input type="range" id="s-ac" min="5" max="30" step="1" value="20" oninput="cfgUpdate()">
+          <div class="slrow"><span id="s-ac-l">Traction (accel)</span><span class="sval" id="s-ac-v">20 ft/s²</span></div>
+          <input type="range" id="s-ac" aria-labelledby="s-ac-l" min="5" max="30" step="1" value="20" oninput="cfgUpdate()">
         </div>
         <div class="srow">
-          <div class="slrow"><span>Braking</span><span class="sval" id="s-fr-v">20 ft/s²</span></div>
-          <input type="range" id="s-fr" min="2" max="30" step="1" value="20" oninput="cfgUpdate()">
+          <div class="slrow"><span id="s-fr-l">Braking</span><span class="sval" id="s-fr-v">20 ft/s²</span></div>
+          <input type="range" id="s-fr" aria-labelledby="s-fr-l" min="2" max="30" step="1" value="20" oninput="cfgUpdate()">
         </div>
         <div class="srow">
-          <div class="slrow"><span>Response Delay</span><span class="sval" id="s-rd-v">80 ms</span></div>
-          <input type="range" id="s-rd" min="0" max="300" step="10" value="80" oninput="cfgUpdate()">
+          <div class="slrow"><span id="s-rd-l">Response Delay</span><span class="sval" id="s-rd-v">80 ms</span></div>
+          <input type="range" id="s-rd" aria-labelledby="s-rd-l" min="0" max="300" step="10" value="80" oninput="cfgUpdate()">
         </div>
       </div>
       <div class="panel">
@@ -203,12 +214,15 @@
         <div class="hlp">
           <div><b>W / S</b> — Forward / Back</div>
           <div><b>A / D</b> — Strafe L / R</div>
-          <div><b>← →</b> — Rotate CW / CCW</div>
+          <div><b>← / →</b> — Turn left / right</div>
           <div><b>R</b> — Reset robot position</div>
           <div><b>F</b> — Toggle drive mode</div>
           <div><b>T</b> — Toggle drivetrain</div>
           <div><b>Space</b> — Start / pause timer</div>
           <div><b>P</b> — Hide / show this panel</div>
+          <div><b>L</b> — Switch Free Drive / Levels</div>
+          <div><b>H</b> — Hide / show the mini stats</div>
+          <div><b>Esc</b> — Leave a level</div>
         </div>
       </div>
     </div>
@@ -232,7 +246,7 @@
   <div id="analytics-backdrop" onclick="if(event.target===this)closeDriverReport()">
     <div id="analytics-modal">
       <div class="an-header">
-        <div class="an-title"><span class="rt-icon" data-rt-icon="chart"></span>Driver Report Card</div>
+        <div class="an-title" id="an-title"><span class="rt-icon" data-rt-icon="chart"></span>Driver Report Card</div>
         <button class="an-close" onclick="closeDriverReport()" aria-label="Close">&#10005;</button>
       </div>
       <div class="an-tabs">

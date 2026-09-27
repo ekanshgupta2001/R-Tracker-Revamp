@@ -23,8 +23,8 @@ function verifiedPhase(id, extra = {}) {
   return Object.assign(S.createEmptyPhase(id), { status: 'verified', verifiedAt: 5, verifiedBy: 'auto', bestScore: 90 }, extra);
 }
 
-test('schema version is 4 and non-phase0 phases carry checkedWith', () => {
-  assert.equal(S.SCHEMA_VERSION, 4);
+test('schema version is 5 and non-phase0 phases carry checkedWith', () => {
+  assert.equal(S.SCHEMA_VERSION, 5);
   assert.equal(S.createEmptyPhase('phase1').checkedWith, null);
   assert.equal('checkedWith' in S.createEmptyPhase('phase0'), false);
 });
@@ -119,7 +119,7 @@ test('migration 4 stamps checkedWith from the newest passing review', () => {
   });
   delete obj.curriculum.phases.phase1.checkedWith;
   const out = S.migrate(obj);
-  assert.equal(out.schemaVersion, 4);
+  assert.equal(out.schemaVersion, 5);
   assert.equal(out.curriculum.phases.phase1.checkedWith, 'structural-1/rules-2');
   assert.equal(out.curriculum.phases.phase2.checkedWith, null);
   assert.equal(out.curriculum.phases.phase3.checkedWith, null);
@@ -135,4 +135,27 @@ test('isPassingReview matches the documented rule', () => {
   assert.equal(S.isPassingReview(review(null)), false);
   assert.equal(S.isPassingReview(null), false);
   assert.equal(S.isPassingReview({ result: 'x' }), false);
+});
+
+test('migration 5 moves saved paths onto Pedro\'s 141.5 in field without moving them on the image', () => {
+  const obj = JSON.parse(JSON.stringify(S.createEmptyState()));
+  obj.schemaVersion = 4;
+  obj.paths = [{
+    id: 'p_1', name: 'Auto', createdAt: 1, updatedAt: 1, pathSettings: { speed: 1 },
+    waypoints: [
+      { x: 144, y: 72, heading: 90, waitMs: 500, action: 'Intake' },
+      { x: 0, y: 36, heading: -45, waitMs: 0, action: 'None' },
+      { x: 'left', y: 12 },
+    ],
+    segments: [{ cps: [{ x: 72, y: 144 }] }, { cps: 'garbage' }],
+  }, 'not a path'];
+  const out = S.migrate(obj);
+  assert.equal(out.schemaVersion, 5);
+  const [a, b, c] = out.paths[0].waypoints;
+  assert.deepEqual([a.x, a.y, a.heading, a.waitMs, a.action], [141.5, 70.75, 90, 500, 'Intake']);
+  assert.deepEqual([b.x, b.y, b.heading], [0, 35.38, -45]);
+  assert.deepEqual([c.x, c.y], ['left', 11.79]);
+  assert.deepEqual(out.paths[0].segments[0].cps[0], { x: 70.75, y: 141.5 });
+  assert.equal(out.paths[0].segments[1].cps, 'garbage');
+  assert.equal(out.paths[1], 'not a path');
 });

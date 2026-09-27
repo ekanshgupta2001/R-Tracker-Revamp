@@ -114,13 +114,13 @@
   function buildSidebarHTML() {
     const navItems = NAV_ITEMS.map(item => {
       const active = item.id === pageName ? ' active' : '';
-      return `<a href="${item.href}" class="nav-item${active}"><span class="nav-icon">${item.icon}</span>${item.label}</a>`;
+      return `<a href="${item.href}" class="nav-item${active}"${active ? ' aria-current="page"' : ''}><span class="nav-icon">${item.icon}</span>${item.label}</a>`;
     }).join('');
 
     return `
-      <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Toggle navigation"><span class="ham-icon">${ICONS.menu}</span></button>
+      <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Menu" aria-controls="sidebar" aria-expanded="false"><span class="ham-icon">${ICONS.menu}</span></button>
       <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
-      <nav class="sidebar" id="sidebar">
+      <nav class="sidebar" id="sidebar" aria-label="Site">
         <div class="sidebar-brand">
           <div class="sidebar-logo"><span class="sidebar-mark">${ICONS.mark}</span><span><span class="ftc">R-</span><span class="sim">Tracker</span></span></div>
           <div class="sidebar-tagline">Rundle Robotics Visualizer</div>
@@ -128,16 +128,17 @@
         <ul class="sidebar-nav">${navItems}</ul>
         <div class="sidebar-progress" id="sidebar-progress"></div>
         <div class="sidebar-footer">
-          <div class="theme-toggle" onclick="toggleTheme()">
+          <button type="button" class="theme-toggle" onclick="toggleTheme()">
             <span>Toggle Theme</span>
-            <span class="theme-toggle-icon" id="themeIcon"></span>
-          </div>
+            <span class="theme-toggle-icon" id="themeIcon" aria-hidden="true"></span>
+          </button>
         </div>
       </nav>
     `;
   }
 
   function injectSidebar() {
+    if (document.getElementById('sidebar')) return;   // one navigation per page, however often init runs
     const container = document.getElementById('sidebar-container');
     const html = buildSidebarHTML();
     if (container) container.innerHTML = html;
@@ -217,6 +218,9 @@
       setTimeout(() => { hamIcon.innerHTML = sidebarOpen ? ICONS.close : ICONS.menu; hamIcon.classList.remove('swap'); }, 140);
     }
     if (backdrop) backdrop.classList.toggle('visible', sidebarOpen && window.innerWidth <= NARROW);
+    const ham = document.getElementById('hamburger');
+    if (ham) ham.setAttribute('aria-expanded', String(sidebarOpen));
+    sidebar.inert = !sidebarOpen;   // closed: its links leave the tab order and the accessibility tree
     if (sidebarOpen) animateNavItems();
     layoutChanged();   // stagger in on open; on close the items ride the panel out
   };
@@ -265,6 +269,11 @@
     const url = new URL(link.href, location.href);
     if (url.origin !== location.origin) return;
     if (url.pathname === location.pathname && url.search === location.search && url.hash) return;   // same page, new hash
+    // A page with work that is not saved anywhere yet (a Strategy board, a Path
+    // Planner path) registers window.rtUnsaved; it returns the warning, or ''.
+    const unsaved = typeof window.rtUnsaved === 'function' && window.rtUnsaved();
+    if (unsaved && !window.confirm(unsaved + '\n\nLeave this page anyway?')) { e.preventDefault(); return; }
+    if (unsaved) window.rtUnsavedConfirmed = true;   // store.js's beforeunload must not ask a second time
     try { sessionStorage.setItem('rt-nav', '1'); } catch (err) {}
     if (nativeVT || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;   // the browser navigates now
     e.preventDefault();
@@ -283,6 +292,7 @@
   // Back/forward from the bfcache restores the page as we left it: undo the leave.
   window.addEventListener('pageshow', function (e) {
     if (!e.persisted) return;
+    window.rtUnsavedConfirmed = false;
     docEl.classList.remove('rt-leaving', 'rt-arriving');
     const wrap = document.querySelector('.main-wrap, .curr-wrap, body > #app');
     if (wrap) wrap.style.viewTransitionName = '';
@@ -323,6 +333,23 @@
     return 'Exported ' + when + who + ' · ' + levels + ' level' + (levels === 1 ? '' : 's') + ' completed · ' + phases + ' curriculum phase' + (phases === 1 ? '' : 's') + ' done.';
   }
 
+  const BANNER_TEXT = 'Your progress is only in this tab. Export it to a file to keep it after the tab closes.';
+
+  // The banner is fixed to the bottom of the window; while it shows, --rt-notice-h
+  // on <html> is its height plus its margin, and body pads by it (css/global.css)
+  // so no page's controls sit under it. Canvas pages re-measure on rt-layoutchange.
+  let noticeH = 0;
+  function syncNoticeSpace() {
+    const b = $('rt-dirty-banner');
+    const gap = window.innerHeight <= 500 ? 12 : 26;   // the banner's bottom offset + a little air
+    const h = b && !b.hidden ? Math.ceil(b.getBoundingClientRect().height) + gap : 0;
+    if (h === noticeH) return;
+    noticeH = h;
+    document.documentElement.style.setProperty('--rt-notice-h', h + 'px');
+    window.dispatchEvent(new Event('rt-layoutchange'));
+  }
+  window.addEventListener('resize', function () { if (noticeH > 0) syncNoticeSpace(); });
+
   function ensureBanner() {
     if ($('rt-dirty-banner')) return;
     const b = document.createElement('div');
@@ -330,13 +357,14 @@
     b.className = 'rt-dirty-banner';
     b.hidden = true;
     b.innerHTML =
-      '<span class="rt-dirty-text" id="rt-dirty-text">Progress not saved to a file yet — it disappears when this tab closes.</span>' +
-      '<button class="rt-dirty-btn" onclick="rtExportProgress()">Export now</button>' +
-      '<button class="rt-dirty-close" onclick="rtDismissBanner()" title="Hide">&#10005;</button>';
+      '<span class="rt-dirty-text" id="rt-dirty-text">' + BANNER_TEXT + '</span>' +
+      '<button class="rt-dirty-btn" onclick="rtExportProgress()">Export to file</button>' +
+      '<button class="rt-dirty-close" onclick="rtDismissBanner()" title="Hide this reminder" aria-label="Hide this reminder">&#10005;</button>';
     document.body.appendChild(b);
     const t = document.createElement('div');
     t.id = 'rt-toast';
     t.className = 'rt-toast';
+    t.setAttribute('role', 'status');
     t.hidden = true;
     document.body.appendChild(t);
   }
@@ -350,7 +378,7 @@
     if (status) {
       let text;
       if (quota) text = 'Storage full — export now';
-      else if (dirty) text = 'Unsaved changes';
+      else if (dirty) text = 'Only in this tab — not in a file yet';
       else if (s.meta.lastExportedAt) text = 'Exported ' + fmtAgo(s.meta.lastExportedAt);
       else text = 'Not exported yet';
       if (RTStore.backendName() === 'memory' && !quota) text += ' · this browser keeps nothing between reloads';
@@ -365,8 +393,9 @@
       const txt = $('rt-dirty-text');
       if (txt) txt.textContent = quota
         ? 'This tab\'s storage is full — your latest progress is only in memory. Export now.'
-        : 'Progress not saved to a file yet — it disappears when this tab closes.';
+        : BANNER_TEXT;
     }
+    syncNoticeSpace();
   }
 
   window.renderSidebarProgress = function () {
@@ -376,10 +405,10 @@
       '<div class="sb-progress">' +
         '<div class="sb-progress-status" id="sb-progress-status"></div>' +
         '<div class="sb-progress-row">' +
-          '<button class="sb-progress-btn" id="sb-export-btn" onclick="rtExportProgress()" title="Download your progress as a .json file">' + ICONS.download + 'Export</button>' +
-          '<button class="sb-progress-btn" id="sb-import-btn" onclick="rtImportProgress()" title="Open a progress file you exported earlier">' + ICONS.upload + 'Import</button>' +
+          '<button class="sb-progress-btn" id="sb-export-btn" onclick="rtExportProgress()" title="Download your progress as a .json file">' + ICONS.download + 'Export to file</button>' +
+          '<button class="sb-progress-btn" id="sb-import-btn" onclick="rtImportProgress()" title="Open a progress file you exported earlier">' + ICONS.upload + 'Import file</button>' +
         '</div>' +
-        '<input type="file" id="sb-import-file" accept=".json,application/json" style="display:none">' +
+        '<input type="file" id="sb-import-file" accept=".json,application/json" style="display:none" aria-label="Progress file to import">' +
       '</div>';
     $('sb-import-file').addEventListener('change', onImportFile);
     ensureBanner();
@@ -411,17 +440,18 @@
     updateProgressUI();
   };
 
-  window.rtNudgeExport = function (msg) {
+  window.rtNudgeExport = function (msg, opts) {
     if (!window.RTStore || !RTStore.isDirty()) return;
+    const force = opts && opts.force;               // a direct answer to a Save, not a milestone nudge
     ensureBanner();
     const t = $('rt-toast');
     if (!t) return;
     const banner = $('rt-dirty-banner');
-    if (banner && !banner.hidden) return;                          // the banner already says it
-    if (Date.now() - lastNudgeAt < NUDGE_MIN_INTERVAL_MS) return;  // one nudge per 10 min per page
-    lastNudgeAt = Date.now();
+    if (banner && !banner.hidden && !force) return;                // the banner already says it
+    if (!force && Date.now() - lastNudgeAt < NUDGE_MIN_INTERVAL_MS) return;  // one nudge per 10 min per page
+    if (!force) lastNudgeAt = Date.now();
     t.innerHTML = '<span>' + window.escSidebar(msg || 'Nice — export your progress so you don\'t lose it.') + '</span>' +
-      '<button class="rt-dirty-btn" onclick="rtExportProgress()">Export</button>';
+      '<button class="rt-dirty-btn" onclick="rtExportProgress()">Export to file</button>';
     t.hidden = false;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { t.hidden = true; }, 6000);
@@ -455,6 +485,67 @@
     reader.readAsText(file);
   }
 
+  // ── Dialogs ───────────────────────────────────────────────────────────────
+  // One helper for every modal (Strategy and Path Planner save/load, the TeleOp
+  // Driver Report, the curriculum resubmit confirm). The page's CSS fades the
+  // backdrop with `.open` and keeps it `visibility: hidden` while closed, so a
+  // closed dialog is out of the tab order and the accessibility tree. open()
+  // labels it, moves focus in, keeps Tab inside and remembers the opener; Esc or
+  // close() hands focus back.
+  const dialogStack = [];
+  const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  function focusablesIn(el) {
+    return Array.prototype.filter.call(el.querySelectorAll(FOCUSABLE), function (n) { return n.getClientRects().length > 0; });
+  }
+  window.rtDialog = {
+    // opts: { dialog, labelledBy, focus (selector), onClose (runs instead of close() on Esc) }
+    open: function (backdrop, opts) {
+      if (!backdrop) return;
+      opts = opts || {};
+      const dlg = opts.dialog || backdrop.firstElementChild || backdrop;
+      dlg.setAttribute('role', 'dialog');
+      dlg.setAttribute('aria-modal', 'true');
+      if (opts.labelledBy) dlg.setAttribute('aria-labelledby', opts.labelledBy);
+      if (!dlg.hasAttribute('tabindex')) dlg.setAttribute('tabindex', '-1');
+      if (!dialogStack.some(function (d) { return d.backdrop === backdrop; })) {
+        dialogStack.push({ backdrop: backdrop, dlg: dlg, returnTo: document.activeElement, onClose: opts.onClose });
+      }
+      backdrop.classList.add('open');
+      const target = (opts.focus && dlg.querySelector(opts.focus)) || focusablesIn(dlg)[0] || dlg;
+      try { target.focus({ preventScroll: true }); } catch (e) { target.focus(); }
+    },
+    close: function (backdrop) {
+      if (!backdrop) return;
+      backdrop.classList.remove('open');
+      const i = dialogStack.findIndex(function (d) { return d.backdrop === backdrop; });
+      if (i < 0) return;
+      const entry = dialogStack.splice(i, 1)[0];
+      const back = entry.returnTo;
+      if (back && back.focus && document.contains(back) && back !== document.body) {
+        try { back.focus({ preventScroll: true }); } catch (e) { back.focus(); }
+      }
+    },
+    isOpen: function () { return dialogStack.length > 0; },
+  };
+  // Capture phase, so a page's own key shortcuts (TeleOp) never see Esc or Tab
+  // while a dialog is up.
+  document.addEventListener('keydown', function (e) {
+    const top = dialogStack[dialogStack.length - 1];
+    if (!top) return;
+    if (e.key === 'Escape') {
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (top.onClose) top.onClose(); else window.rtDialog.close(top.backdrop);
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    const list = focusablesIn(top.dlg);
+    if (!list.length) { e.preventDefault(); top.dlg.focus(); return; }
+    const first = list[0], last = list[list.length - 1];
+    const inside = top.dlg.contains(document.activeElement);
+    if (e.shiftKey && (document.activeElement === first || !inside)) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (document.activeElement === last || !inside)) { e.preventDefault(); first.focus(); }
+  }, true);
+
   // Static markup asks for an icon with <span class="rt-icon" data-rt-icon="save"></span>;
   // fill those in once the DOM is ready (page scripts that rebuild a control use rtIcon()).
   function hydrateIcons() {
@@ -466,14 +557,17 @@
   window.rtHydrateIcons = hydrateIcons;
 
   // ── initSidebar ───────────────────────────────────────────────────────────
+  let sidebarInited = false;
   window.initSidebar = function () {
+    if (sidebarInited) return;
+    sidebarInited = true;
     injectSidebar();
     hydrateIcons();
     syncThemeIcon();
     // Always start collapsed
     sidebarOpen = false;
     const sidebar = document.getElementById('sidebar');
-    if (sidebar) sidebar.classList.add('collapsed');
+    if (sidebar) { sidebar.classList.add('collapsed'); sidebar.inert = true; }
     document.body.classList.remove('sidebar-open');
     document.body.classList.add('sidebar-collapsed');
     animateNavItems();

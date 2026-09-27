@@ -433,11 +433,11 @@ function openDriverReport() {
   document.getElementById('ans-dist').textContent = Math.round(driverMetrics.totalDistance);
   document.getElementById('ans-inputs').textContent = driverMetrics.totalInputs;
 
-  document.getElementById('analytics-backdrop').classList.add('open');
+  window.rtDialog.open(document.getElementById('analytics-backdrop'), { labelledBy: 'an-title', onClose: closeDriverReport });
 }
 
 function closeDriverReport() {
-  document.getElementById('analytics-backdrop').classList.remove('open');
+  window.rtDialog.close(document.getElementById('analytics-backdrop'));
 }
 
 function confirmResetMetrics() {

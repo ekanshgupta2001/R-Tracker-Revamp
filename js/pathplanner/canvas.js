@@ -10,12 +10,18 @@ var animRunning    = false;
 var pathSettings   = { reversed: false, maxVel: 60, maxAccel: 40, maxAngVel: 180 };
 
 const fieldImg = new Image();
-fieldImg.src = '../../assets/biobuzz.webp';
+fieldImg.src = '../assets/biobuzz.webp';
 fieldImg.onload = () => drawAll();
 
 const cvs = document.getElementById('fieldCanvas');
 const ctx = cvs.getContext('2d');
-const FIELD_IN = 144;
+// Pedro Pathing's field: 141.5 × 141.5 in, origin at the bottom-left corner,
+// y up (pathing/reference/posefactory.mdx). The field image is the six tiles
+// wall to wall, so it spans exactly this. Saved paths from before schema 5 were
+// drawn on a 144 in square and are rescaled by the migration (js/schema.js).
+const FIELD_IN = 141.5;
+const TILE_IN = FIELD_IN / 6;
+function clampField(v) { return Math.min(FIELD_IN, Math.max(0, v)); }
 
 // cvsSz is the field's size in CSS pixels and every draw call works in it; the
 // backing store is cvsSz × devicePixelRatio (≤ 2) so the field is sharp on phones.
@@ -51,7 +57,7 @@ function drawAll() {
 }
 
 function drawGrid() {
-  const step = px(12);
+  const step = px(TILE_IN / 2);                        // half-tile lines
   ctx.save();
   ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 0.5;
   for (let x = 0; x <= cvsSz; x += step) {
@@ -61,7 +67,7 @@ function drawGrid() {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cvsSz, y); ctx.stroke();
   }
   ctx.strokeStyle = 'rgba(255,255,255,0.16)'; ctx.lineWidth = 1;
-  const midX = px(72), midY = px(72);
+  const midX = px(FIELD_IN / 2), midY = px(FIELD_IN / 2);
   ctx.beginPath(); ctx.moveTo(midX, 0); ctx.lineTo(midX, cvsSz); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(cvsSz, midY); ctx.stroke();
   ctx.restore();

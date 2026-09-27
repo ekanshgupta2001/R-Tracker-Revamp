@@ -40,7 +40,7 @@ function loop(ts) {
 
   if (appMode === 'freedrive') tickTimer(ts);
 
-  const robotFrozen = appMode === 'levels' && lvl.phase === 'countdown';
+  const robotFrozen = appMode === 'levels' && (lvl.phase === 'countdown' || lvl.phase === 'ready');
   const prevBotX = bot.x, prevBotY = bot.y;
   if (!robotFrozen) updateBot(dt);
   updateMetrics(dt, prevBotX, prevBotY);
@@ -106,5 +106,16 @@ hydrateCompletedLevels();
   try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
   if (!LEVELS.some(function (l) { return l.id === id; }) || !isLevelUnlocked(id)) return;
   switchMode('levels');
-  startCountdown(id);
+  startLevel(id);                                  // the ready card first (levels.js)
+})();
+
+// Toggle buttons tell assistive tech their state: aria-pressed mirrors .active
+// wherever a script flips it (setDrive, setMode, setViewMode, switchMode, the
+// report tabs).
+(function syncPressedStates() {
+  const els = document.querySelectorAll('#mode-tabs .mode-tab, #btn-mec, #btn-tank, #btn-fc, #btn-rc, .view-btn, .an-tab');
+  const sync = el => el.setAttribute('aria-pressed', String(el.classList.contains('active')));
+  els.forEach(sync);
+  const mo = new MutationObserver(recs => recs.forEach(r => sync(r.target)));
+  els.forEach(el => mo.observe(el, { attributes: true, attributeFilter: ['class'] }));
 })();

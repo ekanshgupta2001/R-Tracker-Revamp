@@ -10,7 +10,8 @@
 //
 // Schema versions: 1 = v1 export shape; 2 = per-run driver records (driver.runs);
 // 3 = path-planner headings in Pedro's convention; 4 = curriculum phases carry
-// checkedWith (the code-check grader version that last passed the deliverable).
+// checkedWith (the code-check grader version that last passed the deliverable);
+// 5 = path-planner coordinates on Pedro's 141.5 in field (they were on 144 in).
 //
 // Import rule (every schema version): a phase marked 'verified' must carry its proof —
 // a passing code-check review from a known grader version (phase0: a passing quiz
@@ -22,7 +23,7 @@
 (function () {
   'use strict';
 
-  var SCHEMA_VERSION = 4;
+  var SCHEMA_VERSION = 5;
   var APP_VERSION = '2.1.0';
 
   var PHASE_IDS = [
@@ -273,6 +274,32 @@
         var r = latestPassingReview(ph);
         var gv = r && r.result.graderVersion;
         ph.checkedWith = typeof gv === 'string' ? gv : null;
+      });
+      return s;
+    },
+    // v5: the path planner's field is Pedro Pathing's 141.5 × 141.5 in (the six tiles
+    // wall to wall, which is what the field image shows); before, the same image was
+    // 144 in. Every saved waypoint and control point is scaled by 141.5 / 144 so it
+    // stays on the same spot of the field, rounded to 0.01 and kept on the field.
+    // Headings, waits, actions and the robot size do not change. Only finite numbers
+    // are rewritten, as in v3.
+    5: function (s) {
+      if (!Array.isArray(s.paths)) return s;
+      var k = 141.5 / 144;
+      function scale(pt) {
+        if (!isPlainObject(pt)) return;
+        ['x', 'y'].forEach(function (axis) {
+          var v = pt[axis];
+          if (typeof v !== 'number' || !isFinite(v)) return;
+          pt[axis] = Math.min(141.5, Math.max(0, Math.round(v * k * 100) / 100));
+        });
+      }
+      s.paths.forEach(function (p) {
+        if (!isPlainObject(p)) return;
+        if (Array.isArray(p.waypoints)) p.waypoints.forEach(scale);
+        if (Array.isArray(p.segments)) p.segments.forEach(function (seg) {
+          if (isPlainObject(seg) && Array.isArray(seg.cps)) seg.cps.forEach(scale);
+        });
       });
       return s;
     }

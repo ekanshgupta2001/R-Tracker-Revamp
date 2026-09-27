@@ -137,6 +137,9 @@ test('teleop.html#level-1 opens level 1 in levels mode and clears the hash', asy
   await page.waitForFunction(() => typeof lvl !== 'undefined' && lvl.id === 1);
   expect(await page.evaluate(() => appMode)).toBe('levels');
   expect(await page.evaluate(() => window.location.hash)).toBe('');
+  // it waits on the ready card (goal + controls) instead of starting the clock
+  await expect(page.locator('#ready-card')).toBeVisible();
+  expect(await page.evaluate(() => lvl.phase)).toBe('ready');
   // a locked level is ignored (load another page first: a hash-only change is not a reload)
   await page.goto('/', { waitUntil: 'load' });
   await page.goto('/pages/teleop.html#level-9', { waitUntil: 'load' });

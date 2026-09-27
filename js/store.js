@@ -247,9 +247,13 @@
   window.RTStore.ready = true;
 
   // Warn before the tab closes with unexported progress. In-app navigation sets
-  // sessionStorage 'rt-nav' just before it happens, so it never prompts.
+  // sessionStorage 'rt-nav' just before it happens, so it never prompts for that.
+  // A page with unsaved work (window.rtUnsaved, see js/sidebar.js) prompts on a
+  // reload or tab close too, unless the student already confirmed leaving it.
   window.addEventListener('beforeunload', function (e) {
     try {
+      const pageUnsaved = typeof window.rtUnsaved === 'function' && !window.rtUnsavedConfirmed && window.rtUnsaved();
+      if (pageUnsaved) { e.preventDefault(); e.returnValue = ''; return; }
       if (!state || !state.meta.dirtySinceExport) return;
       if (window.sessionStorage.getItem('rt-nav') === '1') return;
       e.preventDefault();

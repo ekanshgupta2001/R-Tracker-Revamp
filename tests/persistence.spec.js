@@ -54,7 +54,7 @@ test('export → clear → import restores identical state; banner tracks unsave
   // A change makes the banner appear
   await page.evaluate(() => RTStore.update(s => { s.profile.displayName = 'Changed'; }));
   await expect(page.locator('#rt-dirty-banner')).toBeVisible();
-  await expect(page.locator('#sb-progress-status')).toHaveText(/Unsaved/);
+  await expect(page.locator('#sb-progress-status')).toHaveText(/not in a file yet/);
 
   const before = await readState(page);
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#sb-export-btn')]);
@@ -62,7 +62,7 @@ test('export → clear → import restores identical state; banner tracks unsave
   const text = fs.readFileSync(await dl.path(), 'utf8');
   const exported = JSON.parse(text);
   expect(exported.meta.app).toBe('r-tracker');
-  expect(exported.schemaVersion).toBe(4);
+  expect(exported.schemaVersion).toBe(5);
   await expect(page.locator('#rt-dirty-banner')).toBeHidden();
   await expect(page.locator('#sb-progress-status')).toHaveText(/Exported/);
 
@@ -95,7 +95,7 @@ test('dismissing the unsaved banner holds across pages until the next export', a
   let s = await readState(page);
   expect(s.meta.exportReminderDismissed).toBe(true);
   expect(s.meta.dirtySinceExport).toBe(true);
-  await expect(page.locator('#sb-progress-status')).toHaveText(/Unsaved/);
+  await expect(page.locator('#sb-progress-status')).toHaveText(/not in a file yet/);
 
   for (const path of ['/pages/report.html', '/pages/curriculum.html', '/pages/teleop.html']) {
     await page.goto(path, { waitUntil: 'load' });
@@ -217,7 +217,7 @@ test('older progress files migrate to schema 4 without losing anything', async (
   const r = await page.evaluate(s => RTStore.importJSON(JSON.stringify(s)), v1);
   expect(r.ok, r.error).toBe(true);
   const s = await readState(page);
-  expect(s.schemaVersion).toBe(4);
+  expect(s.schemaVersion).toBe(5);
   expect(s.driver.runs).toEqual([]);
   expect(s.driver.levels['1'].bestStars).toBe(3);
   expect(s.driver.levels['2'].attempts).toBe(2);
@@ -284,7 +284,7 @@ test('importing a year of real progress keeps verified phases that carry a passi
   await page.waitForFunction(() => window.RTStore && RTStore.get().paths.length === 1 && RTStore.get().driver.sessions.length > 100, null, { timeout: 10000 });
   await page.waitForSelector('#sidebar');
   const s = await readState(page);
-  expect(s.schemaVersion).toBe(4);
+  expect(s.schemaVersion).toBe(5);
   for (const pid of ['phase0', 'phase1', 'phase2']) expect(s.curriculum.phases[pid].status, pid).toBe('verified');
   expect(s.curriculum.phases.phase1.checkedWith).toBe('structural-2/rules-3');
   expect(s.curriculum.phases.phase3.status).toBe('in_progress');

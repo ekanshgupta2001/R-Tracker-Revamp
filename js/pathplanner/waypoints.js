@@ -56,7 +56,7 @@ function hitTestSegment(cx, cy) {
 function addWaypoint(ftcX, ftcY) {
   const heading = waypoints.length > 0 ? waypoints[waypoints.length-1].heading : 0;
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-  waypoints.push({ x: parseFloat(clamp(ftcX, 0, 144).toFixed(1)), y: parseFloat(clamp(ftcY, 0, 144).toFixed(1)), heading, waitMs: 0, action: 'None' });
+  waypoints.push({ x: parseFloat(clamp(ftcX, 0, FIELD_IN).toFixed(1)), y: parseFloat(clamp(ftcY, 0, FIELD_IN).toFixed(1)), heading, waitMs: 0, action: 'None' });
   if (waypoints.length >= 2) segments.push({ cps: [] });
   selectedIdx    = waypoints.length - 1;
   selectedSegIdx = -1;
@@ -104,8 +104,8 @@ function setSegmentType(si, type) {
       const perp = 20;
       const len = Math.hypot(dx, dy) || 1;
       segments[si].cps = [{
-        x: parseFloat(Math.min(144, Math.max(0, mx - dy / len * perp)).toFixed(1)),
-        y: parseFloat(Math.min(144, Math.max(0, my + dx / len * perp)).toFixed(1)),
+        x: parseFloat(clampField(mx - dy / len * perp).toFixed(1)),
+        y: parseFloat(clampField(my + dx / len * perp).toFixed(1)),
       }];
     }
   }
@@ -118,7 +118,7 @@ function addControlPoint(si) {
   const seg = segments[si];
   if (seg.cps.length >= 2) return;
   const a = waypoints[si], b = waypoints[si+1];
-  const clamp = v => Math.min(144, Math.max(0, v));
+  const clamp = v => clampField(v);
   if (seg.cps.length === 0) {
     seg.cps.push({ x: parseFloat(clamp(a.x + (b.x - a.x) / 3).toFixed(1)), y: parseFloat(clamp(a.y + (b.y - a.y) / 3).toFixed(1)) });
   } else {
@@ -182,15 +182,15 @@ cvs.addEventListener('pointermove', e => {
 
   if (dragType === 'waypoint' && dragIdx >= 0) {
     const ftc = cvsToFtc(cp.x - dragOffX, cp.y - dragOffY);
-    waypoints[dragIdx].x = parseFloat(Math.min(144, Math.max(0, ftc.x)).toFixed(1));
-    waypoints[dragIdx].y = parseFloat(Math.min(144, Math.max(0, ftc.y)).toFixed(1));
+    waypoints[dragIdx].x = parseFloat(clampField(ftc.x).toFixed(1));
+    waypoints[dragIdx].y = parseFloat(clampField(ftc.y).toFixed(1));
     renderWpList();
     if (selectedIdx === dragIdx) renderWaypointEditor();
     updateCode(); drawAll();
   } else if (dragType === 'cp') {
     const ftc = cvsToFtc(cp.x - dragOffX, cp.y - dragOffY);
-    segments[dragSegIdx].cps[dragCpIdx].x = parseFloat(Math.min(144, Math.max(0, ftc.x)).toFixed(1));
-    segments[dragSegIdx].cps[dragCpIdx].y = parseFloat(Math.min(144, Math.max(0, ftc.y)).toFixed(1));
+    segments[dragSegIdx].cps[dragCpIdx].x = parseFloat(clampField(ftc.x).toFixed(1));
+    segments[dragSegIdx].cps[dragCpIdx].y = parseFloat(clampField(ftc.y).toFixed(1));
     if (selectedSegIdx === dragSegIdx) renderSegmentEditor(dragSegIdx);
     updateCode(); drawAll();
   }

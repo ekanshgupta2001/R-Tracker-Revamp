@@ -2107,8 +2107,8 @@ if (autoTimer.seconds() > 27.0 && !parking) {
           // Completed written answer — show read-only textarea + feedback wrap restored from local progress
           html += '<div class="les-check-done" id="les-wdone-badge-' + sec.id + '">&#10003; Submitted</div>';
           html += '<div class="les-written-done-detail" id="les-wdone-' + sec.id + '" style="display:none">';
-          html += '<div class="les-check-q">' + esc(sec.check.question) + '</div>';
-          html += '<textarea class="les-written-area les-written-locked" id="les-written-' + sec.id + '" placeholder="Type your answer here..." readonly></textarea>';
+          html += '<div class="les-check-q" id="les-q-' + sec.id + '">' + esc(sec.check.question) + '</div>';
+          html += '<textarea class="les-written-area les-written-locked" id="les-written-' + sec.id + '" aria-labelledby="les-q-' + sec.id + '" placeholder="Type your answer here..." readonly></textarea>';
           html += '<div class="les-written-footer">';
           html += '<span class="les-written-count" id="les-wcount-' + sec.id + '"></span>';
           html += '<button class="les-written-submit les-written-submitted" id="les-wsubmit-' + sec.id + '" style="display:none" onclick="window._submitWrittenAnswer(\'' + sec.id + '\')" disabled>Submit Answer</button>';
@@ -2123,8 +2123,8 @@ if (autoTimer.seconds() > 27.0 && !parking) {
           if (sec.check.graded === false) {
             html += '<div class="les-reflection-label">' + (window.rtIcon ? window.rtIcon('pencil') : '') + '<span>Reflection &mdash; share with your mentor. There is no single right answer; your answer is kept in your progress file and is not scored.</span></div>';
           }
-          html += '<div class="les-check-q">' + esc(sec.check.question) + '</div>';
-          html += '<textarea class="les-written-area" id="les-written-' + sec.id + '" placeholder="Type your answer here..."></textarea>';
+          html += '<div class="les-check-q" id="les-q-' + sec.id + '">' + esc(sec.check.question) + '</div>';
+          html += '<textarea class="les-written-area" id="les-written-' + sec.id + '" aria-labelledby="les-q-' + sec.id + '" placeholder="Type your answer here..."></textarea>';
           html += '<div class="les-written-footer">';
           html += '<span class="les-written-count" id="les-wcount-' + sec.id + '">0 / ' + minWordsOf(sec.check) + ' words minimum</span>';
           html += '<button class="les-written-submit" id="les-wsubmit-' + sec.id + '" onclick="window._submitWrittenAnswer(\'' + sec.id + '\')" disabled>Submit Answer</button>';

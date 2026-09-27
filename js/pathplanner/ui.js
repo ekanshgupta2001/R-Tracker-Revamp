@@ -34,7 +34,7 @@ function renderWpList() {
           <div class="wp-coords">(${wp.x.toFixed(1)}, ${wp.y.toFixed(1)}) in</div>
           <div class="wp-heading">Heading: ${wp.heading.toFixed(1)}° · ${escapeHTML(wp.action)}</div>
         </div>
-        <button class="wp-delete" onclick="event.stopPropagation(); deleteWpAt(${i})" title="Delete">✕</button>
+        <button class="wp-delete" onclick="event.stopPropagation(); deleteWpAt(${i})" title="Delete" aria-label="Delete waypoint ${i + 1}">✕</button>
       </div>`;
     if (i < waypoints.length - 1) {
       const seg = segments[i];
@@ -42,7 +42,7 @@ function renderWpList() {
       html += `
       <div class="seg-row">
         <span class="seg-row-label">↕ ${i+1}→${i+2}</span>
-        <select class="seg-select${isCurved ? ' curved' : ''}"
+        <select class="seg-select${isCurved ? ' curved' : ''}" aria-label="Segment ${i+1} to ${i+2} shape"
           onchange="setSegmentType(${i}, this.value)"
           onclick="event.stopPropagation()">
           <option value="line"${!isCurved ? ' selected' : ''}>line()</option>
@@ -83,35 +83,36 @@ function renderWaypointEditor() {
     <div class="editor-form">
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">X (0–144 in)</label>
-          <input type="number" class="form-input" id="edX" value="${wp.x}" step="0.5" min="0" max="144" oninput="editorUpdate()">
+          <label class="form-label" for="edX">X (0–${FIELD_IN} in)</label>
+          <input type="number" class="form-input" id="edX" value="${wp.x}" step="0.5" min="0" max="${FIELD_IN}" oninput="editorUpdate()">
         </div>
         <div class="form-group">
-          <label class="form-label">Y (0–144 in)</label>
-          <input type="number" class="form-input" id="edY" value="${wp.y}" step="0.5" min="0" max="144" oninput="editorUpdate()">
+          <label class="form-label" for="edY">Y (0–${FIELD_IN} in)</label>
+          <input type="number" class="form-input" id="edY" value="${wp.y}" step="0.5" min="0" max="${FIELD_IN}" oninput="editorUpdate()">
         </div>
       </div>
       <div class="form-row">
         <div class="form-group" style="flex:2">
-          <label class="form-label">Heading (°, 0 = +x, CCW)</label>
+          <label class="form-label" for="edH">Heading (°, 0 = +x, CCW)</label>
           <div class="angle-row">
-            <canvas id="anglePicker" width="40" height="40" title="Click or drag to set heading"></canvas>
+            <canvas id="anglePicker" width="40" height="40" title="Click or drag to set heading" aria-hidden="true"></canvas>
             <input type="number" class="form-input" id="edH" value="${wp.heading}" step="1" min="-180" max="180" oninput="editorUpdate()">
           </div>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Wait (ms)</label>
+          <label class="form-label" for="edW">Wait (ms)</label>
           <input type="number" class="form-input" id="edW" value="${wp.waitMs}" step="100" min="0" oninput="editorUpdate()">
         </div>
         <div class="form-group">
-          <label class="form-label">Action</label>
+          <label class="form-label" for="edA">Action</label>
           <select class="form-select" id="edA" onchange="editorUpdate()">
             ${['None','Wait','Intake','Outtake','Custom'].map(a => `<option${a===wp.action?' selected':''}>${a}</option>`).join('')}
           </select>
         </div>
       </div>
+      <div class="form-note">The wait runs in <code>routine()</code> in the code below. An action becomes a TODO line there for your mechanism code.</div>
     </div>`;
   drawAnglePicker(wp.heading);
   initAnglePicker();
@@ -132,17 +133,17 @@ function renderSegmentEditor(si) {
         <div class="cp-card">
           <div class="cp-card-title">
             Control Point ${ci + 1}
-            <button class="cp-remove-btn" onclick="removeCP(${si}, ${ci})" title="Remove CP">✕</button>
+            <button class="cp-remove-btn" onclick="removeCP(${si}, ${ci})" title="Remove CP" aria-label="Remove control point ${ci + 1}">✕</button>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">X (0–144)</label>
-              <input type="number" class="form-input" value="${cp.x.toFixed(1)}" step="0.5" min="0" max="144"
+              <label class="form-label" for="cpX${ci}">X (0–${FIELD_IN})</label>
+              <input type="number" class="form-input" id="cpX${ci}" value="${cp.x.toFixed(1)}" step="0.5" min="0" max="${FIELD_IN}"
                 oninput="updateCP(${si}, ${ci}, 'x', this.value)">
             </div>
             <div class="form-group">
-              <label class="form-label">Y (0–144)</label>
-              <input type="number" class="form-input" value="${cp.y.toFixed(1)}" step="0.5" min="0" max="144"
+              <label class="form-label" for="cpY${ci}">Y (0–${FIELD_IN})</label>
+              <input type="number" class="form-input" id="cpY${ci}" value="${cp.y.toFixed(1)}" step="0.5" min="0" max="${FIELD_IN}"
                 oninput="updateCP(${si}, ${ci}, 'y', this.value)">
             </div>
           </div>
@@ -154,8 +155,8 @@ function renderSegmentEditor(si) {
 function editorUpdate() {
   if (selectedIdx < 0) return;
   const wp = waypoints[selectedIdx];
-  wp.x       = parseFloat(document.getElementById('edX').value) || 0;
-  wp.y       = parseFloat(document.getElementById('edY').value) || 0;
+  wp.x       = clampField(parseFloat(document.getElementById('edX').value) || 0);
+  wp.y       = clampField(parseFloat(document.getElementById('edY').value) || 0);
   wp.heading = parseFloat(document.getElementById('edH').value) || 0;
   wp.waitMs  = parseInt(document.getElementById('edW').value)   || 0;
   wp.action  = document.getElementById('edA').value;
@@ -226,17 +227,29 @@ function openPathModal(mode) {
   const loadSec = document.getElementById('ppc-load-section');
   clearPathMsg();
   if (mode === 'save') {
-    modal.querySelector('.ppc-title').textContent = 'Save Path';
+    modal.querySelector('.ppc-title').textContent = 'Save in this tab';
     saveRow.style.display = 'flex'; loadSec.style.display = 'none';
   } else {
-    modal.querySelector('.ppc-title').textContent = 'Load Path';
+    modal.querySelector('.ppc-title').textContent = 'Load a path';
     saveRow.style.display = 'none'; loadSec.style.display = 'block';
     renderSavedPaths();
   }
-  document.getElementById('pp-cloud-backdrop').classList.add('open');
+  window.rtDialog.open(document.getElementById('pp-cloud-backdrop'), { labelledBy: 'ppc-title', focus: mode === 'save' ? '#ppc-name-input' : '.ppc-path-open', onClose: closePathModal });
 }
 
-function closePathModal() { document.getElementById('pp-cloud-backdrop').classList.remove('open'); }
+function closePathModal() { window.rtDialog.close(document.getElementById('pp-cloud-backdrop')); }
+
+// ── Unsaved work ──────────────────────────────────────────────────────────
+// The path lives only on this page until it is saved in the tab (RTStore.paths).
+// cleanSig is the path as last saved or loaded; anything else asks before the
+// student leaves (js/sidebar.js, js/store.js).
+function pathSig() { return JSON.stringify([waypoints, segments]); }
+let cleanSig = pathSig();
+function markPathClean() { cleanSig = pathSig(); }
+window.rtUnsaved = function () {
+  if (!waypoints.length || pathSig() === cleanSig) return '';
+  return 'Your path has changes that are not saved yet.';
+};
 function clearPathMsg()   { const el = document.getElementById('ppc-msg'); if (el) { el.textContent = ''; el.className = 'ppc-msg'; } }
 function setPathMsg(msg, isErr) {
   const el = document.getElementById('ppc-msg');
@@ -272,8 +285,13 @@ function savePath() {
       }
     }
   });
-  setPathMsg('Path saved to your progress.', false);
+  markPathClean();
+  setPathMsg('Saved in this tab. Export to a file to keep it after the tab closes.', false);
   nameInput.value = '';
+  setTimeout(() => {
+    closePathModal();
+    if (window.rtNudgeExport) window.rtNudgeExport('"' + name + '" is saved in this tab. Export to a file to keep it after the tab closes.', { force: true });
+  }, 900);
 }
 
 function renderSavedPaths() {
@@ -286,11 +304,12 @@ function renderSavedPaths() {
     const row = document.createElement('div');
     row.className = 'ppc-path-item';
     row.innerHTML = `
-      <div onclick="loadSavedPath('${escapeHTML(d.id)}')" style="flex:1;min-width:0">
-        <div class="ppc-path-name">${escapeHTML(d.name)}</div>
-        <div class="ppc-path-meta">${(d.waypoints||[]).length} waypoints &middot; ${escapeHTML(updated)}</div>
-      </div>
-      <button class="ppc-path-del" onclick="deleteSavedPath('${escapeHTML(d.id)}',event)" title="Delete">&#128465;</button>`;
+      <button type="button" class="ppc-path-open" onclick="loadSavedPath('${escapeHTML(d.id)}')">
+        <span class="ppc-path-name">${escapeHTML(d.name)}</span>
+        <span class="ppc-path-meta">${(d.waypoints||[]).length} waypoints &middot; ${escapeHTML(updated)}</span>
+      </button>
+      <button type="button" class="ppc-path-del" onclick="deleteSavedPath('${escapeHTML(d.id)}',event)" title="Delete" aria-label="Delete ${escapeHTML(d.name)}">${rtIcon('trash')}</button>`;
+    row.addEventListener('click', e => { if (e.target === row) row.querySelector('.ppc-path-open').click(); });
     container.appendChild(row);
   });
 }
@@ -298,11 +317,17 @@ function renderSavedPaths() {
 function loadSavedPath(id) {
   const d = RTStore.get().paths.find(p => p.id === id);
   if (!d) { setPathMsg('Path not found.', true); return; }
+  if (window.rtUnsaved() && !confirm('Your path has changes that are not saved yet. Load "' + d.name + '" anyway?')) return;
+  stopAnim();
   waypoints = JSON.parse(JSON.stringify(d.waypoints || []));
   segments  = JSON.parse(JSON.stringify(d.segments || []));
   if (d.pathSettings) Object.assign(pathSettings, d.pathSettings);
-  selectedIdx = -1;
-  updateCode(); renderWpList(); drawAll();
+  const speed = Number(pathSettings.speed);
+  if (speed > 0) document.getElementById('speedSlider').value = speed;
+  updatePathSettings();
+  selectedIdx = -1; selectedSegIdx = -1;
+  refreshUI();                                   // list, editor, Play button, code, field
+  markPathClean();
   setPathMsg('Path "' + d.name + '" loaded!', false);
   setTimeout(closePathModal, 1200);
 }
@@ -319,7 +344,8 @@ window.addEventListener('resize', () => { resizeCanvas(); drawAll(); });
 window.addEventListener('rt-layoutchange', () => { resizeCanvas(); drawAll(); });   // sidebar opened / closed
 
 // ── Init ──────────────────────────────────────────────────────────────────
-initSidebar();
+// (js/sidebar.js builds the navigation itself; calling initSidebar() here as well
+// used to inject it twice.)
 resizeCanvas();
 updatePathSettings();
 updateCode();

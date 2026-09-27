@@ -62,6 +62,7 @@ test('full student session makes only same-origin static GETs', async ({ page, c
   await visit('/pages/teleop.html');
   await page.click('#tab-levels');
   await page.locator('#lvl-list .lvl-card').first().click();
+  await page.click('#ready-begin');                      // the ready card: goal + controls, then the countdown
   await page.waitForFunction(() => typeof lvl !== 'undefined' && lvl.phase === 'attempt', null, { timeout: 10000 });
   await page.keyboard.down('KeyW'); await page.waitForTimeout(600); await page.keyboard.up('KeyW');
   await page.keyboard.down('KeyD'); await page.waitForTimeout(300); await page.keyboard.up('KeyD');

@@ -50,6 +50,7 @@
   --glass: rgba(222, 234, 247, 0.55);
   --glass-tool: rgba(226, 236, 248, 0.78);
   --glass-side: rgba(222, 234, 247, 0.46);
+  --glass-work: rgba(226, 236, 248, 0.84);  /* tool panels people read and type in (TeleOp, Path Planner, Strategy) */
   --glass-blur: 20px;
   --glass-border: rgba(255, 255, 255, 0.62);
   --glass-border-strong: rgba(255, 255, 255, 0.78);
@@ -138,6 +139,7 @@ html:not(.light) {
   --glass: rgba(12, 22, 42, 0.58);
   --glass-tool: rgba(12, 22, 42, 0.8);
   --glass-side: rgba(12, 22, 42, 0.46);
+  --glass-work: rgba(12, 22, 42, 0.84);
   --glass-border: rgba(255, 255, 255, 0.16);
   --glass-border-strong: rgba(255, 255, 255, 0.22);
   --glass-highlight: rgba(255, 255, 255, 0.18);
@@ -196,6 +198,10 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   transition: color 0.35s ease;
+  /* Room for the export banner (js/sidebar.js sets --rt-notice-h while it shows)
+     so it never sits on top of a page's controls. Locked-height pages size their
+     wrapper from the body's content box, so they shrink instead of scrolling. */
+  padding-bottom: var(--rt-notice-h, 0px);
 }
 
 /* Link colour rides a token rather than a `html:not(.light) a` rule: that
@@ -379,8 +385,8 @@ html.rt-sunrise #rt-atmosphere .atm-sun { transition: transform 0.8s cubic-bezie
 
 /* Opaque fallback where backdrop-filter is unavailable (design.md §15) */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  :root { --glass: rgba(226, 236, 248, 0.92); --glass-nav: rgba(226, 236, 248, 0.94); --glass-side: rgba(226, 236, 248, 0.7); }
-  html:not(.light) { --glass: rgba(12, 22, 42, 0.92); --glass-nav: rgba(12, 22, 42, 0.94); --glass-side: rgba(12, 22, 42, 0.7); }
+  :root { --glass: rgba(226, 236, 248, 0.92); --glass-nav: rgba(226, 236, 248, 0.94); --glass-side: rgba(226, 236, 248, 0.7); --glass-work: rgba(226, 236, 248, 0.95); }
+  html:not(.light) { --glass: rgba(12, 22, 42, 0.92); --glass-nav: rgba(12, 22, 42, 0.94); --glass-side: rgba(12, 22, 42, 0.7); --glass-work: rgba(12, 22, 42, 0.95); }
 }
 
 /* ── Buttons ─────────────────────────────────────────────────────────────── */

@@ -29,7 +29,7 @@
     </div>
     <div class="topbar-actions">
       <button class="topbar-btn" onclick="openStratModal('load')" aria-label="Load"><span class="rt-icon" data-rt-icon="folder"></span><span class="tb-lbl">Load</span></button>
-      <button class="topbar-btn" onclick="openStratModal('save')" aria-label="Save"><span class="rt-icon" data-rt-icon="save"></span><span class="tb-lbl">Save</span></button>
+      <button class="topbar-btn" onclick="openStratModal('save')" aria-label="Save in this tab" title="Save in this tab (Export to file from the menu keeps it after the tab closes)"><span class="rt-icon" data-rt-icon="save"></span><span class="tb-lbl">Save in tab</span></button>
       <button class="topbar-btn" onclick="stratExportPNG()" aria-label="Export PNG"><span class="rt-icon" data-rt-icon="camera"></span><span class="tb-lbl">Export PNG</span></button>
       <button class="topbar-btn" onclick="togglePresentation()" aria-label="Present"><span class="rt-icon" data-rt-icon="play"></span><span class="tb-lbl">Present</span></button>
     </div>
@@ -43,31 +43,31 @@
       <!-- Floating Toolbar -->
       <div class="strat-toolbar" id="stratToolbar">
         <!-- Drawing Tools -->
-        <button class="tool-btn active" data-tool="draw" onclick="setTool('draw')" title="Draw" aria-label="Draw"><span class="rt-icon" data-rt-icon="pencil"></span></button>
-        <button class="tool-btn" data-tool="arrow" onclick="setTool('arrow')" title="Arrow" aria-label="Arrow"><span class="rt-icon" data-rt-icon="arrowRight"></span></button>
-        <button class="tool-btn" data-tool="rect" onclick="setTool('rect')" title="Rectangle" aria-label="Rectangle"><span class="rt-icon" data-rt-icon="square"></span></button>
-        <button class="tool-btn" data-tool="circle" onclick="setTool('circle')" title="Circle" aria-label="Circle"><span class="rt-icon" data-rt-icon="circle"></span></button>
-        <button class="tool-btn" data-tool="text" onclick="setTool('text')" title="Text" aria-label="Text">T</button>
-        <button class="tool-btn" data-tool="robot" onclick="setTool('robot')" title="Robot" aria-label="Robot"><span class="rt-icon" data-rt-icon="robot"></span></button>
-        <button class="tool-btn" data-tool="waypoint" onclick="setTool('waypoint')" title="Waypoint" aria-label="Waypoint"><span class="rt-icon" data-rt-icon="disc"></span></button>
-        <button class="tool-btn" data-tool="eraser" onclick="setTool('eraser')" title="Eraser" aria-label="Eraser"><span class="rt-icon" data-rt-icon="eraser"></span></button>
+        <button class="tool-btn active" data-tool="draw" aria-pressed="true" onclick="setTool('draw')" title="Draw" aria-label="Draw"><span class="rt-icon" data-rt-icon="pencil"></span></button>
+        <button class="tool-btn" data-tool="arrow" aria-pressed="false" onclick="setTool('arrow')" title="Arrow" aria-label="Arrow"><span class="rt-icon" data-rt-icon="arrowRight"></span></button>
+        <button class="tool-btn" data-tool="rect" aria-pressed="false" onclick="setTool('rect')" title="Rectangle" aria-label="Rectangle"><span class="rt-icon" data-rt-icon="square"></span></button>
+        <button class="tool-btn" data-tool="circle" aria-pressed="false" onclick="setTool('circle')" title="Circle" aria-label="Circle"><span class="rt-icon" data-rt-icon="circle"></span></button>
+        <button class="tool-btn" data-tool="text" aria-pressed="false" onclick="setTool('text')" title="Text" aria-label="Text">T</button>
+        <button class="tool-btn" data-tool="robot" aria-pressed="false" onclick="setTool('robot')" title="Robot" aria-label="Robot"><span class="rt-icon" data-rt-icon="robot"></span></button>
+        <button class="tool-btn" data-tool="waypoint" aria-pressed="false" onclick="setTool('waypoint')" title="Waypoint" aria-label="Waypoint"><span class="rt-icon" data-rt-icon="disc"></span></button>
+        <button class="tool-btn" data-tool="eraser" aria-pressed="false" onclick="setTool('eraser')" title="Eraser" aria-label="Eraser"><span class="rt-icon" data-rt-icon="eraser"></span></button>
 
         <div class="sep"></div>
 
         <!-- Colors -->
-        <button class="color-swatch active" data-color="#ff4444" style="background:#ff4444" onclick="setColor('#ff4444')"></button>
-        <button class="color-swatch" data-color="#4488ff" style="background:#4488ff" onclick="setColor('#4488ff')"></button>
-        <button class="color-swatch" data-color="#44ff88" style="background:#44ff88" onclick="setColor('#44ff88')"></button>
-        <button class="color-swatch" data-color="#ffaa00" style="background:#ffaa00" onclick="setColor('#ffaa00')"></button>
-        <button class="color-swatch" data-color="#ff44ff" style="background:#ff44ff" onclick="setColor('#ff44ff')"></button>
-        <button class="color-swatch" data-color="#ffffff" style="background:#ffffff" onclick="setColor('#ffffff')"></button>
+        <button class="color-swatch active" data-color="#ff4444" aria-label="Red pen" title="Red" aria-pressed="true" style="background:#ff4444" onclick="setColor('#ff4444')"></button>
+        <button class="color-swatch" data-color="#4488ff" aria-label="Blue pen" title="Blue" aria-pressed="false" style="background:#4488ff" onclick="setColor('#4488ff')"></button>
+        <button class="color-swatch" data-color="#44ff88" aria-label="Green pen" title="Green" aria-pressed="false" style="background:#44ff88" onclick="setColor('#44ff88')"></button>
+        <button class="color-swatch" data-color="#ffaa00" aria-label="Orange pen" title="Orange" aria-pressed="false" style="background:#ffaa00" onclick="setColor('#ffaa00')"></button>
+        <button class="color-swatch" data-color="#ff44ff" aria-label="Pink pen" title="Pink" aria-pressed="false" style="background:#ff44ff" onclick="setColor('#ff44ff')"></button>
+        <button class="color-swatch" data-color="#ffffff" aria-label="White pen" title="White" aria-pressed="false" style="background:#ffffff" onclick="setColor('#ffffff')"></button>
 
         <div class="sep"></div>
 
         <!-- Line Widths -->
-        <button class="width-btn" data-width="2" onclick="setLineWidth(2)"><span class="width-dot" style="width:4px;height:4px"></span></button>
-        <button class="width-btn active" data-width="4" onclick="setLineWidth(4)"><span class="width-dot" style="width:7px;height:7px"></span></button>
-        <button class="width-btn" data-width="8" onclick="setLineWidth(8)"><span class="width-dot" style="width:11px;height:11px"></span></button>
+        <button class="width-btn" data-width="2" aria-label="Thin line" title="Thin line" aria-pressed="false" onclick="setLineWidth(2)"><span class="width-dot" style="width:4px;height:4px"></span></button>
+        <button class="width-btn active" data-width="4" aria-label="Medium line" title="Medium line" aria-pressed="true" onclick="setLineWidth(4)"><span class="width-dot" style="width:7px;height:7px"></span></button>
+        <button class="width-btn" data-width="8" aria-label="Thick line" title="Thick line" aria-pressed="false" onclick="setLineWidth(8)"><span class="width-dot" style="width:11px;height:11px"></span></button>
 
         <div class="sep"></div>
 
@@ -79,7 +79,7 @@
 
       <!-- Text Input Overlay -->
       <div class="text-input-overlay" id="textInputOverlay">
-        <input class="text-input-field" id="textInputField" type="text" placeholder="Type text...">
+        <input class="text-input-field" id="textInputField" type="text" placeholder="Type text..." aria-label="Text to place on the field">
       </div>
 
       <!-- Notes expand button (when panel is collapsed) -->
@@ -94,11 +94,11 @@
     <!-- Notes Panel -->
     <div class="notes-panel" id="notesPanel">
       <div class="notes-header">
-        <span class="notes-title">Strategy Notes</span>
-        <button class="notes-toggle" onclick="toggleNotes()" title="Collapse">&times;</button>
+        <span class="notes-title" id="notes-title">Strategy Notes</span>
+        <button class="notes-toggle" onclick="toggleNotes()" title="Hide notes" aria-label="Hide notes">&times;</button>
       </div>
-      <textarea id="strategyNotes" placeholder="Write your strategy notes here...&#10;&#10;Example:&#10;- Auto: Launch preloads, tip the hive&#10;- TeleOp: Cycle pollen from the garden&#10;- Endgame: Nectar in the flowers, park in the loading zone"></textarea>
-      <div class="notes-footer">Notes are saved with your strategy</div>
+      <textarea id="strategyNotes" aria-labelledby="notes-title" placeholder="Write your strategy notes here...&#10;&#10;Example:&#10;- Auto: Launch preloads, tip the hive&#10;- TeleOp: Cycle pollen from the garden&#10;- Endgame: Nectar in the flowers, park in the loading zone"></textarea>
+      <div class="notes-footer">Notes are kept when you Save in this tab</div>
     </div>
   </main>
 
@@ -106,11 +106,11 @@
   <div id="strat-modal-backdrop" onclick="if(event.target===this)closeStratModal()">
     <div id="strat-modal">
       <div class="sm-header">
-        <div class="sm-title" id="sm-title">Save Strategy</div>
-        <button class="sm-close" onclick="closeStratModal()">&#10005;</button>
+        <div class="sm-title" id="sm-title">Save in this tab</div>
+        <button class="sm-close" onclick="closeStratModal()" aria-label="Close">&#10005;</button>
       </div>
       <div class="sm-input-row" id="sm-save-row">
-        <input id="sm-name-input" class="sm-input" type="text" placeholder="Strategy name (e.g. Match 1 Plan)"
+        <input id="sm-name-input" class="sm-input" type="text" aria-label="Strategy name" placeholder="Strategy name (e.g. Match 1 Plan)"
                onkeydown="if(event.key==='Enter')saveStrategy()">
         <button class="sm-save-btn" onclick="saveStrategy()">Save</button>
       </div>

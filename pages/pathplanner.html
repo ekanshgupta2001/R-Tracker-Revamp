@@ -34,7 +34,7 @@
     <div class="field-panel" id="fieldPanel">
       <canvas id="fieldCanvas"></canvas>
       <div class="field-overlay-btns">
-        <button class="fob-btn active" id="btnGrid" onclick="toggleGrid()">Grid</button>
+        <button class="fob-btn active" id="btnGrid" onclick="toggleGrid()" aria-pressed="true">Grid</button>
         <button class="fob-btn" id="btnRobotAnim" onclick="toggleAnim()" disabled><span class="rt-icon" data-rt-icon="play"></span>Play</button>
         <button class="fob-btn" id="btnStopAnim" onclick="stopAnim()" disabled><span class="rt-icon" data-rt-icon="stop"></span>Stop</button>
       </div>
@@ -50,8 +50,8 @@
           <button class="tbtn primary" onclick="addWaypointAtCenter()">+ Add Point</button>
           <button class="tbtn" id="btnDelSel" onclick="deleteSelected()" disabled>Delete Selected</button>
           <button class="tbtn" onclick="clearAll()">Clear All</button>
-          <button class="tbtn" onclick="exportPath()">Export JSON</button>
-          <button class="tbtn" onclick="openPathModal('save')"><span class="rt-icon" data-rt-icon="save"></span>Save</button>
+          <button class="tbtn" onclick="exportPath()" title="Download just this path as a .json file (not your progress)">Download path .json</button>
+          <button class="tbtn" onclick="openPathModal('save')" title="Save in this tab (Export to file from the menu keeps it after the tab closes)"><span class="rt-icon" data-rt-icon="save"></span>Save in tab</button>
           <button class="tbtn" onclick="openPathModal('load')"><span class="rt-icon" data-rt-icon="folder"></span>Load</button>
         </div>
       </div>
@@ -79,18 +79,18 @@
       <div class="section">
         <div class="section-title">Path Settings</div>
         <div class="setting-row">
-          <div class="setting-label"><span>Animation Speed</span><span class="setting-val" id="speedVal">1.0×</span></div>
+          <div class="setting-label"><label for="speedSlider">Animation Speed</label><span class="setting-val" id="speedVal">1.0×</span></div>
           <input type="range" id="speedSlider" min="0.1" max="1.0" step="0.05" value="1.0" oninput="updatePathSettings()">
         </div>
         <div style="margin-top:8px;">
           <div class="form-label" style="margin-bottom:6px;">Robot Dimensions (inches)</div>
           <div class="dim-inputs">
             <div class="form-group">
-              <label class="form-label">Width</label>
+              <label class="form-label" for="robotW">Width</label>
               <input type="number" class="form-input" id="robotW" value="18" min="6" max="24" oninput="drawAll()">
             </div>
             <div class="form-group">
-              <label class="form-label">Length</label>
+              <label class="form-label" for="robotL">Length</label>
               <input type="number" class="form-input" id="robotL" value="18" min="6" max="24" oninput="drawAll()">
             </div>
           </div>
@@ -113,11 +113,11 @@
   <div id="pp-cloud-backdrop" onclick="if(event.target===this)closePathModal()">
     <div id="pp-cloud-modal">
       <div class="ppc-header">
-        <div class="ppc-title">Save Path</div>
-        <button class="ppc-close" onclick="closePathModal()">&#10005;</button>
+        <div class="ppc-title" id="ppc-title">Save in this tab</div>
+        <button class="ppc-close" onclick="closePathModal()" aria-label="Close">&#10005;</button>
       </div>
       <div class="ppc-input-row" id="ppc-save-row">
-        <input id="ppc-name-input" class="ppc-input" type="text" placeholder="Path name (e.g. Auto Path 1)"
+        <input id="ppc-name-input" class="ppc-input" type="text" aria-label="Path name" placeholder="Path name (e.g. Auto Path 1)"
                onkeydown="if(event.key==='Enter')savePath()">
         <button class="ppc-save-btn" onclick="savePath()">Save</button>
       </div>

@@ -213,7 +213,9 @@ R-Tracker/
   The first-run (welcome) card sits beside the greeting in `.home-intro` and stacks under it ≤ 1100 px. Gold `#e8b04b` is the action accent (`--gold`: primary buttons, active nav/tabs/tools,
   progress); burgundy `#800020` stays as the logo mark and as alpenglow in the horizon haze. Tokens live
   in `css/global.css`: surfaces `--glass` / `--glass-nav` / `--glass-tool` (three blurred levels) and
-  `--glass-inset` (the flat fill for rows and cards nested inside a blurred surface); `--glass-border`,
+  `--glass-inset` (the flat fill for rows and cards nested inside a blurred surface), `--glass-work` (the
+  more opaque sheet for tool panels people read and type in: TeleOp's panel, control bar, tabs and folded
+  column, the Path Planner control sheet, Strategy's toolbar and notes); `--glass-border`,
   `--glass-highlight`, `--glass-shadow`; text `--text` / `--text-secondary` / `--text-muted` /
   `--text-faint` (every placeholder uses `--text-faint`; all three greys must stay ≥ 4.5:1 on glass, and a test
   in `tests/responsive.spec.js` checks it), and `--text-on-sky` + `--on-sky-shadow` for anything placed directly on the sky; accent
@@ -274,12 +276,20 @@ R-Tracker/
   `structural-N/rules-M` grader; phase0: `passed && score >= 80`) or `validateImport` downgrades it
   to `in_progress` with a warning (the sidebar shows the warnings after import). `reviews[]` is
   capped at 10 but the newest passing review is never evicted.
+- Schema 5 (2026-09-26): path-planner coordinates are on Pedro's 141.5 × 141.5 in field (the field
+  image is the six tiles wall to wall); migration 5 scales older waypoints and control points by
+  141.5 / 144 so each stays on the same spot of the image.
 
 ### Path planner
 - `js/pathplanner/codegen.js` emits a Pedro Pathing 3 class: `PoseFactory.degrees()`, one `Path`
-  method per segment (`line()`/`curve()` + `.linear()`), `fullPath()` joining them; no `Follower`
-  in the class. Headings are stored and drawn in Pedro's convention (`canvas.js`, `ui.js`); a node
-  test (`tests/pathplanner-codegen.test.js`) pins the emitted text.
+  method per segment (`line()`/`curve()` + `.linear()`), `fullPath()` joining them, and an Ivy
+  `routine(Follower follower)`: `sequential(follow(follower, pathN()), …)` with each waypoint's action
+  (`instant(() -> { /* TODO … */ })`, a slot for the team's mechanism code) and wait (`waitMs`) where the
+  robot reaches it. The class never constructs a `Follower`. Headings are stored and drawn in Pedro's
+  convention (`canvas.js`, `ui.js`); a node test (`tests/pathplanner-codegen.test.js`) pins the emitted text.
+- The field is `FIELD_IN = 141.5` (`canvas.js`, Pedro's field: origin bottom-left, y up), drawn on
+  tile and half-tile lines; every clamp goes through `clampField()`. Strategy and TeleOp keep their
+  12 ft model (they export no coordinates).
 
 ### Curriculum
 - Phase 0: Java quiz (10 MC, 80% to pass, unlocks Phase 1). Phases 1–2: code lessons with MC checks.
@@ -354,7 +364,10 @@ R-Tracker/
   field takes the room. ≤ 900 px portrait everything stacks and stays stacked when folded: tabs, field,
   sticks, the control bar as one scrolling row, the handle as a tab on the sheet's top edge, then the panel as
   a sheet that scrolls (the field leaves it `SHEET_MIN` px; `resize()` reads the resolved grid rows when
-  `--stacked` is 1, else it sizes to `#field-container`'s grid cell). 12 levels across
+  `--stacked` is 1, else it sizes to `#field-container`'s grid cell). Picking a level (the list, Next,
+  Home's `#level-N`) calls `startLevel()`: the robot waits on the start behind `#ready-card` (the goal
+  and the controls for the input in use; `lvl.phase === 'ready'`, frozen, untimed) until Begin attempt
+  (Enter / Space); Retry calls `startCountdown()` and skips the card. 12 levels across
   4 tiers with star ratings, all routed in the ring around the frame (a unit test checks the clearances).
 - **Physics (`js/teleop/drive.js`) models a real 435 RPM mecanum drivetrain.** Defaults: 6.5 ft/s,
   strafe at 80% of forward, 380 °/s spin (190 °/s while driving flat out, because the wheel-power
@@ -415,6 +428,19 @@ R-Tracker/
 - Do not "improve" features outside the current phase's scope. Log ideas in `PLAN.md` under *Deferred*.
 
 ## Common gotchas
+- **Unsaved page work.** A page whose work lives only on the page until the student saves it (Strategy's
+  board, the Path Planner's path) sets `window.rtUnsaved = () => 'message' | ''`; the link handler in
+  `js/sidebar.js` confirms before leaving and `store.js`'s `beforeunload` prompts on reload / close.
+  "Save in tab" means `RTStore` (this tab); "Export to file" is the only thing that outlives the tab —
+  keep the two words distinct in any new UI.
+- **Dialogs** go through `window.rtDialog.open(backdrop, { labelledBy, focus, onClose })` / `.close()`
+  (`js/sidebar.js`): role, `aria-modal`, focus in, Tab trapped, Esc, focus returned. The backdrop's CSS
+  keeps it `visibility: hidden` while closed (delayed so the fade still plays). The closed sidebar is
+  `inert`. `tests/responsive.spec.js` checks every page at every size for duplicate ids, unnamed
+  buttons, unlabelled fields and exposed closed dialogs.
+- **The export banner** is fixed to the bottom; while it shows, `--rt-notice-h` on `<html>` is its
+  height and `body` pads by it (`css/global.css`), so locked-height pages size their wrapper from the
+  body's content box (`height: calc(100% - 48px)`, TeleOp's `#app` 100%) and never sit under it.
 - The page transition (`js/sidebar.js`) watches every `<a>` click — new navigation must use `<a href>`
   tags. It sets sessionStorage `rt-nav` (so `store.js`'s `beforeunload` does not prompt) and, only in
   browsers without View Transitions, delays navigation 160 ms; it skips modified clicks, other origins,

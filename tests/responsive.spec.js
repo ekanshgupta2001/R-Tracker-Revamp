@@ -10,7 +10,7 @@ const PAGES = [
   { name: 'TeleOp', url: '/pages/teleop.html', key: ['#c', '#mode-tabs', '#ctrl-bar'] },
   { name: 'Curriculum', url: '/pages/curriculum.html', key: ['.curr-content'] },
   { name: 'Path Planner', url: '/pages/pathplanner.html', key: ['#fieldCanvas'] },
-  { name: 'Strategy', url: '/pages/strategy.html', key: ['#strategyCanvas', '.topbar-btn[aria-label="Save"]', '.topbar-btn[aria-label="Present"]'] },
+  { name: 'Strategy', url: '/pages/strategy.html', key: ['#strategyCanvas', '.topbar-btn[aria-label="Save in this tab"]', '.topbar-btn[aria-label="Present"]'] },
   { name: 'Report', url: '/pages/report.html', key: ['.report-content'] },
   { name: 'About', url: '/pages/about.html', key: ['.content'] },
   { name: '404', url: '/404.html', key: ['.nf-card'] }
@@ -48,6 +48,38 @@ function offscreen() {
   return { doc: document.documentElement.scrollWidth - vw, out: out.slice(0, 5) };
 }
 
+// Accessibility basics on the page as it stands: one navigation, no id used twice,
+// every visible control named, and closed dialogs out of the accessibility tree.
+function a11yIssues() {
+  const out = [];
+  const seen = new Set();
+  for (const el of document.querySelectorAll('[id]')) {
+    if (seen.has(el.id)) out.push('duplicate id #' + el.id);
+    seen.add(el.id);
+  }
+  if (document.querySelectorAll('nav.sidebar').length > 1) out.push(document.querySelectorAll('nav.sidebar').length + ' sidebars');
+  const shown = el => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
+  const labelled = el => {
+    const by = el.getAttribute('aria-labelledby');
+    if (by && by.split(/\s+/).some(id => (document.getElementById(id) || {}).textContent)) return true;
+    return !!((el.getAttribute('aria-label') || '').trim() || (el.getAttribute('title') || '').trim());
+  };
+  const tag = el => el.tagName.toLowerCase() + (el.id ? '#' + el.id : el.className ? '.' + String(el.className).split(' ')[0] : '');
+  for (const b of document.querySelectorAll('button')) {
+    if (!shown(b)) continue;
+    const text = b.textContent.replace(/\s+/g, ' ').trim();
+    if (!labelled(b) && (!text || /^[×✕✖🗑]$/u.test(text))) out.push('unnamed button ' + tag(b) + ' "' + text + '"');
+  }
+  for (const f of document.querySelectorAll('input:not([type="hidden"]), select, textarea')) {
+    if (!shown(f)) continue;
+    if (!(f.labels && f.labels.length) && !labelled(f)) out.push('unlabelled ' + tag(f));
+  }
+  for (const d of document.querySelectorAll('#strat-modal-backdrop, #pp-cloud-backdrop, #analytics-backdrop')) {
+    if (!d.classList.contains('open') && getComputedStyle(d).visibility !== 'hidden') out.push('closed dialog still exposed: #' + d.id);
+  }
+  return out;
+}
+
 for (const size of SIZES) {
   test(`${size.name} (${size.w}×${size.h}): every page fits the width and shows its controls`, async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width: size.w, height: size.h }, hasTouch: size.touch });
@@ -71,6 +103,7 @@ for (const size of SIZES) {
         expect(box.x + box.width, `${p.name}: ${sel} right edge`).toBeLessThanOrEqual(size.w + 1);
         expect(box.y, `${p.name}: ${sel} top`).toBeLessThan(size.h);
       }
+      expect(await page.evaluate(a11yIssues), `${p.name}: accessibility`).toEqual([]);
       if (p.name === 'TeleOp') {
         // the whole field is on screen, and on touch screens so are both sticks
         const field = await page.locator('#c').boundingBox();
@@ -194,7 +227,8 @@ test('grey text tokens keep 4.5:1 on glass in both themes', async ({ page }) => 
       root.classList.toggle('light', theme === 'light');
       const sky = rgba(theme === 'light' ? 'var(--sky-horizon)' : 'var(--sky-mid)');
       const glass = over(rgba('var(--glass)'), sky);
-      const grounds = theme === 'light' ? [glass, over(rgba('var(--glass-inset)'), glass)] : [glass];
+      const work = over(rgba('var(--glass-work)'), sky);
+      const grounds = theme === 'light' ? [glass, over(rgba('var(--glass-inset)'), glass), work, over(rgba('var(--glass-inset)'), work)] : [glass, work];
       for (const t of ['--text-secondary', '--text-muted', '--text-faint']) {
         const fg = rgba('var(' + t + ')');
         out[theme + ' ' + t] = Math.min(...grounds.map(g => ratio(fg, g)));
@@ -290,4 +324,133 @@ test('page transition under reduced motion: links navigate at once', async ({ br
   await page.waitForURL(u => u.pathname === '/' || u.pathname.endsWith('/index.html'));
   expect(await page.locator('html.rt-leaving, html.rt-arriving').count()).toBe(0);
   await context.close();
+});
+
+// ── Fixes from the testing round ────────────────────────────────────────────
+test('TeleOp: a level waits on the ready card; Begin starts the countdown, Retry skips the card', async ({ page }) => {
+  await page.goto('/pages/teleop.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => typeof startLevel === 'function' && typeof lvl !== 'undefined');
+  await page.click('#tab-levels');
+  await page.locator('#lvl-list .lvl-card').first().click();
+  await expect(page.locator('#ready-card')).toBeVisible();
+  await expect(page.locator('#ready-goal')).toContainText('checkpoint');
+  await expect(page.locator('#ready-controls')).toContainText('W / S');
+  await expect(page.locator('#ready-begin')).toBeFocused();
+  await page.waitForTimeout(1000);
+  expect(await page.evaluate(() => [lvl.phase, lvl.elapsed])).toEqual(['ready', 0]);   // nothing is timed yet
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#ready-card')).toBeHidden();
+  await page.waitForFunction(() => lvl.phase === 'attempt', null, { timeout: 6000 });
+  await page.evaluate(() => finishLevel(false));
+  await page.locator('#fail-card button', { hasText: 'Retry' }).click();
+  expect(await page.evaluate(() => lvl.phase)).toBe('countdown');
+  await expect(page.locator('#ready-card')).toBeHidden();
+});
+
+test('TeleOp: the export banner never covers the controls', async ({ browser }) => {
+  for (const vp of [{ width: 1280, height: 720 }, { width: 844, height: 390 }]) {
+    const context = await browser.newContext({ viewport: vp });
+    const page = await context.newPage();
+    await page.goto('/', { waitUntil: 'load' });
+    await seedState(page, makeYearState());
+    await page.goto('/pages/teleop.html', { waitUntil: 'load' });
+    await page.waitForFunction(() => typeof cvsSize === 'number' && window.RTStore);
+    await page.evaluate(() => RTStore.update(s => { s.meta.dirtySinceExport = true; s.meta.exportReminderDismissed = false; }));
+    const banner = page.locator('#rt-dirty-banner');
+    await expect(banner).toBeVisible();
+    await page.waitForTimeout(300);
+    for (const folded of [false, true]) {
+      if (folded) { await page.click('#panel-toggle'); await page.waitForTimeout(300); }
+      const b = await banner.boundingBox();
+      for (const sel of ['#c', '#ctrl-bar', '#mode-tabs', '#panel-toggle']) {
+        const r = await page.locator(sel).boundingBox();
+        const overlap = !(r.x >= b.x + b.width || r.x + r.width <= b.x || r.y >= b.y + b.height || r.y + r.height <= b.y);
+        expect(overlap, `${vp.width}×${vp.height}${folded ? ' folded' : ''}: banner covers ${sel}`).toBe(false);
+      }
+    }
+    await context.close();
+  }
+});
+
+test('Path Planner: a saved path loads with Play enabled, on the 141.5 in field', async ({ page }) => {
+  await page.goto('/pages/pathplanner.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => typeof addWaypoint === 'function' && window.rtDialog);
+  expect(await page.evaluate(() => FIELD_IN)).toBe(141.5);
+  await page.evaluate(() => { addWaypoint(20, 20); addWaypoint(60, 40); });
+  await page.getByRole('button', { name: 'Save in tab' }).click();
+  await expect(page.locator('#pp-cloud-modal')).toHaveAttribute('role', 'dialog');
+  await expect(page.locator('#ppc-name-input')).toBeFocused();
+  await page.fill('#ppc-name-input', 'Two points');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#pp-cloud-backdrop')).not.toHaveClass(/open/, { timeout: 3000 });
+  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/pages/pathplanner.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => typeof loadSavedPath === 'function' && window.rtDialog);
+  await expect(page.locator('#btnRobotAnim')).toBeDisabled();
+  await page.getByRole('button', { name: 'Load', exact: true }).click();
+  await page.locator('.ppc-path-open', { hasText: 'Two points' }).click();
+  await expect(page.locator('#btnRobotAnim')).toBeEnabled();
+  expect(await page.evaluate(() => waypoints.length)).toBe(2);
+  expect(await page.locator('#codeBlock').textContent()).toContain('public Command routine(Follower follower)');
+});
+
+test('Strategy: leaving an unsaved board asks first; a saved board leaves quietly', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/pages/strategy.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => typeof window.rtUnsaved === 'function' && window.rtDialog);
+  // colours, widths and tools say what they are and which is picked
+  for (const name of ['Red pen', 'Blue pen', 'Thin line', 'Thick line']) await expect(page.getByRole('button', { name })).toHaveAttribute('aria-pressed', /true|false/);
+  await page.getByRole('button', { name: 'Blue pen' }).click();
+  await expect(page.getByRole('button', { name: 'Blue pen' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Red pen' })).toHaveAttribute('aria-pressed', 'false');
+  // draw a stroke and write a note
+  const box = await page.locator('#strategyCanvas').boundingBox();
+  await page.mouse.move(box.x + 40, box.y + 40);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 140, box.y + 120, { steps: 6 });
+  await page.mouse.up();
+  await page.fill('#strategyNotes', 'Cycle the garden');
+  expect(await page.evaluate(() => window.rtUnsaved())).not.toBe('');
+  // leaving through a link asks; dismissing it stays
+  const asked = [];
+  page.once('dialog', d => { asked.push(d.message()); d.dismiss(); });
+  await page.locator('.home-btn').click();
+  await page.waitForTimeout(400);
+  expect(asked.length).toBe(1);
+  expect(asked[0]).toMatch(/not saved/);
+  expect(page.url()).toContain('strategy.html');
+  // save in the tab: the dialog is labelled, focus moves in, Esc closes it and returns focus
+  const saveBtn = page.locator('.topbar-btn[aria-label="Save in this tab"]');
+  await saveBtn.click();
+  await expect(page.locator('#strat-modal')).toHaveAttribute('role', 'dialog');
+  await expect(page.locator('#sm-name-input')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#strat-modal-backdrop')).not.toHaveClass(/open/);
+  await expect(saveBtn).toBeFocused();
+  await saveBtn.click();
+  await page.fill('#sm-name-input', 'Match 1');
+  await page.keyboard.press('Enter');
+  expect(await page.evaluate(() => window.rtUnsaved())).toBe('');
+  let prompted = false;
+  page.once('dialog', d => { prompted = true; d.accept(); });
+  await page.locator('.home-btn').click();
+  await page.waitForURL(/index\.html$|\/$/);
+  expect(prompted).toBe(false);
+});
+
+test('closed dialogs are out of the tab order; the TeleOp report traps focus and Esc returns it', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/pages/teleop.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => typeof openDriverReport === 'function' && window.rtDialog);
+  const reportBtn = page.locator('#ctrl-bar button', { hasText: 'Report' });
+  await reportBtn.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#analytics-modal')).toHaveAttribute('role', 'dialog');
+  expect(await page.evaluate(() => document.getElementById('analytics-modal').contains(document.activeElement))).toBe(true);
+  for (let i = 0; i < 12; i++) await page.keyboard.press('Tab');
+  expect(await page.evaluate(() => document.getElementById('analytics-modal').contains(document.activeElement))).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#analytics-backdrop')).not.toHaveClass(/open/);
+  await expect(reportBtn).toBeFocused();
+  expect(await page.evaluate(() => appMode)).toBe('freedrive');   // Esc went to the dialog, not the page
 });
