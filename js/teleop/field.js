@@ -9,43 +9,39 @@ fieldImg.src = '../../assets/biobuzz.webp';
 const cvs = document.getElementById('c');
 const ctx = cvs.getContext('2d');
 
-// The field fills #field-container minus the chrome stacked above and below it
-// (mode tabs, control bar, touch sticks, mini stats) — measured, so the CSS can
-// change their height without this constant drifting. Wide screens lay the page
-// out in a row and #field-container's height comes from the flex layout; phones
-// stack it (css/teleop.css ≤ 900 px), and there the field shares #app's height
-// with the panel sheet below it, which keeps at least SHEET_MIN px.
+// The field fills #field-container. #app is a grid (css/teleop.css). Side by
+// side, the field's cell is a 1fr row and column between the tabs, the control
+// bar, the sticks and the panel (or the control column when the panel is
+// folded), so the cell is the space. Stacked (phones and tablets in portrait,
+// --stacked: 1) the field row gets the height the other rows leave, keeping
+// SHEET_MIN px for the panel sheet unless the panel is folded — read from the
+// resolved grid tracks, so the CSS can change the rows' heights without this
+// drifting.
 //
 // cvsSize is the field's size in CSS pixels; every draw call works in it. The
 // backing store is cvsSize × devicePixelRatio (≤ 2) so the field stays sharp on
 // phones and retina screens, and the context carries the matching transform.
 const SHEET_MIN = 170;
+const FIELD_ROW = 1, SHEET_ROW = 5;           // grid rows in the stacked layout (teleop.css)
 let cvsSize = 300;
 function resize() {
   const fc = document.getElementById('field-container');
-  const wrap = document.getElementById('field-wrap');
   const app = document.getElementById('app');
-  let avW = window.innerWidth - 320, avH = window.innerHeight - 170;
-  if (fc && wrap && app) {
-    const gap = parseFloat(getComputedStyle(fc).rowGap) || 10;
-    let chrome = 0, n = 0;
-    for (const el of fc.children) {
-      if (el === wrap || !el.offsetHeight || getComputedStyle(el).position === 'absolute') continue;
-      chrome += el.offsetHeight; n++;
-    }
-    avW = fc.clientWidth - 2;                 // #field-wrap border
-    const pad = document.getElementById('touch-pad');
-    if (pad && pad.offsetWidth && getComputedStyle(pad).position === 'absolute') {
-      let side = 0;                           // floating sticks: keep them beside the field
-      for (const st of pad.children) side = Math.max(side, st.offsetWidth);
-      avW -= 2 * (side + 8);
-    }
+  let avW = window.innerWidth - 480, avH = window.innerHeight - 24;
+  if (fc && app) {
     const acs = getComputedStyle(app);
-    if (acs.flexDirection === 'column') {
-      const inner = app.clientHeight - parseFloat(acs.paddingTop) - parseFloat(acs.paddingBottom) - (parseFloat(acs.rowGap) || 0);
-      avH = inner - SHEET_MIN - chrome - gap * n - 2;
+    if (acs.getPropertyValue('--stacked').trim() === '1') {
+      const rows = acs.gridTemplateRows.split(' ').map(parseFloat);
+      const gap = parseFloat(acs.rowGap) || 0;
+      const sheet = app.classList.contains('panel-collapsed') ? 0 : SHEET_MIN;
+      let used = sheet;
+      rows.forEach((h, k) => { if (k !== FIELD_ROW && k !== SHEET_ROW) used += h || 0; });
+      const inner = app.clientHeight - parseFloat(acs.paddingTop) - parseFloat(acs.paddingBottom);
+      avH = inner - used - gap * (rows.length - 1) - 2;
+      avW = fc.clientWidth - 2;
     } else {
-      avH = fc.clientHeight - chrome - gap * n - 2;
+      avW = fc.clientWidth - 2;               // #field-wrap border
+      avH = fc.clientHeight - 2;
     }
   }
   cvsSize = Math.max(160, Math.floor(Math.min(avW, avH)));

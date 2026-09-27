@@ -66,6 +66,27 @@ function relayout() {
   resize();
   if (typeof resize3DView === 'function') resize3DView();
 }
+// The Free Drive / Levels panel folds away behind the handle on its edge
+// (#panel-toggle, P) so the field can take its room. Not remembered: every visit opens with the panel showing.
+function togglePanel(show) {
+  const app = document.getElementById('app');
+  const btn = document.getElementById('panel-toggle');
+  const open = typeof show === 'boolean' ? show : app.classList.contains('panel-collapsed');
+  if (open !== app.classList.contains('panel-collapsed')) return;
+  app.classList.toggle('panel-collapsed', !open);
+  app.classList.toggle('panel-opening', open);          // css/teleop.css panelIn
+  if (open) setTimeout(() => app.classList.remove('panel-opening'), 200);
+  if (btn) {
+    const lbl = (open ? 'Hide' : 'Show') + ' panel (P)';
+    btn.setAttribute('aria-expanded', String(open));
+    btn.setAttribute('aria-label', lbl);
+    btn.title = lbl;
+    const txt = btn.querySelector('.ph-lbl');
+    if (txt) txt.textContent = (open ? 'Hide' : 'Show') + ' panel';
+  }
+  relayout();
+}
+
 window.addEventListener('resize', relayout);
 window.addEventListener('rt-layoutchange', relayout);   // sidebar opened / closed
 resize();

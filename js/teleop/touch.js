@@ -17,7 +17,7 @@ const touchInp = { lx: 0, ly: 0, rx: 0, left: false, right: false };
   function showSticks() {
     if (root.classList.contains('rt-touch')) return;
     root.classList.add('rt-touch');
-    resize();                                 // the stick row takes room from the field (field.js)
+    resize();                                 // the sticks take room from the field (field.js)
   }
   if (window.matchMedia('(pointer: coarse)').matches) root.classList.add('rt-touch');
   window.addEventListener('touchstart', showSticks, { passive: true, once: true });

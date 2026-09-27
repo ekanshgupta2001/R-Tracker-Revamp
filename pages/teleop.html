@@ -26,10 +26,6 @@
 <div id="rt-atmosphere" aria-hidden="true" data-drift="off"><i class="atm atm-day"></i><i class="atm atm-night"></i><i class="atm atm-stars-a"></i><i class="atm atm-stars-b"></i><i class="atm atm-dusk"></i><i class="atm atm-sun"></i><i class="atm atm-moon"></i><i class="atm atm-land-day"></i><i class="atm atm-land-night"></i><i class="atm atm-mist"></i><i class="atm atm-vignette"></i></div>
   <main id="app">
     <div id="field-container">
-      <div id="mode-tabs">
-        <button class="mode-tab active" id="tab-freedrive" onclick="switchMode('freedrive')">Free Drive</button>
-        <button class="mode-tab" id="tab-levels" onclick="switchMode('levels')">Levels</button>
-      </div>
       <div id="field-wrap">
         <canvas id="c"></canvas>
         <div id="countdown-overlay">
@@ -69,39 +65,48 @@
           </div>
         </div>
       </div>
-      <div id="touch-pad" aria-hidden="true">
-        <div class="stick" id="stick-l"><span class="stick-knob"></span><span class="stick-lbl">Drive</span></div>
-        <div class="stick stick-x" id="stick-r"><span class="stick-knob"></span><span class="stick-lbl">Turn</span></div>
-      </div>
-      <div id="ctrl-bar">
-        <button class="btn active" id="btn-mec" onclick="setDrive('mecanum')">Mecanum</button>
-        <button class="btn" id="btn-tank" onclick="setDrive('tank')">Tank</button>
-        <span class="ctrl-sep" aria-hidden="true"></span>
-        <button class="btn active" id="btn-fc" onclick="setMode('field')">Field-Centric</button>
-        <button class="btn" id="btn-rc" onclick="setMode('robot')">Robot-Centric</button>
-        <span class="ctrl-sep" aria-hidden="true"></span>
-        <button class="btn" onclick="resetRobot()">Reset<span class="kbd-hint"> [R]</span></button>
-        <span class="ctrl-sep" aria-hidden="true"></span>
-        <button class="btn" onclick="openDriverReport()"><span class="rt-icon" data-rt-icon="chart"></span>Report</button>
-        <span class="ctrl-sep" aria-hidden="true"></span>
-        <div class="view-toggle">
-          <button class="view-btn active" data-mode="2d" onclick="setViewMode('2d')">2D</button>
-          <button class="view-btn" data-mode="3d" onclick="setViewMode('3d')">3D</button>
-        </div>
-        <div id="gpstatus" class="gpoff">No Gamepad</div>
-      </div>
-      <div id="mini-stats">
-        <span class="ms-item"><span class="ms-lbl">SPD</span><span class="ms-val" id="ms-spd">0.00</span></span>
-        <span class="ms-sep">·</span>
-        <span class="ms-item"><span class="ms-lbl">SESSION</span><span class="ms-val" id="ms-sess">0:00</span></span>
-        <span class="ms-sep">·</span>
-        <span class="ms-item"><span class="ms-lbl">SMOOTH</span><span class="ms-val" id="ms-smooth">-</span></span>
-        <span class="ms-sep">·</span>
-        <span class="ms-item"><span class="ms-lbl">RATING</span><span class="ms-val" id="ms-rating">-</span></span>
-        <span class="ms-sep">·</span>
-        <span class="ms-hint">[H] hide</span>
-      </div>
     </div>
+    <aside id="ctrl-col">
+      <div id="ctrl-scroll">
+        <div id="mode-tabs">
+          <button class="mode-tab active" id="tab-freedrive" onclick="switchMode('freedrive')">Free Drive</button>
+          <button class="mode-tab" id="tab-levels" onclick="switchMode('levels')">Levels</button>
+        </div>
+        <div id="ctrl-bar">
+          <button class="btn active" id="btn-mec" onclick="setDrive('mecanum')">Mecanum</button>
+          <button class="btn" id="btn-tank" onclick="setDrive('tank')">Tank</button>
+          <span class="ctrl-sep" aria-hidden="true"></span>
+          <button class="btn active" id="btn-fc" onclick="setMode('field')">Field-Centric</button>
+          <button class="btn" id="btn-rc" onclick="setMode('robot')">Robot-Centric</button>
+          <span class="ctrl-sep" aria-hidden="true"></span>
+          <button class="btn" onclick="resetRobot()">Reset<span class="kbd-hint"> [R]</span></button>
+          <span class="ctrl-sep" aria-hidden="true"></span>
+          <button class="btn" onclick="openDriverReport()"><span class="rt-icon" data-rt-icon="chart"></span>Report</button>
+          <span class="ctrl-sep" aria-hidden="true"></span>
+          <div class="view-toggle">
+            <button class="view-btn active" data-mode="2d" onclick="setViewMode('2d')">2D</button>
+            <button class="view-btn" data-mode="3d" onclick="setViewMode('3d')">3D</button>
+          </div>
+          <div id="gpstatus" class="gpoff">No Gamepad</div>
+        </div>
+        <div id="mini-stats">
+          <span class="ms-item"><span class="ms-lbl">SPD</span><span class="ms-val" id="ms-spd">0.00</span></span>
+          <span class="ms-sep">·</span>
+          <span class="ms-item"><span class="ms-lbl">SESSION</span><span class="ms-val" id="ms-sess">0:00</span></span>
+          <span class="ms-sep">·</span>
+          <span class="ms-item"><span class="ms-lbl">SMOOTH</span><span class="ms-val" id="ms-smooth">-</span></span>
+          <span class="ms-sep">·</span>
+          <span class="ms-item"><span class="ms-lbl">RATING</span><span class="ms-val" id="ms-rating">-</span></span>
+          <span class="ms-sep">·</span>
+          <span class="ms-hint">[H] hide</span>
+        </div>
+      </div>
+      <div id="stick-row">
+        <div class="stick" id="stick-l" aria-hidden="true"><span class="stick-knob"></span><span class="stick-lbl">Drive</span></div>
+        <div class="stick stick-x" id="stick-r" aria-hidden="true"><span class="stick-knob"></span><span class="stick-lbl">Turn</span></div>
+      </div>
+    </aside>
+    <button id="panel-toggle" class="panel-handle" onclick="togglePanel()" aria-controls="sidebar-teleop levels-sidebar" aria-expanded="true" aria-label="Hide panel (P)" title="Hide panel (P)"><span class="rt-icon" data-rt-icon="chevronRight"></span><span class="ph-lbl">Hide panel</span></button>
     <div id="sidebar-teleop">
       <div class="panel">
         <div class="ptitle">Match Timer</div>
@@ -203,6 +208,7 @@
           <div><b>F</b> — Toggle drive mode</div>
           <div><b>T</b> — Toggle drivetrain</div>
           <div><b>Space</b> — Start / pause timer</div>
+          <div><b>P</b> — Hide / show this panel</div>
         </div>
       </div>
     </div>

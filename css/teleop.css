@@ -1,10 +1,13 @@
 /* ── R-Tracker TeleOp Practice — Summit Atmosphere ────────────────────────
-   Layout is unchanged from v1: field in the middle, telemetry column on the
-   right, levels column when in Levels mode, analytics modal. Surfaces, colour
+   The field in the middle with the mode tabs over it and the control bar
+   under it, the Free Drive / Levels panel on the right behind a handle joined
+   to its edge. Folding the panel turns the controls into a column on the
+   right (#ctrl-col) and gives the field the room. Phones and tablets in
+   portrait stack everything instead (see the end). Surfaces, colour
    and type ride the tokens in global.css (both themes from the same rules).
 
-   Blur budget: the mode tabs, the control bar, the two side columns and the
-   modal. Panels, level cards and stat tiles inside them are flat fills.
+   Blur budget: the mode tabs, the control bar, the panel sheets, the panel
+   handle and the modal (folded: the control column instead of tabs and bar). Panels, level cards and stat tiles inside them are flat fills.
    NOTHING between <body> and the canvases gets `backdrop-filter` or
    `overflow: hidden`: js/teleop/view3d.js rewrites `overflow` on #field-wrap's
    ancestors when the 3D view opens, and a blur on a WebGL ancestor is costly. */
@@ -28,11 +31,10 @@ body {
 #field-container {
   flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
   min-width: 0;
+  min-height: 0;
 }
 
 canvas {
@@ -318,6 +320,44 @@ input[type=range] {
 
 .mode-tab.active { background: var(--gold-soft); border-color: var(--gold); color: var(--text); }
 .mode-tab:hover:not(.active) { background: var(--glass-inset-hover); color: var(--text); }
+/* ── Panel handle and folding (#panel-toggle, P — js/teleop/ui.js togglePanel)
+   The handle is joined to the inner edge of whatever is on the right: the
+   panel, or the control column once the panel is folded. Folding takes the
+   sheets out of the layout (field.js stops keeping SHEET_MIN for the stacked
+   sheet). !important because switchMode() (levels.js)
+   writes an inline display on the two sheets. The field resizes once, never
+   per frame; the sheet only fades back in when it returns. */
+.panel-handle {
+  align-self: center;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 20px; height: 76px; padding: 0;
+  margin-right: -1px;                         /* sits on the sheet's border */
+  position: relative; z-index: 1;
+  background: var(--glass-nav);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid var(--glass-border);
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+  color: var(--text-secondary);
+  font-family: inherit; font-size: 11.5px; font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.panel-handle:hover { background: var(--glass-tool); color: var(--text); }
+.panel-handle:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.panel-handle .rt-icon { font-size: 14px; transition: transform 0.2s; }
+.panel-handle .ph-lbl { display: none; }
+#app.panel-collapsed .panel-handle .rt-icon { transform: rotate(180deg); }
+#app.panel-collapsed #sidebar-teleop,
+#app.panel-collapsed #levels-sidebar { display: none !important; }
+@media (pointer: coarse) { .panel-handle { width: 26px; height: 88px; } }
+@media (prefers-reduced-motion: no-preference) {
+  #app.panel-opening #sidebar-teleop,
+  #app.panel-opening #levels-sidebar { animation: panelIn 0.16s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+}
+@keyframes panelIn { from { opacity: 0; transform: translateX(12px); } }
 
 /* ── Field Wrap (glass-edged frame; no overflow clipping, see header) ────── */
 #field-wrap {
@@ -892,25 +932,14 @@ input[type=range] {
 
 /* ── Touch thumbsticks (js/teleop/touch.js) ──────────────────────────────
    Shown on touch devices (html.rt-touch), hidden while a gamepad is connected.
-   Flat fills, no blur: they sit over or beside the field every frame. Stacked
-   (portrait) they are a row under the field; everywhere else they float at
-   the two sides of the field column, and field.js narrows the field so they
-   never cover it. */
-#touch-pad { display: none; }
-html.rt-touch:not(.rt-gamepad) #touch-pad {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  position: absolute;
-  left: 0; right: 0; top: 50%;
-  transform: translateY(-50%);
-  padding: 0 4px;
-  pointer-events: none;
-  z-index: 5;
-}
+   Flat fills, no blur. Side by side they flank the field (panel open) or sit
+   at the foot of the control column (folded); stacked, they share a row under
+   the field. */
+.stick { display: none; }
+html.rt-touch:not(.rt-gamepad) .stick { display: flex; }
 .stick {
   position: relative;
+  flex-shrink: 0;
   width: 112px; height: 112px;
   border-radius: 50%;
   background: var(--glass-tool);
@@ -919,8 +948,7 @@ html.rt-touch:not(.rt-gamepad) #touch-pad {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
-  pointer-events: auto;
-  display: flex; align-items: center; justify-content: center;
+  align-items: center; justify-content: center;
 }
 .stick.stick-x { width: 140px; height: 64px; border-radius: 32px; }
 .stick-knob {
@@ -939,41 +967,142 @@ html.rt-touch:not(.rt-gamepad) #touch-pad {
   color: var(--text-on-sky); text-shadow: var(--on-sky-shadow);
   pointer-events: none;
 }
-#field-container { position: relative; }
 
 /* Keyboard shortcuts mean nothing without a keyboard */
 @media (hover: none) {
   .kbd-hint, .ms-hint, .kbd-panel { display: none; }
 }
 
-/* ── Stacked layout (tablets in portrait, phones) ─────────────────────────
-   The field on top, the touch sticks (when shown) and the control bar under
-   it, then the Free Drive / Levels column becomes a sheet that fills the rest
-   of the height and scrolls on its own (field.js leaves it SHEET_MIN px).
-   The sheet is a sibling of the field, never an ancestor, so its blur is fine. */
-@media (max-width: 900px) and (orientation: portrait) {
+/* ── Side by side (everything except phones and tablets in portrait) ──────
+   Panel open: tabs over the field, the control bar and mini stats under it,
+   the touch sticks either side of it, the handle and the panel on the right.
+   Panel folded: the tabs, controls, mini stats and sticks become one glass
+   column on the right, joined to the handle, and the field takes the rest.
+   #app is a grid; the control column's wrappers dissolve into it
+   (display: contents) while the panel is open. field.js sizes the field to
+   #field-container's cell. */
+@media (min-width: 901px), (orientation: landscape) {
   #app {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "tabs tabs  tabs handle sheet"
+      "stl  field str  handle sheet"
+      "ctrl ctrl  ctrl handle sheet"
+      "mini mini  mini handle sheet";
+    column-gap: 0;
+    row-gap: 10px;
+  }
+  #ctrl-col, #ctrl-scroll, #stick-row { display: contents; }
+  #mode-tabs { grid-area: tabs; justify-self: center; }
+  #field-container { grid-area: field; }
+  #ctrl-bar { grid-area: ctrl; justify-self: center; max-width: 100%; }
+  #mini-stats { grid-area: mini; justify-self: center; }
+  #stick-l { grid-area: stl; align-self: center; margin: 0 8px 18px 0; }
+  #stick-r { grid-area: str; align-self: center; margin: 0 0 18px 8px; }
+  .panel-handle { grid-area: handle; margin-left: 12px; }
+  #sidebar-teleop, #levels-sidebar { grid-area: sheet; min-height: 0; }
+
+  #app.panel-collapsed {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "field handle rail";
+    padding-left: 64px;                       /* the hamburger's corner (sidebar.css) */
+  }
+  #app.panel-collapsed #ctrl-col {
+    grid-area: rail;
+    display: flex;
     flex-direction: column;
     gap: 10px;
+    width: 148px;
+    min-height: 0;
+    padding: 10px 8px;
+    background: var(--glass-nav);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow-sm);
+  }
+  #app.panel-collapsed #ctrl-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  #app.panel-collapsed #ctrl-scroll::-webkit-scrollbar { display: none; }
+  #app.panel-collapsed #mode-tabs,
+  #app.panel-collapsed #ctrl-bar {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    justify-content: flex-start;
+    max-width: none;
+    overflow: visible;
+    padding: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  #app.panel-collapsed #mode-tabs { gap: 4px; }
+  #app.panel-collapsed .mode-tab { padding: 7px 8px; }
+  #app.panel-collapsed #ctrl-bar { gap: 6px; }
+  #app.panel-collapsed .ctrl-sep { width: auto; height: 1px; margin: 2px 4px; }
+  #app.panel-collapsed .view-toggle .view-btn { flex: 1; }
+  #app.panel-collapsed #gpstatus { justify-content: center; }
+  #app.panel-collapsed #mini-stats {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 3px;
+    margin-top: auto;
+    padding: 8px;
+    background: var(--glass-inset);
+  }
+  #app.panel-collapsed .ms-item { justify-content: space-between; }
+  #app.panel-collapsed .ms-sep { display: none; }
+  #app.panel-collapsed .ms-hint { text-align: center; }
+  #app.panel-collapsed #stick-row { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  #app.panel-collapsed #stick-l,
+  #app.panel-collapsed #stick-r { margin: 0 0 18px; }
+  @media (prefers-reduced-motion: no-preference) {
+    #app.panel-collapsed #ctrl-col { animation: panelIn 0.16s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  }
+}
+
+/* ── Stacked layout (tablets in portrait, phones) ─────────────────────────
+   One grid: mode tabs, field, the two sticks (when shown) in a row, the
+   control bar as one scrolling row, the panel handle as a tab on the sheet's
+   top edge, then the Free Drive / Levels sheet that fills the rest and scrolls
+   on its own (field.js leaves it SHEET_MIN px and reads the rows it resolves;
+   --stacked tells it which layout this is). Folding the panel keeps the
+   controls where they are. The sheet is a sibling of the field, never an
+   ancestor, so its blur is fine. */
+@media (max-width: 900px) and (orientation: portrait) {
+  #app {
+    --stacked: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto auto minmax(0, 1fr);
+    grid-template-areas: "tabs tabs" "field field" "stl str" "ctrl ctrl" "handle handle" "sheet sheet";
+    column-gap: 10px;
+    row-gap: 8px;
     padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
   }
-  #field-container { flex: none; justify-content: flex-start; gap: 8px; }
-  #sidebar-teleop, #levels-sidebar {
-    width: auto;
-    flex: 1 1 0;
-    min-height: 0;
-    padding: 8px;
-  }
-  /* the sticks become a row between the field and the control bar */
-  html.rt-touch:not(.rt-gamepad) #touch-pad {
-    position: static;
-    transform: none;
-    padding: 0 4px 16px;
-  }
+  #ctrl-col, #ctrl-scroll, #stick-row { display: contents; }
+  #mode-tabs { grid-area: tabs; justify-self: center; }
+  #field-container { grid-area: field; }
+  #stick-l { grid-area: stl; justify-self: start; margin: 0 4px 18px; }
+  #stick-r { grid-area: str; justify-self: end; align-self: center; margin: 0 4px 18px; }
   #ctrl-bar {
+    grid-area: ctrl;
     flex-wrap: nowrap;
     justify-content: flex-start;
-    max-width: 100%;
     overflow-x: auto;
     scrollbar-width: none;
     padding: 6px 8px;
@@ -981,28 +1110,62 @@ html.rt-touch:not(.rt-gamepad) #touch-pad {
   #ctrl-bar::-webkit-scrollbar { display: none; }
   #ctrl-bar > * { flex-shrink: 0; }
   #mini-stats { display: none; }
-  #mode-tabs { align-self: center; }
+  #sidebar-teleop, #levels-sidebar {
+    grid-area: sheet;
+    width: auto;
+    min-height: 0;
+    padding: 8px;
+  }
+  .panel-handle {
+    grid-area: handle;
+    justify-self: center;
+    width: auto; height: auto;
+    padding: 5px 16px;
+    margin: 0 0 -9px;
+    border-right: 1px solid var(--glass-border);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+  }
+  .panel-handle .ph-lbl { display: inline; }
+  .panel-handle .rt-icon { transform: rotate(90deg); }
+  #app.panel-collapsed { grid-template-rows: auto auto auto auto auto; align-content: center; }
+  #app.panel-collapsed .panel-handle { margin: 0; border-bottom: 1px solid var(--glass-border); border-radius: 10px; }
+  #app.panel-collapsed .panel-handle .rt-icon { transform: rotate(-90deg); }
+  @media (prefers-reduced-motion: no-preference) {
+    #app.panel-opening #sidebar-teleop,
+    #app.panel-opening #levels-sidebar { animation-name: panelUp; }
+  }
 }
+@keyframes panelUp { from { opacity: 0; transform: translateY(12px); } }
 
-/* Landscape phones: the field keeps the full height on the left, the column
-   narrows, the mini stats give their row to the field. */
+/* Landscape phones: the panel narrows, the control bar is one scrolling row,
+   the mini stats give way; folded, the column goes two buttons a row and the
+   sticks sit side by side at its foot so it fits the short height. */
 @media (max-height: 500px) and (orientation: landscape) {
-  #app { gap: 8px; padding: 8px 8px 8px calc(8px + env(safe-area-inset-left)); }
-  #field-container { gap: 6px; }
+  #app { row-gap: 6px; padding: 8px 8px 8px calc(8px + env(safe-area-inset-left)); }
+  #app.panel-collapsed { padding-left: calc(60px + env(safe-area-inset-left)); }
   #sidebar-teleop, #levels-sidebar { width: 240px; padding: 8px; }
   #mini-stats { display: none; }
   #ctrl-bar {
     flex-wrap: nowrap;
     justify-content: flex-start;
-    max-width: 100%;
     overflow-x: auto;
     scrollbar-width: none;
     padding: 4px 6px;
   }
   #ctrl-bar::-webkit-scrollbar { display: none; }
   #ctrl-bar > * { flex-shrink: 0; }
-  .stick { width: 96px; height: 96px; }
-  .stick.stick-x { width: 120px; height: 56px; }
+  #app.panel-collapsed #ctrl-col { width: 224px; padding: 6px; gap: 6px; }
+  #app.panel-collapsed #ctrl-scroll { gap: 8px; }
+  #app.panel-collapsed #mode-tabs { flex-direction: row; }
+  #app.panel-collapsed .mode-tab { flex: 1; padding: 6px 4px; }
+  #app.panel-collapsed #ctrl-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  #app.panel-collapsed #ctrl-bar .btn { padding: 5px 6px; }
+  #app.panel-collapsed .ctrl-sep, #app.panel-collapsed #mini-stats { display: none; }
+  #app.panel-collapsed #stick-row { flex-direction: row; align-items: center; justify-content: center; gap: 8px; }
+  .stick { width: 88px; height: 88px; }
+  .stick.stick-x { width: 116px; height: 52px; }
+  .stick-knob { width: 40px; height: 40px; }
 }
 @media (max-width: 400px) and (orientation: portrait) {
   .stick { width: 96px; height: 96px; }

@@ -215,7 +215,8 @@ R-Tracker/
   in `css/global.css`: surfaces `--glass` / `--glass-nav` / `--glass-tool` (three blurred levels) and
   `--glass-inset` (the flat fill for rows and cards nested inside a blurred surface); `--glass-border`,
   `--glass-highlight`, `--glass-shadow`; text `--text` / `--text-secondary` / `--text-muted` /
-  `--text-faint`, and `--text-on-sky` + `--on-sky-shadow` for anything placed directly on the sky; accent
+  `--text-faint` (every placeholder uses `--text-faint`; all three greys must stay ≥ 4.5:1 on glass, and a test
+  in `tests/responsive.spec.js` checks it), and `--text-on-sky` + `--on-sky-shadow` for anything placed directly on the sky; accent
   text `--gold-text` / `--burgundy-text` (darkened on light glass); status `--good` / `--warn` / `--bad` /
   `--info` with `-soft` fills; `--medal-*`; `--chart-*`; `--code-bg` / `--code-text` (code surfaces are
   navy in both themes). Primitives: `.rt-glass*`, `.rt-sheet`, `.rt-button-primary|secondary|ghost`,
@@ -233,7 +234,7 @@ R-Tracker/
   Curriculum put their side column under the main view) and **600 px** (phone details: icon-only
   topbar actions, no topbar "← Home" — the hamburger is the way home, tighter padding, tables scroll
   sideways); landscape phones (`max-height: 500px` and landscape) keep TeleOp, Path Planner and Strategy
-  side by side. Locked-height pages use `100dvh` (with a `100vh` line before it) so mobile toolbars never
+  side by side (TeleOp's folded control column goes two buttons a row there). Locked-height pages use `100dvh` (with a `100vh` line before it) so mobile toolbars never
   hide the bottom. Canvases size themselves in CSS pixels and draw at `devicePixelRatio` (≤ 2): TeleOp
   `cvsSize` (`field.js`), Path Planner `cvsSz` (`canvas.js`), Strategy `W`, charts `prepare()`. The
   sidebar fires `rt-layoutchange` on `window` after it opens or closes (the window did not resize);
@@ -345,9 +346,15 @@ R-Tracker/
   on-screen sticks (`js/teleop/touch.js`: left = drive/strafe, right = turn; shown by `html.rt-touch`,
   hidden while a gamepad is connected) that write `touchInp`, which `updateBot()` reads between the
   gamepad and the keyboard through the same deadzone and latency buffer — so touch runs are rated like
-  any other. ≤ 900 px portrait the page stacks: field, sticks, control bar (one scrolling row), then the
-  Free Drive / Levels column as a sheet that scrolls (the field leaves it `SHEET_MIN` px); elsewhere the
-  sticks float beside the field and `resize()` narrows the field so they never cover it. 12 levels across
+  any other. `#app` is a grid: the mode tabs over the field, the control bar
+  and mini stats under it, the sticks either side, and the Free Drive / Levels panel on the right behind a
+  handle joined to its edge (`#panel-toggle`, key `P`, `togglePanel()` in `ui.js`; not remembered, and picking
+  a mode unfolds it). Folding the panel turns the tabs, controls, mini stats and sticks into one column on the
+  right (`#ctrl-col`, which is `display: contents` while the panel is open), joined to the handle, and the
+  field takes the room. ≤ 900 px portrait everything stacks and stays stacked when folded: tabs, field,
+  sticks, the control bar as one scrolling row, the handle as a tab on the sheet's top edge, then the panel as
+  a sheet that scrolls (the field leaves it `SHEET_MIN` px; `resize()` reads the resolved grid rows when
+  `--stacked` is 1, else it sizes to `#field-container`'s grid cell). 12 levels across
   4 tiers with star ratings, all routed in the ring around the frame (a unit test checks the clearances).
 - **Physics (`js/teleop/drive.js`) models a real 435 RPM mecanum drivetrain.** Defaults: 6.5 ft/s,
   strafe at 80% of forward, 380 °/s spin (190 °/s while driving flat out, because the wheel-power

@@ -33,9 +33,9 @@
 
   /* text */
   --text: #16233a;
-  --text-secondary: #33425a;
-  --text-muted: #4b5b73;
-  --text-faint: #6b788c;
+  --text-secondary: #2c3a51;
+  --text-muted: #3e4d64;
+  --text-faint: #54627a;
   --text-on-sky: #f7f9fc;
   /* text placed directly on the sky (page titles, hero): always light + a soft halo,
      because the zenith is deep blue in both themes */
@@ -126,9 +126,9 @@
 /* ── Tokens — dark glass (no `light` class on <html>) ───────────────────── */
 html:not(.light) {
   --text: #f4f6fa;
-  --text-secondary: #c6d0de;
-  --text-muted: #a9b4c6;
-  --text-faint: #8e9bb0;
+  --text-secondary: #d0d8e4;
+  --text-muted: #b6c0d0;
+  --text-faint: #a3afc2;
   --gold-text: var(--gold);
   --burgundy-text: #d1607d;
   --text-on-cloud: #eef2f8;

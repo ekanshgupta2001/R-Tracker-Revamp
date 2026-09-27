@@ -23,6 +23,9 @@ const SIZES = [
   { name: 'tablet landscape', w: 1024, h: 768, touch: false },
   { name: 'laptop 1280', w: 1280, h: 720, touch: false }
 ];
+// sizes where folding the TeleOp panel must visibly grow the field (portrait phones are width-bound,
+// a 16:9 laptop is height-bound with the panel open already)
+const GROWS = new Set(['phone landscape', 'tablet portrait', 'tablet landscape']);
 
 // Elements whose right edge passes the viewport and that no clipping ancestor
 // (a horizontal scroller, an overflow-hidden frame) keeps inside it.
@@ -81,6 +84,54 @@ for (const size of SIZES) {
             expect(overlap, `${id} covers the field`).toBe(false);
           }
         }
+        // panel open: the control bar sits under the field, and the fold handle is
+        // joined to the panel's edge (its left edge side by side, its top stacked)
+        const field0 = await page.locator('#c').boundingBox();
+        const sideBySide = size.w > 900 || size.w > size.h;
+        const bar = await page.locator('#ctrl-bar').boundingBox();
+        const handle = await page.locator('#panel-toggle').boundingBox();
+        const sheet = await page.locator('#sidebar-teleop').boundingBox();
+        expect(bar.y, 'TeleOp: controls sit under the field').toBeGreaterThanOrEqual(field0.y + field0.height);
+        if (sideBySide) expect(Math.abs(handle.x + handle.width - sheet.x), 'TeleOp: handle joins the panel\'s left edge').toBeLessThanOrEqual(2);
+        else expect(Math.abs(handle.y + handle.height - sheet.y), 'TeleOp: handle joins the sheet\'s top edge').toBeLessThanOrEqual(10);
+        // the panel folds away and the field takes its room
+        const before = await page.evaluate(() => cvsSize);
+        await page.click('#panel-toggle');
+        await page.waitForTimeout(250);
+        expect(await page.locator('#sidebar-teleop').isVisible(), 'TeleOp: folded column').toBe(false);
+        const folded = await page.evaluate(() => cvsSize);
+        if (GROWS.has(size.name)) expect(folded, 'TeleOp: folded field grows').toBeGreaterThan(before + 15);
+        else expect(folded, 'TeleOp: folded field').toBeGreaterThanOrEqual(before);
+        const fo = await page.evaluate(offscreen);
+        expect(fo.doc, 'TeleOp folded: page scrolls sideways').toBeLessThanOrEqual(0);
+        expect(fo.out, 'TeleOp folded: runs off the right edge').toEqual([]);
+        const ff = await page.locator('#c').boundingBox();
+        expect(ff.y + ff.height, 'TeleOp folded: field bottom').toBeLessThanOrEqual(size.h + 1);
+        expect(ff.x + ff.width, 'TeleOp folded: field right').toBeLessThanOrEqual(size.w + 1);
+        if (sideBySide) {
+          // folded side by side: the controls become a column on the right, joined to the handle
+          const col = await page.locator('#ctrl-col').boundingBox();
+          const h2 = await page.locator('#panel-toggle').boundingBox();
+          expect(col.x, 'TeleOp folded: control column right of the field').toBeGreaterThanOrEqual(ff.x + ff.width);
+          expect(col.height, 'TeleOp folded: controls form a column').toBeGreaterThan(col.width);
+          expect(Math.abs(h2.x + h2.width - col.x), 'TeleOp folded: handle joins the control column').toBeLessThanOrEqual(2);
+        } else {
+          const b2 = await page.locator('#ctrl-bar').boundingBox();
+          expect(b2.y, 'TeleOp folded (stacked): controls stay under the field').toBeGreaterThanOrEqual(ff.y + ff.height);
+        }
+        const hb = await page.locator('.hamburger').boundingBox();
+        expect(hb.x + hb.width <= ff.x || hb.y + hb.height <= ff.y, 'TeleOp folded: hamburger covers the field').toBe(true);
+        for (const sel of ['#panel-toggle', '#ctrl-bar', ...(size.touch ? ['#stick-l', '#stick-r'] : [])]) {
+          const b = await page.locator(sel).boundingBox();
+          expect(b.x + b.width, `TeleOp folded: ${sel} right edge`).toBeLessThanOrEqual(size.w + 1);
+          expect(b.y + b.height, `TeleOp folded: ${sel} bottom`).toBeLessThanOrEqual(size.h + 1);
+          const overlap = !(b.x >= ff.x + ff.width || b.x + b.width <= ff.x || b.y >= ff.y + ff.height || b.y + b.height <= ff.y);
+          expect(overlap, `TeleOp folded: ${sel} covers the field`).toBe(false);
+        }
+        // picking a mode brings the panel back
+        await page.click('#tab-levels');
+        await expect(page.locator('#levels-sidebar')).toBeVisible();
+        expect(await page.evaluate(() => cvsSize)).toBeLessThanOrEqual(folded);
       }
     }
     expect(errors).toEqual([]);
@@ -112,6 +163,46 @@ test('TeleOp on a phone: the left stick drives the robot and recentres on releas
   expect(await page.evaluate(() => bot.y)).toBeGreaterThan(y0 + 1);   // drove forward (+y is up the field)
   expect(await page.evaluate(() => ({ ...touchInp }))).toEqual({ lx: 0, ly: 0, rx: 0, left: false, right: false });
   await context.close();
+});
+
+test('TeleOp: P folds and unfolds the side column', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/pages/teleop.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => typeof togglePanel === 'function' && typeof cvsSize === 'number');
+  const toggle = page.locator('#panel-toggle');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('KeyP');
+  await expect(page.locator('#sidebar-teleop')).toBeHidden();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(toggle).toHaveAttribute('aria-label', 'Show panel (P)');
+  await page.keyboard.press('KeyP');
+  await expect(page.locator('#sidebar-teleop')).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+});
+
+// Grey text (secondary / muted / faint, also every placeholder) stays readable:
+// at least 4.5:1 on the glass over the brightest sky each theme can show.
+test('grey text tokens keep 4.5:1 on glass in both themes', async ({ page }) => {
+  await page.goto('/pages/about.html', { waitUntil: 'load' });
+  const ratios = await page.evaluate(() => {
+    const rgba = v => { const d = document.createElement('i'); d.style.color = v; document.body.appendChild(d); const m = getComputedStyle(d).color.match(/[\d.]+/g).map(Number); d.remove(); return [m[0], m[1], m[2], m.length > 3 ? m[3] : 1]; };
+    const over = (f, b) => [0, 1, 2].map(i => f[i] * f[3] + b[i] * (1 - f[3]));
+    const lum = c => { const [r, g, b] = c.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+    const out = {}, root = document.documentElement;
+    for (const theme of ['light', 'dark']) {
+      root.classList.toggle('light', theme === 'light');
+      const sky = rgba(theme === 'light' ? 'var(--sky-horizon)' : 'var(--sky-mid)');
+      const glass = over(rgba('var(--glass)'), sky);
+      const grounds = theme === 'light' ? [glass, over(rgba('var(--glass-inset)'), glass)] : [glass];
+      for (const t of ['--text-secondary', '--text-muted', '--text-faint']) {
+        const fg = rgba('var(' + t + ')');
+        out[theme + ' ' + t] = Math.min(...grounds.map(g => ratio(fg, g)));
+      }
+    }
+    return out;
+  });
+  for (const [k, v] of Object.entries(ratios)) expect(v, k).toBeGreaterThanOrEqual(4.5);
 });
 
 test('Path Planner: a pointer drag moves a waypoint', async ({ page }) => {

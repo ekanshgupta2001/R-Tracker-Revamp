@@ -54,6 +54,7 @@ document.addEventListener('keydown', e => {
     if (e.code === 'Space') { tmr.running ? timerPause() : timerStart(); e.preventDefault(); }
   }
   if (e.code === 'KeyH') toggleMiniStats();
+  if (e.code === 'KeyP') togglePanel();
   if (e.code === 'KeyL') switchMode(appMode === 'freedrive' ? 'levels' : 'freedrive');
   if (e.code === 'Escape' && appMode === 'levels') {
     if (lvl.phase !== 'select') exitToSelect(); else switchMode('freedrive');

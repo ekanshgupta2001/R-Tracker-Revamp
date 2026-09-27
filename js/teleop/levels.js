@@ -487,6 +487,7 @@ function nextLevel() {
 }
 
 function switchMode(mode) {
+  if (typeof togglePanel === 'function') togglePanel(true);   // picking a mode brings a folded panel back (ui.js)
   if (appMode === mode) return;
   appMode = mode;
   document.getElementById('tab-freedrive').classList.toggle('active', mode === 'freedrive');

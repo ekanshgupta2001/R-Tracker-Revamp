@@ -1184,7 +1184,7 @@
   box-sizing: border-box;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.code-editor::placeholder { color: rgba(223, 231, 243, 0.4); }
+.code-editor::placeholder { color: rgba(223, 231, 243, 0.6); }
 .code-editor:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(232, 176, 75, 0.3); }
 
 .code-actions { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
